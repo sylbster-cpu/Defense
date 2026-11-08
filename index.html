@@ -389,9 +389,12 @@ function cardDescription(id){const n=upgradeRanks[id]+1,C=BAL.card;
 }
 function upgradeScreen(){phase='upgrade';stageReports.push({op,facilities:[...facilities],core});
  const names=['발전소','정비소'],statuses=facilities.map((h,i)=>names[i]+' '+(h>0?'유지':'붕괴')+' ('+Math.round(h)+' / 100)');
- offeredUpgrades=[facilities[0]>0?'stable':'emergency',facilities[1]>0?'precision':'rubble'];
+ // Keep the two facility-dependent offers. Rotate one alternative so all four existing upgrades are reachable without destroying a facility.
+ const facilityOffers=[facilities[0]>0?'stable':'emergency',facilities[1]>0?'precision':'rubble'];
+ const alternatives=['stable','emergency','precision','rubble'].filter(id=>!facilityOffers.includes(id));
+ offeredUpgrades=[...facilityOffers,alternatives[(op-1)%alternatives.length]];
  const tags={stable:'발전소 생존',emergency:'발전소 붕괴',precision:'정비소 생존',rubble:'정비소 붕괴'};
- const choices=offeredUpgrades.map(id=>({id,label:CARD_NAMES[id],rank:upgradeRanks[id],tag:tags[id],desc:cardDescription(id)}));
+ const choices=offeredUpgrades.map((id,i)=>({id,label:CARD_NAMES[id],rank:upgradeRanks[id],tag:i<facilityOffers.length?tags[id]:'추가 선택',desc:cardDescription(id)}));
  const html=`<div class="tiny">작전 ${String(op).padStart(2,'0')} / 05 · 강화 ${upgradeHistory.length+1} / 04</div><h2>강화 선택</h2><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
  renderOverlay(html,'upgrade');for(const btn of document.querySelectorAll('[data-choice]'))btn.addEventListener('click',()=>choose(btn.dataset.choice));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -460,7 +463,7 @@ const tutorialSteps=[
  {title:'방어 목표',body:'왼쪽 발전소와 오른쪽 정비소를 지키세요. 적이 방어선을 통과하면 시설과 중앙 송신소의 내구도가 감소합니다. 포탑은 자동으로 쏘고, 곧 나올 적은 전장 위쪽에 미리 표시됩니다.',visual:'<div><span class="symbol">ϟ</span><strong>발전소</strong><small>무너지면 기체 이동 느려짐</small></div><div><span class="symbol">⌘</span><strong>정비소</strong><small>무너지면 포탑 사격 느려짐</small></div>',btn:'다음'},
  {title:'지원 기체 이동',task:'move',body:'지원 기체는 한 대뿐입니다. 적이 많은 전선으로 옮겨 자동 포탑을 도우세요. 직접 한 번 옮겨 봅니다.',visual:'<div><span class="symbol">↙</span><strong>발전소 방어</strong><small>버튼 · 화면 왼쪽 · A</small></div><div><span class="symbol">↘</span><strong>정비소 방어</strong><small>버튼 · 화면 오른쪽 · D</small></div>',btn:'직접 옮겨 보기'},
  {title:'과부하 공격',task:'pulse',body:'과부하는 지원 기체 주변 점선 원 안의 적에게 한꺼번에 피해를 줍니다. 적이 원 안에 모였을 때 쓰세요. 쓰고 나면 재충전 시간이 필요합니다.',visual:'<div><span class="symbol">✳</span><strong>과부하 방출</strong><small>버튼 · Space</small></div><div><span class="symbol">◎</span><strong>재충전</strong><small>버튼에 남은 시간 표시</small></div>',btn:'직접 방출해 보기'},
- {title:'무엇을 지킬지',body:'양쪽 전선에 동시에 적이 몰려오면 어느 쪽을 지킬지 골라야 합니다. 각 작전이 끝나면 시설의 상태에 따라 강화 카드 두 장이 나옵니다. 하나를 선택하세요. 같은 기술을 다시 고르면 강화 단계가 높아집니다. 마지막 다섯 번째 작전을 막으면 승리합니다.',visual:'<div><span class="symbol">✓</span><strong>시설 생존</strong><small>해당 시설의 기술 확보</small></div><div><span class="symbol">◇</span><strong>시설 파괴</strong><small>다른 방식의 기술 확보</small></div>',btn:'작전 시작'}
+ {title:'무엇을 지킬지',body:'양쪽 전선에 동시에 적이 몰려오면 어느 쪽을 지킬지 골라야 합니다. 각 작전이 끝나면 강화 카드 세 장 중 하나를 선택합니다. 두 장은 시설의 상태에 따라, 나머지 한 장은 작전에 따라 바뀝니다. 같은 기술을 다시 고르면 강화 단계가 높아집니다. 마지막 다섯 번째 작전을 막으면 승리합니다.',visual:'<div><span class="symbol">✓</span><strong>시설 생존</strong><small>해당 시설의 기술 확보</small></div><div><span class="symbol">◇</span><strong>시설 파괴</strong><small>다른 방식의 기술 확보</small></div>',btn:'작전 시작'}
 ];
 function showTutorial(){
  phase='tutorial';hideCoach();const step=tutorialSteps[tutorialStep];const done=!!(step.task&&practiced[step.task]);
