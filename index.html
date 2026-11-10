@@ -7,7 +7,7 @@
 <title>방어 실험 02 | 중계선</title>
 <style>
 :root{--bg:#111c22;--panel:#1a2a30;--panel2:#22363c;--edge:#385056;--ink:#f2f1e9;--dim:#aabbb9;--soft:#77918f;--amber:#f0c47b;--amber2:#d99b54;--cyan:#8dd7d0;--rust:#eb806c;--good:#a7d8a3}
-*{box-sizing:border-box}html{min-width:320px;scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:radial-gradient(ellipse at 10% 4%,#2d4144 0,transparent 41%),radial-gradient(ellipse at 95% 64%,#21333a 0,transparent 40%),var(--bg);letter-spacing:-.025em}button{font:inherit;cursor:pointer}button:focus-visible,canvas:focus-visible{outline:3px solid var(--amber);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}h1,h2,h3,p{margin:0}.wrap{width:min(1110px,calc(100% - 36px));margin:0 auto;padding:28px 0 38px}.mast{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:23px}.tiny{font-size:11px;font-weight:800;letter-spacing:.17em;color:var(--amber);text-transform:uppercase}.mast h1{font-size:clamp(27px,4.6vw,43px);font-weight:850;line-height:1.19;letter-spacing:-.065em;margin:9px 0 8px}.subtitle{color:var(--dim);line-height:1.65;font-size:14px}.meta{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:6px;color:#b8cac7;font-size:11px;letter-spacing:.06em}.meta .dot{width:7px;height:7px;background:var(--amber);box-shadow:0 0 0 4px rgba(240,196,123,.1);border-radius:50%}.dashboard{display:grid;grid-template-columns:minmax(0,550px) minmax(280px,1fr);align-items:start;gap:18px}.left{min-width:0}.field{position:relative;isolation:isolate;border:1px solid #52656a;box-shadow:0 18px 55px #0006,0 0 0 5px #12252b;background:#102126;border-radius:13px;overflow:hidden}.field:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 70px rgba(8,16,19,.18)}canvas{display:block;width:100%;height:auto;aspect-ratio:480/600;touch-action:manipulation;cursor:crosshair}.field-sticker{display:none}.toast{position:absolute;z-index:4;pointer-events:none;left:50%;top:21%;transform:translate(-50%,-5px);border:1px solid rgba(240,196,123,.55);background:rgba(14,31,35,.94);color:#ffe5b1;padding:9px 16px;border-radius:5px;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 10px 26px #0005;opacity:0;transition:opacity .2s,transform .2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+*{box-sizing:border-box}html{min-width:320px;scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:radial-gradient(ellipse at 10% 4%,#2d4144 0,transparent 41%),radial-gradient(ellipse at 95% 64%,#21333a 0,transparent 40%),var(--bg);letter-spacing:-.025em}button{font:inherit;cursor:pointer}button:focus-visible,canvas:focus-visible{outline:3px solid var(--amber);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}h1,h2,h3,p{margin:0}.wrap{width:min(1110px,calc(100% - 36px));margin:0 auto;padding:28px 0 38px}.mast{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:23px}.tiny{font-size:11px;font-weight:800;letter-spacing:.17em;color:var(--amber);text-transform:uppercase}.mast h1{font-size:clamp(27px,4.6vw,43px);font-weight:850;line-height:1.19;letter-spacing:-.065em;margin:9px 0 8px}.subtitle{color:var(--dim);line-height:1.65;font-size:14px}.meta{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:6px;color:#b8cac7;font-size:11px;letter-spacing:.06em}.meta .dot{width:7px;height:7px;background:var(--amber);box-shadow:0 0 0 4px rgba(240,196,123,.1);border-radius:50%}.dashboard{display:grid;grid-template-columns:minmax(0,550px) minmax(280px,1fr);align-items:start;gap:18px}.left{min-width:0}.field{position:relative;isolation:isolate;border:1px solid #52656a;box-shadow:0 18px 55px #0006,0 0 0 5px #12252b;background:#102126;border-radius:13px;overflow:hidden}.field:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 70px rgba(8,16,19,.18)}canvas{display:block;width:100%;height:auto;aspect-ratio:480/702;touch-action:manipulation;cursor:crosshair}.field-sticker{display:none}.toast{position:absolute;z-index:4;pointer-events:none;left:50%;top:21%;transform:translate(-50%,-5px);border:1px solid rgba(240,196,123,.55);background:rgba(14,31,35,.94);color:#ffe5b1;padding:9px 16px;border-radius:5px;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 10px 26px #0005;opacity:0;transition:opacity .2s,transform .2s}.toast.show{opacity:1;transform:translate(-50%,0)}
 .overlay{position:absolute;z-index:10;inset:0;display:flex;justify-content:center;align-items:center;padding:15px;background:rgba(9,19,23,.79);backdrop-filter:blur(5px);overflow:auto}.overlay[hidden]{display:none}.overlay.is-modal{position:fixed;z-index:1000;inset:0;padding:24px;background:rgba(5,15,18,.87)}.overlay.is-modal .overlay-card{max-width:530px;max-height:min(91dvh,760px)}.overlay-card{width:100%;max-width:435px;max-height:100%;overflow:auto;border:1px solid #6a7770;background:linear-gradient(145deg,#26393d,#1b2b31 58%,#15272c);padding:clamp(18px,4vw,27px);box-shadow:0 25px 80px #0008;border-radius:8px}.overlay h2{font-size:clamp(24px,5.2vw,34px);letter-spacing:-.06em;line-height:1.23;margin:12px 0 12px}.overlay p{font-size:13px;line-height:1.73;color:#c6d3ce}.separator{height:1px;background:linear-gradient(90deg,#6e8580,transparent);margin:19px 0}.howto{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0}.howto div{background:#1b3033;border:1px solid #395052;border-radius:6px;padding:12px}.howto strong{display:block;color:#f7deac;font-size:13px;margin-bottom:6px}.howto span{font-size:12px;line-height:1.55;color:#a6c0bc}.primary{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid #e9bb75;background:#e6b970;color:#18262a;font-size:15px;font-weight:850;padding:14px 15px;border-radius:5px;transition:background .15s,transform .15s}.primary:hover{background:#f4ce8b;transform:translateY(-1px)}.primary:active{transform:translateY(1px)}.muted-tip{margin-top:12px;font-size:11px!important;color:#8fa8a4!important}.report{font-size:12px;line-height:1.7;background:#1a3034;border:1px solid #415458;padding:12px;margin:16px 0;color:#d9e5dc}.report strong{color:var(--amber)}.choices{display:grid;grid-template-columns:1fr;gap:9px;margin:15px 0 8px}.choice{width:100%;text-align:left;padding:14px;border:1px solid #5a6f69;background:rgba(21,42,45,.85);border-radius:5px;color:#f2f1e9;transition:border-color .15s,background .15s}.choice:hover,.choice:focus-visible{border-color:#ebbf79;background:#314246}.choice .choice-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.choice h3{font-size:15px;letter-spacing:-.03em}.choice span{color:#d8a66c;font-size:10px;font-weight:800;letter-spacing:.05em}.choice p{font-size:12px;line-height:1.55;color:#bcd0c9}.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px 0}.result-stat{border:1px solid #52615f;background:#172e32;padding:12px;border-radius:4px}.result-stat .n{font-size:23px;font-weight:800;line-height:1.2;color:#f0c47b}.result-stat .k{font-size:11px;color:#aebfbb;margin-top:5px}
 .controls{display:grid;grid-template-columns:1fr 1fr 1.18fr;gap:9px;margin-top:14px}.action{min-width:0;padding:12px 7px 11px;border-radius:7px;border:1px solid #52686b;background:#21353a;color:#edf2eb;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .15s,border-color .15s}.action:hover:not(:disabled){background:#2b4448;border-color:#a6c2bc}.action.active{border-color:var(--amber);background:#37433e}.action .ico{font-size:19px;font-weight:900;line-height:1}.action .label{font-size:12px;font-weight:800;white-space:nowrap}.action .sub{font-size:10px;color:#b2c2bf;font-weight:500;white-space:nowrap}.action.special{background:#3f3531;border-color:#bd8b5b}.action.special:hover:not(:disabled){background:#554339}.action.special .ico{color:#ffd49b}.action.special .sub{color:#e2c8a8}.inline-help{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:11px 2px 0;color:#95aba7;font-size:11px;line-height:1.5}.textbtn{border:0;background:transparent;color:#d5e0d5;padding:3px 5px;font-size:11px;text-decoration:underline;text-decoration-color:#718785;text-underline-offset:3px}
 .right{display:grid;gap:14px}.panel{border:1px solid #3c5258;border-radius:9px;background:linear-gradient(151deg,#1e3036,#16252b);padding:19px;box-shadow:0 8px 24px #0002}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panel-title{font-size:13px;font-weight:800;letter-spacing:.025em}.pill{font-size:10px;color:#e7c38f;background:#3b3b34;border:1px solid #726348;padding:4px 7px;border-radius:3px;font-weight:700}.mission{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:19px}.mission small{font-size:10px;color:#99afac;display:block;margin-bottom:4px}.mission strong{font-size:20px;letter-spacing:.015em;font-weight:800}.status-list{display:grid;gap:17px}.status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.status-row .name{font-size:12px;color:#d7e0d8;font-weight:650}.status-row .value{font-size:12px;font-variant-numeric:tabular-nums;font-weight:800}.bar{height:7px;background:#101f25;border:1px solid #33474d;border-radius:100px;overflow:hidden}.bar span{display:block;height:100%;width:100%;background:#9fcfbd;border-radius:100px;transition:width .25s,background .25s}.bar.amber span{background:#ebc07c}.bar.core span{background:#a7d7a3}.bar .danger{background:#e48771!important}.panel-note{font-size:12px;line-height:1.7;color:#aabfbb}.panel-note strong{color:#f2d7a4}.log{display:flex;flex-direction:column;gap:10px;min-height:134px}.entry{font-size:11px;line-height:1.55;color:#b8c8c4;padding-left:15px;position:relative}.entry:before{content:"";position:absolute;left:0;top:6px;background:#ccaa75;width:5px;height:5px;border-radius:50%}.entry:first-child{color:#f6e4bf}.keyline{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #3c5354}.key{font-size:11px;color:#94aba6}.key strong{color:#d4c4a2}.dev-note{padding:5px 3px;font-size:11px;color:#829d99;line-height:1.55}.foot{font-size:11px;color:#778e8b;margin-top:22px;padding-top:16px;border-top:1px solid #31464d;line-height:1.65}.foot b{color:#b1c8c3}
@@ -241,7 +241,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 
 /* Phone landscape is held with both hands at the ends: lane buttons on the left edge, overload on the right edge, battlefield in the middle. */
 @media(orientation:landscape) and (max-height:520px) and (max-width:1100px){
- .dashboard{grid-template-columns:clamp(78px,13vw,118px) minmax(0,1fr) clamp(140px,23vw,205px);grid-template-rows:auto auto minmax(0,1fr)}
+ .dashboard{grid-template-columns:clamp(78px,13vw,118px) minmax(0,1fr) clamp(116px,17vw,168px);grid-template-rows:auto auto minmax(0,1fr)}
  .left,.controls{display:contents}
  .field{grid-column:2;grid-row:1/4}
  #leftBtn,#rightBtn{grid-column:1;grid-row:1/4;height:calc(50% - var(--ui-gap)/2)}
@@ -249,6 +249,8 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .right{grid-column:3;grid-row:1;height:auto}
  .right .panel{height:auto}
  .right .mission{display:none}
+ .right .panel-title,.status-row .long{display:none}
+ .right .panel-head{justify-content:flex-end}
  .inline-help{grid-column:3;grid-row:2}
  #pulseBtn{grid-column:3;grid-row:3}
 }
@@ -259,7 +261,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <main class="dashboard">
     <section class="left" aria-label="전투 영역">
       <div class="field" id="field">
-        <canvas id="game" width="480" height="600" tabindex="0" aria-label="두 전선의 전투 화면. 왼쪽 절반은 발전소, 오른쪽 절반은 정비소. 전투 중 터치하여 지원 기체를 이동합니다."></canvas>
+        <canvas id="game" width="480" height="702" tabindex="0" aria-label="두 전선의 전투 화면. 왼쪽 절반은 발전소, 오른쪽 절반은 정비소. 전투 중 터치하여 지원 기체를 이동합니다."></canvas>
         <div class="field-sticker">RIDGE RELAY / SECTOR 02</div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
         <div class="coach" id="coach" role="status" aria-live="polite" hidden><strong id="coachTitle"></strong><span id="coachMain"></span><small id="coachHint"></small></div>
@@ -279,7 +281,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
         <div class="panel-head"><span class="panel-title">중계선 · 작전 현황</span><span class="pill" id="phaseLabel">대기 중</span></div>
         <div class="mission"><div><small>OPERATION</small><strong id="operationStat">01 / 05</strong></div><div><small>WAVE</small><strong id="waveStat">— / 03</strong></div></div>
         <div class="status-list">
-          <div><div class="status-row"><span class="name">● 중앙 송신소</span><span class="value" id="coreStat">100 / 100</span></div><div class="bar core"><span id="coreBar"></span></div></div>
+          <div><div class="status-row"><span class="name">● <span class="long">중앙 </span>송신소</span><span class="value" id="coreStat">100 / 100</span></div><div class="bar core"><span id="coreBar"></span></div></div>
           <div><div class="status-row"><span class="name">◆ 발전소</span><span class="value" id="powerStat">100 / 100</span></div><div class="bar amber"><span id="powerBar"></span></div></div>
           <div><div class="status-row"><span class="name">▣ 정비소</span><span class="value" id="shopStat">100 / 100</span></div><div class="bar"><span id="shopBar"></span></div></div>
         </div>
@@ -294,18 +296,23 @@ const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d',{alpha:false});
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.max(0,Math.min(+r||0,w/2,h/2));this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();};}
 const $=id=>document.getElementById(id);
-const W=480,H=600, LANES=[139,341];
+// Lane geometry in world units. The rules and both renderers read these; LEAK_Y sets the lane length.
+const LANE_TOP=99,LEAK_Y=608,DRONE_Y=340,TURRET_Y=489,LANE_LEN=LEAK_Y-LANE_TOP,DY=LEAK_Y-506;
+const W=480,H=600+DY,LANES=[139,341];
 const COLORS={amber:'#edbf76',teal:'#84d8d0',red:'#f17c6f',pale:'#eae9dc',green:'#a6d4a9'};
 // Wide-phone rendering is visual only. The game still simulates exactly the same two lanes.
-let compactCanvas=false,compactRatio=1,compactW=W,compactH=H,canvasModeKey='';
+let compactCanvas=false,compactRatio=1,compactW=W,compactH=H,canvasModeKey='',classicSX=1,classicSY=1;
 function wantsCompactCanvas(){return innerWidth>innerHeight&&innerHeight<=520&&innerWidth<=1100;}
 function syncCanvasMode(){
- const compact=wantsCompactCanvas(),box=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
- const key=compact?'wide:'+Math.round(box.width)+':'+Math.round(box.height)+':'+dpr:'classic';
+ const compact=wantsCompactCanvas(),box=canvas.getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1);
+ const key=(compact?'wide:':'classic:')+Math.round(box.width)+':'+Math.round(box.height)+':'+dpr;
  if(key===canvasModeKey)return;
  canvasModeKey=key;compactCanvas=compact;compactRatio=compact?dpr:1;
  if(compact){canvas.width=Math.max(1,Math.round(box.width*dpr));canvas.height=Math.max(1,Math.round(box.height*dpr));compactW=canvas.width/dpr;compactH=canvas.height/dpr;}
- else{canvas.width=W;canvas.height=H;compactW=W;compactH=H;}
+ else{
+  // Draw the portrait field at the size it is shown, so it stays sharp on dense screens.
+  const s=Math.max(.5,Math.min(3,Math.min(box.width/W,box.height/H)*dpr||1));
+  canvas.width=Math.round(W*s);canvas.height=Math.round(H*s);classicSX=canvas.width/W;classicSY=canvas.height/H;compactW=W;compactH=H;}
  canvas.classList.toggle('compact-landscape',compact);
  canvas.setAttribute('aria-label',compact?'두 개의 가로 전선. 위쪽이 발전소, 아래쪽이 정비소. 화면 위아래를 터치하여 지원 기체를 이동합니다.':'두 개의 세로 전선. 왼쪽이 발전소, 오른쪽이 정비소. 화면 좌우를 터치하여 지원 기체를 이동합니다.');
  $('leftBtn').querySelector('.ico').textContent=compact?'↑':'↙';
@@ -319,23 +326,28 @@ function syncCanvasMode(){
 
 let phase='intro',op=1,wave=0,stageTime=0, speed=1,paused=false,lastTime=0,uiClock=0;
 let core=100,facilities=[100,100],turrets=[],enemies=[],shots=[],particles=[],alerts=[];
-let drone={lane:0,x:LANES[0],y:292,moveCooldown:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0};
+let drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};
 let pattern=[],nextSpawn=0,kills=0,leaks=0,switches=0,stageReports=[],upgradeHistory=[],upgradeRanks={stable:0,emergency:0,precision:0,rubble:0},offeredUpgrades=[];
 // Balance numbers in one place. Card values are read by the upgrade screen text, so the text never drifts from the rule.
 const BAL={droneRange:155,droneDmg:19,droneRate:.29,turretDmg:14,turretRate:.52,turretRange:165,moveBase:2.2,pulseRange:110,pulseDamage:75,pulseBase:11,pulseStun:.5,powerDownMove:1.5,shopDownTurret:1.35,opHeal:15,preview:5,
  card:{
-  stable:n=>({moveBase:Math.max(.55,1.5-.3*(n-1)),droneRange:BAL.droneRange+15+15*(n-1),burstTime:1.0+.7*(n-1),burstRate:1.6}),
-  precision:n=>({focusRamp:.35+.1*(n-1),focusCap:.6+.6*(n-1)}),
-  emergency:n=>({pulseDamage:110+30*(n-1),pulseRange:135+15*(n-1),pulseBase:9,refund:1.4+.5*(n-1),pulseMin:3}),
+  // From rank 3 a card gains an effect that lower ranks do not have.
+  // stable (echo): during the post-move burst the extra shots go to the lane the drone just left, while that lane has a target in range.
+  // precision (pierce): turrets at the full bonus also hit the enemy behind their target.
+  stable:n=>({moveBase:Math.max(.55,1.5-.3*(n-1)),droneRange:BAL.droneRange+15+15*(n-1),burstTime:1.0+.7*(n-1),burstRate:1.6,echo:n>=3?1:0}),
+  precision:n=>({focusRamp:.25+.05*(n-1),focusCap:.6+.5*(n-1),pierce:n>=3?.3+.15*(n-3):0}),
+  emergency:n=>({pulseDamage:110+30*(n-1),pulseRange:165+20*(n-1),pulseBase:9,refund:1.4+.5*(n-1),pulseMin:3}),
   rubble:n=>({rubbleSlow:2+1.2*(n-1),rubbleFactor:Math.max(.25,.55-.08*(n-1))})
  }};
-function baseEffects(){return{droneRange:BAL.droneRange,moveBase:BAL.moveBase,pulseDamage:BAL.pulseDamage,pulseBase:BAL.pulseBase,pulseRange:BAL.pulseRange,burstTime:0,burstRate:1,focusRamp:0,focusCap:0,refund:0,pulseMin:BAL.pulseBase,rubble:0,rubbleSlow:0,rubbleFactor:1};}
+function baseEffects(){return{droneRange:BAL.droneRange,moveBase:BAL.moveBase,pulseDamage:BAL.pulseDamage,pulseBase:BAL.pulseBase,pulseRange:BAL.pulseRange,burstTime:0,burstRate:1,echo:0,focusRamp:0,focusCap:0,pierce:0,refund:0,pulseMin:BAL.pulseBase,rubble:0,rubbleSlow:0,rubbleFactor:1};}
 // Both turrets speed up while the drone holds one lane; moving resets the bonus.
 // A same-lane-only bonus was tested and stayed weak: leaks come from the lane the drone is not covering.
 function focusBonus(){return effects.focusCap>0?Math.min(effects.focusCap,effects.focusRamp*drone.stay):0;}
+function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effects.focusCap;}
+function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.10-1';
+const BUILD='2026.11.10-2';
 let audio=null,mute=false,toastExpiry=0,frameTime=0,logLines=[];
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
@@ -344,7 +356,7 @@ const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',v
 //  zig  = groups alternating between the lanes (moving)
 //  both = the same enemy in both lanes at once (a surge one drone cannot cover)
 //  meet = a slow leader plus faster followers timed to close up behind it beside the drone, so mixed speeds arrive as one clump
-const R='runner',G='grunt',B='brute',X='boss',MEET_AT=200;
+const R='runner',G='grunt',B='brute',X='boss',MEET_AT=DRONE_Y-92;
 const pack=(t,l,types,gap=.45)=>types.map((ty,i)=>[t+i*gap,l,ty]);
 const row=(t,l,types,gap=1.4)=>pack(t,l,types,gap);
 const zig=(t,l,groups,gap=2.6)=>groups.flatMap((g,i)=>pack(t+i*gap,(l+i)%2,g));
@@ -388,26 +400,27 @@ const stages={
 const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44]};
 const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
-function reset(){op=1;wave=0;stageTime=0;speed=1;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:292,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];$('speedBtn').textContent='속도 ×1';logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
-function newStage(index){op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:411,cool:0,flash:0},{lane:1,x:LANES[1],y:411,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;showOverlay(false);hideCoach();showToast('작전 '+String(index).padStart(2,'0')+' · '+OP_NAMES[index],2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
+function reset(){op=1;wave=0;stageTime=0;speed=1;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];$('speedBtn').textContent='속도 ×1';logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
+function newStage(index){op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;showOverlay(false);hideCoach();showToast('작전 '+String(index).padStart(2,'0')+' · '+OP_NAMES[index],2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
-function spawn(lane,type){const m=TYPES[type],hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]);enemies.push({id:Math.random(),lane,type,x:LANES[lane],y:99-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0});}
+function spawn(lane,type){const m=TYPES[type],hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]);enemies.push({id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0});}
 function damageEnemy(e,damage,sx,sy){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sound(360,.035,'triangle',.025);}}
 function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
 function sound(freq,duration=.08,type='sine',volume=.05){if(mute)return;try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();}if(audio.state==='suspended')audio.resume();const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.72),t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration);}catch(e){mute=true;}}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
-function pickTarget(lane,y,range){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0)continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
-function switchLane(lane){if(phase==='practice'){if(practice.task!=='move'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;
+function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
+function switchLane(lane){if(phase==='practice'){if(practice.task!=='move'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sound(510,.13,'sine',.035);addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');if(phase==='practice')practiceDone();updateControls();}
 function pulse(){if(phase==='practice'){if(practice.task!=='pulse'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange);if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y);}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});sound(165,.28,'sawtooth',.09);addLog('과부하 방출. '+close.length+'개 목표에 타격.');if(phase==='practice')practiceDone();updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,509,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave){showToast('제'+wave+'파 공격 시작',1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sound(240,.18,'square',.05);}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
-  for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=506){e.hp=-999;enemyLeak(e);}}
-  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y);sound(430,.03,'square',.012);}}}
-  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(e){drone.shotCooldown=BAL.droneRate/(drone.burst>0?effects.burstRate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y);sound(750,.025,'triangle',.012);}}
+  for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y){e.hp=-999;enemyLeak(e);}}
+  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y);if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y);}sound(430,.03,'square',.012);}}}
+  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y);sound(750,.025,'triangle',.012);}}
+  if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y);}}}
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
   if(core<=0){finish(false);return;}
@@ -418,9 +431,9 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
 const CARD_NAMES={stable:'순환 전원',emergency:'비상 축전',precision:'협동 조준',rubble:'잔해 차폐'};
 function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?BAL.card[id](n-1):null,f1=v=>v.toFixed(1),f2=v=>v.toFixed(2),pc=v=>Math.round(v*100)+'%';
  switch(id){
- case 'stable':return !b?`이동 대기 ${BAL.moveBase}초 → ${f1(a.moveBase)}초 · 이동 후 ${f1(a.burstTime)}초간 기체 공격 속도 ×${a.burstRate} · 사거리 +${a.droneRange-BAL.droneRange}`:`이동 대기 ${f2(b.moveBase)} → ${f2(a.moveBase)}초 · 이동 후 강화 ${f1(b.burstTime)} → ${f1(a.burstTime)}초 · 사거리 +${a.droneRange-b.droneRange}`;
+ case 'stable':return (!b?`이동 대기 ${BAL.moveBase}초 → ${f1(a.moveBase)}초 · 이동 후 ${f1(a.burstTime)}초간 기체 공격 속도 ×${a.burstRate} · 사거리 +${a.droneRange-BAL.droneRange}`:`이동 대기 ${f2(b.moveBase)} → ${f2(a.moveBase)}초 · 이동 후 강화 ${f1(b.burstTime)} → ${f1(a.burstTime)}초 · 사거리 +${a.droneRange-b.droneRange}`)+(n<3?' · 3단계부터 강화 중 떠난 전선도 사격':n===3?' · 새 효과: 강화 중 늘어난 사격이 떠난 전선의 적을 공격':' · 떠난 전선 사격 시간도 함께 늘어남');
  case 'emergency':return !b?`과부하 피해 ${BAL.pulseDamage} → ${a.pulseDamage} · 범위 ${BAL.pulseRange} → ${a.pulseRange} · 맞힌 적 1명당 재충전 ${f1(a.refund)}초 단축 (기본 ${a.pulseBase}초, 최소 ${a.pulseMin}초)`:`피해 ${b.pulseDamage} → ${a.pulseDamage} · 범위 ${b.pulseRange} → ${a.pulseRange} · 1명당 단축 ${f1(b.refund)} → ${f1(a.refund)}초`;
- case 'precision':return !b?`기체가 한 전선에 머무는 동안 양쪽 포탑이 1초마다 +${pc(a.focusRamp)}씩 빨라짐 (최대 +${pc(a.focusCap)}) · 기체가 이동하면 처음부터`:`최대 +${pc(b.focusCap)} → +${pc(a.focusCap)} · 1초마다 +${pc(b.focusRamp)} → +${pc(a.focusRamp)}`;
+ case 'precision':return (!b?`기체가 한 전선에 머무는 동안 양쪽 포탑이 1초마다 +${pc(a.focusRamp)}씩 빨라짐 (최대 +${pc(a.focusCap)}) · 기체가 이동하면 처음부터`:`최대 +${pc(b.focusCap)} → +${pc(a.focusCap)} · 1초마다 +${pc(b.focusRamp)} → +${pc(a.focusRamp)}`)+(n<3?' · 3단계부터 최대일 때 포탑 관통':n===3?` · 새 효과: 가속이 최대일 때 포탑이 뒤의 적 1기도 공격 (피해 ${pc(a.pierce)})`:` · 관통 피해 ${pc(b.pierce)} → ${pc(a.pierce)}`);
  case 'rubble':return !b?`기체가 떠난 전선의 적 ${f1(a.rubbleSlow)}초 감속 (이동 속도 ${pc(a.rubbleFactor)})`:`감속 ${f1(b.rubbleSlow)} → ${f1(a.rubbleSlow)}초 · 이동 속도 ${pc(b.rubbleFactor)} → ${pc(a.rubbleFactor)}`;
  }
 }
@@ -451,10 +464,10 @@ function hideCoach(){$('coach').hidden=true;}
 function practiceDummy(type,y,hp,hold){return{id:Math.random(),lane:1,type,x:LANES[1],y,hp,maxHp:hp,speed:TYPES[type].speed*.55,flash:0,wiggle:Math.random()*6.28,stun:0,hold};}
 function startPractice(task){
  practice={task,done:false,timer:0};phase='practice';showOverlay(false);
- shots=[];alerts=[];turrets=[{lane:0,x:LANES[0],y:411,cool:0,flash:0},{lane:1,x:LANES[1],y:411,cool:0,flash:0}];
+ shots=[];alerts=[];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];
  drone.moveCooldown=0;drone.pulseCooldown=0;drone.shotCooldown=0;
- if(task==='move'){drone.lane=0;drone.x=LANES[0];enemies=[practiceDummy('runner',112,40,212),practiceDummy('runner',146,40,246)];setCoach('이동 연습',wantsCompactCanvas()?'지원 기체를 아래쪽 정비소로 옮기세요':'지원 기체를 오른쪽 정비소로 옮기세요',wantsCompactCanvas()?'아래쪽 버튼 · 화면 아래쪽 터치 · D':'오른쪽 버튼 · 화면 오른쪽 터치 · D');}
- else{drone.lane=1;drone.x=LANES[1];enemies=[practiceDummy('grunt',204,60,204),practiceDummy('grunt',234,60,234),practiceDummy('grunt',264,60,264)];setCoach('과부하 연습','적이 점선 원 안에 모였습니다. 과부하를 방출하세요','과부하 버튼 · Space');}
+ if(task==='move'){drone.lane=0;drone.x=LANES[0];enemies=[practiceDummy('runner',DRONE_Y-180,40,DRONE_Y-80),practiceDummy('runner',DRONE_Y-146,40,DRONE_Y-46)];setCoach('이동 연습',wantsCompactCanvas()?'지원 기체를 아래쪽 정비소로 옮기세요':'지원 기체를 오른쪽 정비소로 옮기세요',wantsCompactCanvas()?'아래쪽 버튼 · 화면 아래쪽 터치 · D':'오른쪽 버튼 · 화면 오른쪽 터치 · D');}
+ else{drone.lane=1;drone.x=LANES[1];enemies=[practiceDummy('grunt',DRONE_Y-88,60,DRONE_Y-88),practiceDummy('grunt',DRONE_Y-58,60,DRONE_Y-58),practiceDummy('grunt',DRONE_Y-28,60,DRONE_Y-28)];setCoach('과부하 연습','적이 점선 원 안에 모였습니다. 과부하를 방출하세요','과부하 버튼 · Space');}
  updateUI();
 }
 function practiceDone(){practice.done=true;practice.timer=0;practiced[practice.task]=true;
@@ -494,7 +507,7 @@ const tutorialSteps=[
  {title:'방어 목표',body:'왼쪽 발전소와 오른쪽 정비소를 지키세요. 적이 방어선을 통과하면 시설과 중앙 송신소의 내구도가 감소합니다. 포탑은 자동으로 쏘고, 곧 나올 적은 전장 위쪽에 미리 표시됩니다.',visual:'<div><span class="symbol">ϟ</span><strong>발전소</strong><small>무너지면 기체 이동 느려짐</small></div><div><span class="symbol">⌘</span><strong>정비소</strong><small>무너지면 포탑 사격 느려짐</small></div>',btn:'다음'},
  {title:'지원 기체 이동',task:'move',body:'지원 기체는 한 대뿐입니다. 적이 많은 전선으로 옮겨 자동 포탑을 도우세요. 직접 한 번 옮겨 봅니다.',visual:'<div><span class="symbol">↙</span><strong>발전소 방어</strong><small>버튼 · 화면 왼쪽 · A</small></div><div><span class="symbol">↘</span><strong>정비소 방어</strong><small>버튼 · 화면 오른쪽 · D</small></div>',btn:'직접 옮겨 보기'},
  {title:'과부하 공격',task:'pulse',body:'과부하는 지원 기체 주변 점선 원 안의 적에게 한꺼번에 피해를 줍니다. 적이 원 안에 모였을 때 쓰세요. 쓰고 나면 재충전 시간이 필요합니다.',visual:'<div><span class="symbol">✳</span><strong>과부하 방출</strong><small>버튼 · Space</small></div><div><span class="symbol">◎</span><strong>재충전</strong><small>버튼에 남은 시간 표시</small></div>',btn:'직접 방출해 보기'},
- {title:'무엇을 지킬지',body:'양쪽 전선에 동시에 적이 몰려오면 어느 쪽을 지킬지 골라야 합니다. 각 작전이 끝나면 강화 카드 세 장 중 하나를 선택합니다. 두 장은 시설의 상태에 따라, 나머지 한 장은 작전에 따라 바뀝니다. 한 전선에 머물수록 강해지는 기술과 자주 옮길수록 강해지는 기술이 있으니, 운용 방식에 맞게 고르세요. 같은 기술을 다시 고르면 강화 단계가 높아집니다. 마지막 다섯 번째 작전을 막으면 승리합니다.',visual:'<div><span class="symbol">✓</span><strong>시설 생존</strong><small>해당 시설의 기술 확보</small></div><div><span class="symbol">◇</span><strong>시설 파괴</strong><small>다른 방식의 기술 확보</small></div>',btn:'작전 시작'}
+ {title:'무엇을 지킬지',body:'양쪽 전선에 동시에 적이 몰려오면 어느 쪽을 지킬지 골라야 합니다. 각 작전이 끝나면 강화 카드 세 장 중 하나를 선택합니다. 두 장은 시설의 상태에 따라, 나머지 한 장은 작전에 따라 바뀝니다. 한 전선에 머물수록 강해지는 기술과 자주 옮길수록 강해지는 기술이 있으니, 운용 방식에 맞게 고르세요. 같은 기술을 다시 고르면 강화 단계가 높아지고, 순환 전원과 협동 조준은 3단계부터 새 효과가 생깁니다. 마지막 다섯 번째 작전을 막으면 승리합니다.',visual:'<div><span class="symbol">✓</span><strong>시설 생존</strong><small>해당 시설의 기술 확보</small></div><div><span class="symbol">◇</span><strong>시설 파괴</strong><small>다른 방식의 기술 확보</small></div>',btn:'작전 시작'}
 ];
 function showTutorial(){
  phase='tutorial';hideCoach();const step=tutorialSteps[tutorialStep];const done=!!(step.task&&practiced[step.task]);
@@ -525,27 +538,27 @@ function rounded(x,y,w,h,r,fill,stroke,width=1){ctx.beginPath();ctx.roundRect(x,
 function text(t,x,y,size=12,color='#fff',align='left',bold=false){ctx.fillStyle=color;ctx.font=`${bold?800:500} ${size}px system-ui, -apple-system, sans-serif`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(t,x,y);}
 function circle(x,y,r,fill,stroke,width=1){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke();}}
 function drawBackdrop(now){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#16282e');g.addColorStop(.5,'#182b31');g.addColorStop(1,'#0f2128');rect(0,0,W,H,g);
- for(let x=20;x<W;x+=24)line(x,65,x,590,'rgba(118,155,148,.065)');for(let y=70;y<600;y+=24)line(0,y,W,y,'rgba(118,155,148,.06)');
+ for(let x=20;x<W;x+=24)line(x,65,x,H-10,'rgba(118,155,148,.065)');for(let y=70;y<H;y+=24)line(0,y,W,y,'rgba(118,155,148,.06)');
  rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text('OP '+String(op).padStart(2,'0')+' / 05',465,22,11,'#e3ece4','right',true);text('WAVE '+(noWave()?'—':wave)+' / 03',465,41,10,'#a2c9c3','right',true);
- for(let i=0;i<2;i++){const x=LANES[i];rounded(x-53,81,106,443,11,'#273b41','#4e696e',1.3);rounded(x-44,90,88,423,8,'#20343a','#304a4e',1);ctx.save();ctx.setLineDash([7,18]);line(x,121,x,484,'rgba(174,195,184,.15)',2);ctx.restore();
- for(let n=0;n<4;n++){const cy=149+n*94;rounded(x-63,cy,11,24,2,'#30464b','#3e595a');rounded(x+52,cy,11,24,2,'#30464b','#3e595a');}
+ for(let i=0;i<2;i++){const x=LANES[i];rounded(x-53,81,106,443+DY,11,'#273b41','#4e696e',1.3);rounded(x-44,90,88,423+DY,8,'#20343a','#304a4e',1);ctx.save();ctx.setLineDash([7,18]);line(x,121,x,484+DY,'rgba(174,195,184,.15)',2);ctx.restore();
+ for(let n=0;n<5;n++){const cy=149+n*(282+DY)/4;rounded(x-63,cy,11,24,2,'#30464b','#3e595a');rounded(x+52,cy,11,24,2,'#30464b','#3e595a');}
  text(i===0?'A / POWER':'B / WORKSHOP',x,99,10,i===0?'#e8ca9b':'#a5d6ce','center',true);
  }
- rect(229,81,22,443,'#101f25');for(let y=103;y<500;y+=28){line(239,y,239,y+10,'#2f474b',2);}
- for(let i=0;i<2;i++){let x=LANES[i],color=i===0?'#e9bf78':'#89d4ca';line(x,514,x,550,color,4);line(x,514,240,559,color,1);}
- rounded(185,554,110,34,5,'#183238','#52756e');rounded(194,560,92,22,3,'#284a4d');text('SIGNAL HUB',240,571,11,'#e9e8cc','center',true);
- for(let y=0;y<600;y+=6){rect(0,y,480,1,'rgba(8,13,15,.028)');}
+ rect(229,81,22,443+DY,'#101f25');for(let y=103;y<500+DY;y+=28){line(239,y,239,y+10,'#2f474b',2);}
+ for(let i=0;i<2;i++){let x=LANES[i],color=i===0?'#e9bf78':'#89d4ca';line(x,514+DY,x,550+DY,color,4);line(x,514+DY,240,559+DY,color,1);}
+ rounded(185,554+DY,110,34,5,'#183238','#52756e');rounded(194,560+DY,92,22,3,'#284a4d');text('SIGNAL HUB',240,571+DY,11,'#e9e8cc','center',true);
+ for(let y=0;y<H;y+=6){rect(0,y,480,1,'rgba(8,13,15,.028)');}
 }
-function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i],alive=hp>0;const gold=i===0;ctx.save();ctx.translate(x,534);if(hp<=0){circle(0,0,29,'#372f2f','#75514b',1.8);line(-18,-13,20,15,'#9f6c5d',3);line(16,-15,-15,14,'#9f6c5d',3);text('OFFLINE',0,0,9,'#f4a18d','center',true);}else{
+function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i],alive=hp>0;const gold=i===0;ctx.save();ctx.translate(x,534+DY);if(hp<=0){circle(0,0,29,'#372f2f','#75514b',1.8);line(-18,-13,20,15,'#9f6c5d',3);line(16,-15,-15,14,'#9f6c5d',3);text('OFFLINE',0,0,9,'#f4a18d','center',true);}else{
  circle(0,0,28,gold?'#4b4a3b':'#2d5251',gold?'#d5b578':'#80c6b8',2);rounded(-20,-17,40,34,5,gold?'#65553e':'#37605d',gold?'#f0c57e':'#8bd4cb',1.4);
  if(gold){rounded(-7,-12,14,22,3,'#ecd294');text('ϟ',0,-1,23,'#403f33','center',true);}
  else{line(-10,-9,10,9,'#b0e6dd',4);line(10,-9,-10,9,'#b0e6dd',4);circle(0,0,6,'#38605a','#c7e6db',1.5);}
  }
- ctx.restore();const max=100;rounded(x-37,572,74,5,3,'#0d1c21');rect(x-37,572,74*Math.max(0,hp/max),5,alive?(gold?'#f3c67d':'#8bd9cb'):'#a35751');text(alive?(gold?'발전소':'정비소'):'기능 정지',x,588,11,alive?'#e7ece2':'#e7998e','center',true);
+ ctx.restore();const max=100;rounded(x-37,572+DY,74,5,3,'#0d1c21');rect(x-37,572+DY,74*Math.max(0,hp/max),5,alive?(gold?'#f3c67d':'#8bd9cb'):'#a35751');text(alive?(gold?'발전소':'정비소'):'기능 정지',x,588+DY,11,alive?'#e7ece2':'#e7998e','center',true);
  }
 }
-function drawTurrets(t){for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%':'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
-function drawDrone(now){const x=drone.x,y=drone.y,breath=Math.sin(now*.003)*2;circle(x,y,effects.droneRange,'rgba(106,202,186,.025)','rgba(112,202,185,.095)',1);circle(x,y,29+breath,'rgba(101,203,190,.09)','rgba(143,229,208,.33)',1);if(drone.burst>0)circle(x,y,40,null,'rgba(150,240,215,'+(.35+.5*Math.min(1,drone.burst))+')',3);if((phase==='battle'||phase==='practice')&&drone.pulseCooldown<=.01){ctx.save();ctx.setLineDash([6,8]);circle(x,y,effects.pulseRange,null,'rgba(240,196,123,.5)',1.5);ctx.restore();}ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);rounded(-18,-18,36,36,5,'#77b9ad','#d1e9d6',2);rounded(-11,-11,22,22,3,'#204249','#c1e9d5',1);ctx.restore();circle(x,y,7,'#f5d798','#c9e7cc',2);line(x-36,y,x-24,y,'#b3d6c7',2);line(x+24,y,x+36,y,'#b3d6c7',2);text('SUPPORT',x,y+46,10,'#d6e8d9','center',true);}
+function drawTurrets(t){for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''):'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
+function drawDrone(now){const x=drone.x,y=drone.y,breath=Math.sin(now*.003)*2;circle(x,y,effects.droneRange,'rgba(106,202,186,.025)','rgba(112,202,185,.095)',1);circle(x,y,29+breath,'rgba(101,203,190,.09)','rgba(143,229,208,.33)',1);if(drone.burst>0)circle(x,y,40,null,'rgba(150,240,215,'+(.35+.5*Math.min(1,drone.burst))+')',3);if(echoOn()){const gx=LANES[drone.echoLane];ctx.save();ctx.globalAlpha=.3+.4*Math.min(1,drone.burst);ctx.setLineDash([5,5]);circle(gx,y,27,null,'#96f0d7',2);ctx.setLineDash([]);ctx.translate(gx,y);ctx.rotate(Math.PI/4);rounded(-14,-14,28,28,4,null,'#96f0d7',2);ctx.restore();}if((phase==='battle'||phase==='practice')&&drone.pulseCooldown<=.01){ctx.save();ctx.setLineDash([6,8]);circle(x,y,effects.pulseRange,null,'rgba(240,196,123,.5)',1.5);ctx.restore();}ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);rounded(-18,-18,36,36,5,'#77b9ad','#d1e9d6',2);rounded(-11,-11,22,22,3,'#204249','#c1e9d5',1);ctx.restore();circle(x,y,7,'#f5d798','#c9e7cc',2);line(x-36,y,x-24,y,'#b3d6c7',2);line(x+24,y,x+36,y,'#b3d6c7',2);text('SUPPORT',x,y+46,10,'#d6e8d9','center',true);}
 function drawEnemy(e,now){let r=TYPES[e.type].r,x=e.x,y=e.y,c=e.flash>0?'#fff8d8':TYPES[e.type].color;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(now*.003+e.wiggle)*.07);circle(0,2,r+4,'rgba(0,0,0,.3)');if(e.type==='runner'){ctx.beginPath();ctx.moveTo(0,r);ctx.lineTo(-r,-r*.4);ctx.lineTo(-5,-r*.1);ctx.lineTo(0,-r);ctx.lineTo(5,-r*.1);ctx.lineTo(r,-r*.4);ctx.closePath();ctx.fillStyle=c;ctx.fill();line(-5,0,5,0,'#593d33',2);}else if(e.type==='grunt'){rounded(-r,-r,r*2,r*2,5,c,'#77483e',2);rounded(-r*.5,-r*.6,r,8,2,'#664a40');}else{rounded(-r,-r,r*2,r*2,7,'#6e4346','#dc9783',3);rounded(-r+4,-r+4,r*2-8,r*2-8,4,c,'#674844',1);line(-r+7,0,r-7,0,'#593f3d',4);if(e.type==='boss'){circle(0,0,9,'#ffd39a','#7a5550',2);circle(-r-4,0,4,'#e9bd8d');circle(r+4,0,4,'#e9bd8d');}}
  ctx.restore();if(e.slow>0){ctx.save();ctx.setLineDash([3,4]);circle(x,y,r+6,null,'rgba(214,170,124,.85)',2);ctx.restore();}rounded(x-r-4,y-r-13,r*2+8,4,2,'#142225');rect(x-r-3,y-r-12,(r*2+6)*Math.max(0,e.hp/e.maxHp),2,'#f1c37c');}
 function drawVfx(){for(const s of shots){ctx.globalAlpha=Math.min(1,s.life/.13);line(s.x,s.y,s.x2,s.y2,'#f4e2a9',s.thick);circle(s.x2,s.y2,2.8,'#fff3c5');}ctx.globalAlpha=1;for(const a of alerts){ctx.globalAlpha=Math.max(0,a.life/.48);circle(LANES[a.lane],a.y,a.r,null,'#f6db9b',4);}ctx.globalAlpha=1;for(const p of particles){ctx.globalAlpha=Math.min(1,p.life*2.3);circle(p.x,p.y,p.r,p.color);}ctx.globalAlpha=1;}
@@ -566,9 +579,9 @@ function drawCompact(now){
  const header=Math.max(26,Math.min(40,h*.14)),footer=Math.max(19,Math.min(30,h*.09));
  const remaining=h-header-footer,rowGap=remaining/2;
  const ys=[header+remaining*.25,header+remaining*.75];
- const xStart=Math.max(28,Math.min(44,w*.10)),xEnd=w-Math.max(35,Math.min(51,w*.13));
+ const xStart=Math.max(22,Math.min(30,w*.065)),xEnd=w-Math.max(35,Math.min(51,w*.13));
  const run=xEnd-xStart,scale=Math.max(.9,Math.min(1.2,Math.min(w/320,h/255)));
- const px=y=>xStart+Math.max(0,Math.min(1,(y-99)/407))*run;
+ const px=y=>xStart+Math.max(0,Math.min(1,(y-LANE_TOP)/LANE_LEN))*run;
  const py=x=>ys[0]+(x-LANES[0])/(LANES[1]-LANES[0])*(ys[1]-ys[0]);
  const map=(x,y)=>[px(y),py(x)];
  // A separate row per lane leaves more room for readable enemies and warnings.
@@ -641,16 +654,17 @@ function drawCompact(now){
   rounded(x-17*scale,y-3*scale,10*scale,6*scale,2,turret.flash>0?'#fff2ad':'#f2d7a4');
   circle(x,y,4*scale,'#e0caa3');
   const fb=focusBonus();
-  if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,18*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();text('+'+Math.round(fb*100)+'%',x,y+(turret.lane===0?-28:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
+  if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,18*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();text('+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''),x,y+(turret.lane===0?-28:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
  }
  // The support drone moves between the two rows as the old horizontal movement interpolates.
  const droneX=px(drone.y),droneY=py(drone.x);
- const reach=effects.pulseRange/407*run;
+ const reach=effects.pulseRange/LANE_LEN*run;
  if((phase==='battle'||phase==='practice')&&drone.pulseCooldown<=.01){
   ctx.save();ctx.setLineDash([5,5]);ctx.beginPath();ctx.ellipse(droneX,droneY,Math.max(22,reach),Math.max(12,14*scale),0,0,Math.PI*2);ctx.strokeStyle='rgba(240,196,123,.85)';ctx.lineWidth=1.7;ctx.stroke();ctx.restore();
  }
  circle(droneX,droneY,20*scale,'rgba(113,201,182,.12)','#73b8ad',1.6);
  if(drone.burst>0)circle(droneX,droneY,26*scale,null,'rgba(150,240,215,'+(.35+.5*Math.min(1,drone.burst))+')',2.5);
+ if(echoOn()){const gy=ys[drone.echoLane];ctx.save();ctx.globalAlpha=.3+.4*Math.min(1,drone.burst);ctx.setLineDash([4,4]);circle(droneX,gy,18*scale,null,'#96f0d7',1.8);ctx.setLineDash([]);ctx.translate(droneX,gy);ctx.rotate(Math.PI/4);rounded(-9*scale,-9*scale,18*scale,18*scale,3,null,'#96f0d7',1.8);ctx.restore();}
  ctx.save();ctx.translate(droneX,droneY);ctx.rotate(Math.PI/4);
  rounded(-12*scale,-12*scale,24*scale,24*scale,4,'#77b9ad','#ccebd6',2);
  rounded(-6*scale,-6*scale,12*scale,12*scale,2,'#244b50');ctx.restore();
@@ -673,7 +687,7 @@ function drawCompact(now){
   rect(0,0,w,h,'rgba(8,18,22,.67)');text('일시정지',w/2,h/2,25,'#ffe1ae','center',true);
  }
 }
-function draw(now){syncCanvasMode();if(compactCanvas){drawCompact(now);return;}ctx.setTransform(1,0,0,1,0,0);drawBackdrop(now);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)drawEnemy(e,now);drawDrone(now);drawPracticeHint(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,539,'rgba(7,18,22,.65)');text('일시정지',240,284,31,'#f0d1a1','center',true);}}
+function draw(now){syncCanvasMode();if(compactCanvas){drawCompact(now);return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop(now);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)drawEnemy(e,now);drawDrone(now);drawPracticeHint(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
 function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(phase==='battle'&&!paused)update(dt*speed);else if(phase==='practice')updatePractice(dt);draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
 $('leftBtn').addEventListener('click',()=>switchLane(0));$('rightBtn').addEventListener('click',()=>switchLane(1));$('pulseBtn').addEventListener('click',pulse);
 canvas.addEventListener('pointerdown',ev=>{if(phase!=='battle'&&phase!=='practice')return;const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}});
