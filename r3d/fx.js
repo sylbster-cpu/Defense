@@ -13,7 +13,7 @@ const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const C={white:[1,1,1],hot:[1,.96,.84],amber:sat(rgb(pal.amber),1.9,1.02),teal:sat(rgb(pal.teal),1.9,1),cream:rgb(pal.cream),eye:rgb(pal.enemyEye),
  fire0:[1,.68,.27],fire1:[.8,.15,.03],red0:[1,.5,.24],red1:[.72,.08,.03],smoke0:[.3,.2,.14],smoke1:[.12,.115,.11],black0:[.24,.14,.09],black1:[.075,.07,.07],
  dust0:sat(rgb(pal.haze),.55,.62),dust1:sat(rgb(pal.groundWarm),1,1.5),scorch:[.012,.01,.008],stone:rgb(pal.roadEdge),stoneDark:rgb(pal.metalDark),steel:rgb(pal.steel),dark:rgb(pal.enemyDark)};
-C.tealHot=mix(C.teal,C.white,.55);C.amberHot=mix(C.amber,C.white,.5);C.ghost=mix(C.teal,C.cream,.62);C.lance=mix(C.amber,C.white,.7);C.ember=[1,.55,.2];
+C.rub0=sat(rgb(pal.haze),.7,.96);C.rock=sat(rgb(pal.haze),.45,.8);C.tealHot=mix(C.teal,C.white,.55);C.amberHot=mix(C.amber,C.white,.5);C.ghost=mix(C.teal,C.cream,.62);C.lance=mix(C.amber,C.white,.7);C.ember=[1,.55,.2];
 const ENEMY_COL={};for(const k in ENEMY)ENEMY_COL[k]=rgb(pal.enemy[k]);
 const LANE_COL=[C.amber,C.teal];
 // at low quality roughly half of the particles are spawned
@@ -68,9 +68,9 @@ const P={
  ember:{tex:0,bl:0,l0:.8,l1:1.7,s0:.22,s1:.36,grow:.5,c0:C.fire0,c1:C.fire1,a:.95,grav:1.2,drag:1.6,str:0,fin:0,fp:1,bnc:0,rv:0},
  smoke:{tex:1,bl:1,l0:.9,l1:1.7,s0:1.1,s1:1.7,grow:2.3,c0:C.smoke0,c1:C.smoke1,a:.6,grav:1.5,drag:1.7,str:0,fin:.12,fp:1.2,bnc:0,rv:1.2},
  black:{tex:1,bl:1,l0:1.6,l1:2.7,s0:1.1,s1:1.7,grow:2.3,c0:C.black0,c1:C.black1,a:1,grav:.9,drag:.5,str:0,fin:.08,fp:.8,bnc:0,rv:.9},
- rubble:{tex:1,bl:.85,l0:1.1,l1:2,s0:1.1,s1:1.8,grow:2.1,c0:C.dust0,c1:C.dust1,a:.55,grav:.25,drag:2.2,str:0,fin:.1,fp:1.1,bnc:0,rv:1},
+ rubble:{tex:1,bl:.85,l0:1.1,l1:2,s0:1.1,s1:1.8,grow:2.1,c0:C.rub0,c1:C.dust0,a:.62,grav:.25,drag:2.2,str:0,fin:.1,fp:1.1,bnc:0,rv:1},
  dust:{tex:1,bl:.8,l0:.8,l1:1.5,s0:1,s1:1.6,grow:2.2,c0:C.dust0,c1:C.dust1,a:.34,grav:.35,drag:2.2,str:0,fin:.14,fp:1.2,bnc:0,rv:1},
- mote:{tex:0,bl:0,l0:2.4,l1:4,s0:.6,s1:1.05,grow:.6,c0:C.cream,c1:C.cream,a:1,grav:0,drag:.15,str:0,fin:.22,fp:1,bnc:0,rv:0}
+ mote:{tex:0,bl:0,l0:2.4,l1:4,s0:.95,s1:1.6,grow:.6,c0:C.cream,c1:C.cream,a:1,grav:0,drag:.15,str:0,fin:.22,fp:1,bnc:0,rv:0}
 };
 function emit(k,x,y,z,vx,vy,vz,sm,c0,c1){
  const i=pCur;pCur=i+1===PN?0:i+1;if(pLife[i]<=0)pAlive++;
@@ -113,9 +113,9 @@ void main(){vec3 a=aA.xyz,b=aB.xyz,p=mix(a,b,uv.x);vec3 sd=cross(b-a,cameraPosit
  p+=sd*position.y*aA.w;vUv=uv;vCol=aCol;vWin=aWin;vHot=aB.w;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
  // vWin: x = where the visible part starts (the tail is eaten towards the target), y = tail feather, z = head feather
  fragmentShader:`varying vec2 vUv;varying vec4 vCol,vWin;varying float vHot;
-void main(){float v=abs(vUv.y*2.-1.),h=1.-v;float halo=h*h*h,core=smoothstep(.3,.05,v);
+void main(){float v=abs(vUv.y*2.-1.),h=1.-v;float halo=h*h*h,core=smoothstep(.22,.04,v);
  float al=smoothstep(vWin.x,vWin.x+vWin.y,vUv.x)*smoothstep(1.,1.-vWin.z,vUv.x);
- vec3 c=vCol.rgb*halo*1.15+vec3(1.,.97,.9)*core*vHot;gl_FragColor=vec4(c*al*(.6+.4*vUv.x)*vCol.a,1.);}`}),14);
+ vec3 c=vCol.rgb*halo*1.3+mix(vCol.rgb,vec3(1.,.97,.9),.6)*core*vHot;gl_FragColor=vec4(c*al*(.6+.4*vUv.x)*vCol.a,1.);}`}),14);
 function ribbon(style,ax,ay,az,bx,by,bz,w,life,c,hot,alpha){
  const i=rCur;rCur=i+1===RN?0:i+1;if(rLife[i]<=0)rAlive++;const o=i*RS;
  rBuf[o]=ax;rBuf[o+1]=ay;rBuf[o+2]=az;rBuf[o+4]=bx;rBuf[o+5]=by;rBuf[o+6]=bz;rBuf[o+7]=hot;rBuf[o+8]=c[0];rBuf[o+9]=c[1];rBuf[o+10]=c[2];
@@ -253,6 +253,7 @@ let wOn=false,wT=0,wR=0,wDur=.3,wX=0,wZ=0,wAcc=0,wEnd=false;
 const lights=[0,1].map(()=>{const l=new THREE.PointLight(0xffffff,0,48,1.7);l.position.set(0,6,0);scene.add(l);return l;});
 const lI=new Float32Array(2),lTau=new Float32Array(2);
 function light(x,y,z,c,intensity,tau){
+ if(!(x===x&&y===y&&z===z&&intensity>0))return;   // a light at NaN would black out every lit surface
  const i=lI[0]<=lI[1]?0:1;if(lI[i]>intensity)return;   // never steal a light from a brighter effect
  lI[i]=intensity;lTau[i]=tau;const l=lights[i];l.position.set(x,y,z);l.color.setRGB(c[0],c[1],c[2],THREE.SRGBColorSpace);l.intensity=intensity;
 }
@@ -263,7 +264,11 @@ function stepLights(dt){
 /* ---------- delayed steps (multi-stage blasts) and short emitters (smoke columns, victory motes) ---------- */
 const TN=40,K_POP=1,K_BOSS=2,K_FAC=3,K_ZAP=4,K_ARRIVE=5,K_HUBTOP=6;
 const tK=new Uint8Array(TN),tT=new Float32Array(TN),tX=new Float32Array(TN),tY=new Float32Array(TN),tZ=new Float32Array(TN),tS=new Float32Array(TN),tRef=new Array(TN).fill(null);
-function after(t,k,x,y,z,s,ref){for(let i=0;i<TN;i++)if(!tK[i]){tK[i]=k;tT[i]=t;tX[i]=x;tY[i]=y;tZ[i]=z;tS[i]=s;tRef[i]=ref||null;return;}}
+function after(t,k,x,y,z,s,ref){
+ let j=-1,low=-1;for(let i=0;i<TN;i++){const q=tK[i];if(!q){j=i;break;}if(q===K_ZAP||q===K_POP)low=i;}
+ if(j<0){if(k===K_ZAP||k===K_POP||k===K_ARRIVE||low<0)return;j=low;}   // table full: a big blast may take the place of a small pop, never the other way round
+ tK[j]=k;tT[j]=t;tX[j]=x;tY[j]=y;tZ[j]=z;tS[j]=s;tRef[j]=ref||null;
+}
 const EN=6,E_SMOKE=1,E_MOTES=2;
 const eK=new Uint8Array(EN),eT=new Float32Array(EN),eDur=new Float32Array(EN),eAcc=new Float32Array(EN),eX=new Float32Array(EN),eY=new Float32Array(EN),eZ=new Float32Array(EN),eS=new Float32Array(EN);
 let eCur=0;
@@ -273,7 +278,7 @@ function stepEmitters(dt){
   const k=eK[i];if(!k)continue;
   const t=eT[i]+=dt;if(t>=eDur[i]){eK[i]=0;continue;}
   const left=1-t/eDur[i],x=eX[i],y=eY[i],z=eZ[i],s=eS[i];
-  let n=eAcc[i]+dt*(k===E_SMOKE?24*(.3+.7*left):20)*(Q?1:.5);const m=Math.min(6,n|0);eAcc[i]=n-(n|0);
+  let n=eAcc[i]+dt*(k===E_SMOKE?24*(.3+.7*left):26)*(Q?1:.5);const m=Math.min(6,n|0);eAcc[i]=n-(n|0);
   if(k===E_MOTES&&(eS[i]-=dt)<=0){
    // a slow signal ring and a soft beam from the top of the tower, repeating while the motes rise
    eS[i]=1.7;decal(D_RING,x,z,3,20,3,20,0,1.7,C.teal,.45,0,0,.15);ribbon(S_COLUMN,x,27,z,x,10.5,z,2.4,1.7,C.tealHot,.5,.6);
@@ -328,7 +333,7 @@ function impact(x,y,z,dx,dy,dz,c,s){
  emit(P.flash,x,y,z,0,0,0,1.25*s,C.hot,c);
  const n=cnt(3);for(let i=0;i<n;i++){const sp=4+rnd()*8;emit(P.spark,x,y,z,-dx*sp+(rnd()-.5)*7,-dy*sp+2+rnd()*5,-dz*sp+(rnd()-.5)*7,.75,C.hot,c);}
 }
-const KILL_S={runner:.62,grunt:.9,brute:1.28,boss:1.45};
+const KILL_S={runner:.62,grunt:.9,brute:1.28,boss:1.45},MUZZLE=3.19;   // MUZZLE: distance from ctx.turretPos to the muzzle of the turret model (base.js)
 function kill(e){
  ctx.enemyPos(e,vE);const d=ENEMY[e.type]||ENEMY.grunt,x=vE.x,y=vE.y,z=vE.z,s=KILL_S[e.type]||.9,col=ENEMY_COL[e.type]||ENEMY_COL.grunt;
  blast(x,y,z,s,false,true);
@@ -372,22 +377,27 @@ function hubBlast(){
 }
 
 /* ---------- event handlers ---------- */
+// events come from the game untouched: anything that is not a lane or a number is ignored instead of becoming NaN in a buffer or a light
+const isLane=l=>l===0||l===1,okEnemy=e=>!!e&&isLane(e.lane)&&e.y===e.y;
 function onHit(ev){
- const e=ev.e,src=ev.src,d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,vE);
+ const e=ev.e,src=ev.src;if(!okEnemy(e))return;
+ const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,vE);
  if(src==='pulse'){
   // the surge reaches each enemy when the shockwave front does
-  if(!ev.kill){const R=Math.max(1,ctx.G.effects.pulseRange*U),f=Math.min(1,Math.abs(vE.x-A.droneX)/R);after((1-Math.pow(1-f,1/2.2))*waveTime(R),K_ZAP,0,0,0,1,e);}
+  if(!ev.kill){const R=Math.min(60,Math.max(1,ctx.G.effects.pulseRange*U||0)),f=Math.min(1,Math.abs(vE.x-A.droneX)/R);after((1-Math.pow(1-f,1/2.2))*waveTime(R),K_ZAP,0,0,0,1,e);}
  }else{
   let c=C.amber,style=S_BOLT,w=1.25,life=.15,hot=1,alpha=1;
   if(src==='turret')ctx.turretPos(e.lane,vS);
   else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.05;life=.13;}
   else if(src==='echo'){vS.set(A.droneX,A.droneH,L.laneZ[e.lane]);c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
-  else{vS.set(ctx.wx(ev.sy),d.cy,L.laneZ[e.lane]);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
+  else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,L.laneZ[e.lane]);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
+  else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
   // stop at the hull on the side of the shooter, nudged towards the camera so the flash is not buried in the model
   const hr=Math.min(d.r*.7,l*.5);let hx=vE.x-dx*hr,hy=vE.y-dy*hr,hz=vE.z-dz*hr;
   vT.copy(L.camPos).sub(vE).normalize();hx+=vT.x*d.r*.45;hy+=vT.y*d.r*.45;hz+=vT.z*d.r*.45;
-  if(src==='turret'){const mz=Math.min(1.5,l*.3);vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;emit(P.flash,vS.x,vS.y,vS.z,0,0,0,1.5,C.hot,c);}
+  // base.js draws the muzzle flash; the tracer only has to leave from the muzzle (never from behind the hull it hits)
+  if(src==='turret'){const mz=Math.max(0,Math.min(MUZZLE,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
   else if(src==='echo')emit(P.glow,vS.x,vS.y,vS.z,0,0,0,2.2,c);
   if(style===S_LANCE){
    // the lance carries on through the second target
@@ -399,8 +409,9 @@ function onHit(ev){
  if(ev.kill)kill(e);
 }
 function onPulse(ev){
- const z=L.laneZ[ev.lane],x=A.droneX,y=A.droneH;
- wOn=true;wT=-1;wR=ev.range*U;wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);
+ if(!isLane(ev.lane))return;
+ const z=L.laneZ[ev.lane],x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
+ wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);
  ribbon(S_COLUMN,x,y+8,z,x,GY,z,4.2,.26,C.amber,1.3,1.25);          // vertical flash through the drone
  emit(P.flash,x,y,z,0,0,0,5.2,C.white,C.amber);emit(P.glow,x,y,z,0,0,0,7,C.amber);
  decal(D_RING,x,z,2,A.laneW*1.25,2,A.laneW*1.25,0,.36,C.amberHot,.9,0,0,.2);
@@ -409,6 +420,7 @@ function onPulse(ev){
  light(x,2.6,z,C.amber,330,.2);ctx.shake(.42);
 }
 function onLeak(ev){
+ if(!isLane(ev.lane))return;
  const z=L.laneZ[ev.lane],s=ev.type==='boss'?1.8:ev.type==='brute'?1.45:ev.type==='runner'?1:1.2,x=.5,y=1.2;
  blast(x,y,z,s,true,true);
  decal(D_BAND,0,z,2.2,4.4,A.laneW+1,A.laneW+1.6,0,.5,C.red0,.95,0,0,.15);   // the leak line flares
@@ -419,6 +431,7 @@ function onLeak(ev){
  if(ev.down)after(.18,K_FAC,A.facX,0,z,ev.lane);
 }
 function onMove(ev){
+ if(!isLane(ev.from)||!isLane(ev.to)||ev.from===ev.to)return;
  const z0=L.laneZ[ev.from],z1=L.laneZ[ev.to],x=A.droneX,y=A.droneH,sg=z1>z0?1:-1;
  ribbon(S_STREAK,x,y,z0,x,y,z1,2.1,.36,C.teal,1,1);
  emit(P.glow,x,y,z0,0,0,0,3,C.tealHot,C.teal);
@@ -429,15 +442,16 @@ function onMove(ev){
  if(ev.rubble){
   // dust and debris dropped onto the lane the drone just left, rolling out along it both ways
   const reach=Math.min(A.droneX-1,A.spawnX-A.droneX)*2;
-  decal(D_BAND,x,z0,6,reach,A.laneW*.94,A.laneW*.94,0,1.4,C.dust0,.3,.6,.05,.25);
-  decal(D_RING,x,z0,2,A.laneW*1.1,2,A.laneW*1.1,0,.4,C.dust0,.6,.3,0,.2);
+  decal(D_BAND,x,z0,6,reach,A.laneW*.94,A.laneW*.94,0,1.5,C.rub0,.5,.45,.05,.25);
+  decal(D_RING,x,z0,2,A.laneW*1.1,2,A.laneW*1.1,0,.4,C.rub0,.8,.3,0,.2);
   n=cnt(30);for(let i=0;i<n;i++){const d=i&1?1:-1,sp=4+rnd()*46;emit(P.rubble,x+d*rnd()*1.5,GY+.5+rnd()*.7,z0+(rnd()-.5)*6.4,d*sp,.3+rnd()*1.6,(rnd()-.5)*1.4,1+rnd()*.5);}
   n=cnt(5);for(let i=0;i<n;i++)emit(P.rubble,x+(rnd()-.5)*2,y-.5-rnd()*2,z0+(rnd()-.5)*2,(rnd()-.5)*3,-5-rnd()*4,(rnd()-.5)*3,1.1);
-  n=cnt(16);for(let i=0;i<n;i++)chunk(x+(rnd()-.5)*2,y-.6-rnd(),z0+(rnd()-.5)*4.5,(rnd()-.5)*36,-3+rnd()*5,(rnd()-.5)*5,.34+rnd()*.4,i&1?C.stone:C.stoneDark,1.8+rnd()*1.2,0);
+  n=cnt(16);for(let i=0;i<n;i++)chunk(x+(rnd()-.5)*2,y-.6-rnd(),z0+(rnd()-.5)*4.5,(rnd()-.5)*36,-3+rnd()*5,(rnd()-.5)*5,.34+rnd()*.4,i&1?C.rock:C.stone,1.8+rnd()*1.2,0);
  }
 }
 function onSpawn(ev){
- const e=ev.e,d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,vE);
+ const e=ev.e;if(!okEnemy(e))return;
+ const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,vE);
  emit(P.glow,vE.x,vE.y,vE.z,0,0,0,d.r*2.6,C.eye);
  decal(D_DISC,vE.x,vE.z,d.r*3,d.r*5,d.r*3,d.r*5,0,.45,C.eye,.5,0,0,.1);
  const n=cnt(2+d.r*1.6);for(let i=0;i<n;i++)emit(P.dust,vE.x+rnd()*1.4,GY+.4+rnd()*.4,vE.z+(rnd()-.5)*d.r*2,1.5+rnd()*4,.5+rnd()*1.3,(rnd()-.5)*2.4,.55+d.r*.28);
@@ -464,7 +478,7 @@ function fire(k,i,ref){
  else if(k===K_FAC)facilityBlast(s|0,x,z);
  else if(k===K_HUBTOP){blast(x,y,z,s,true,false);chunks(cnt(8),x,y,z,2,10,.5,C.steel,C.cream,true);ctx.shake(.5);}
  else if(k===K_ARRIVE){emit(P.glow,x,y,z,0,0,0,2.4,C.teal);decal(D_RING,x,z,1.5,5,1.5,5,0,.3,C.teal,.45,0,0,.2);}
- else if(k===K_ZAP&&ref&&ref.hp>0){
+ else if(k===K_ZAP&&ref&&ref.hp>0&&okEnemy(ref)){
   // an enemy caught by the overload: a bolt strikes its top, sparks fly and a ring marks its feet (all kept outside the hull so the model does not hide them)
   const d=ENEMY[ref.type]||ENEMY.grunt;ctx.enemyPos(ref,vE);const top=d.h+.15;
   ribbon(S_COLUMN,vE.x,top+3.6,vE.z,vE.x,top,vE.z,1.4,.2,C.amber,1.2,1);
@@ -499,11 +513,14 @@ const ray=new THREE.Raycaster(),hits=[];
 function measureGround(){
  let top=-1;
  try{
+  scene.updateMatrixWorld();   // env.js has just moved the lanes in its own layout(); the matrices are normally refreshed only by the next render
   ray.camera=ctx.camera;ray.far=1.2;
   for(let lane=0;lane<2;lane++)for(let k=0;k<3;k++){
    ray.ray.origin.set(9+k*14,.62,L.laneZ[lane]+(k-1)*1.5);ray.ray.direction.set(0,-1,0);hits.length=0;ray.intersectObjects(scene.children,true,hits);
-   for(let i=0;i<hits.length;i++)if(hits[i].object.visible){if(hits[i].point.y>top)top=hits[i].point.y;break;}
+   for(let i=0;i<hits.length;i++){const o=hits[i].object;   // nearest opaque surface: skip dust points, glow layers and sprites
+    if(o.isMesh&&o.visible&&o.material&&!o.material.transparent){if(hits[i].point.y>top)top=hits[i].point.y;break;}}
   }
+  hits.length=0;
  }catch(err){top=-1;}
  GY=top<0?.3:Math.min(.66,top+.07);
 }
@@ -516,6 +533,14 @@ function clearAll(){
  for(let i=0;i<2;i++){lI[i]=0;lights[i].intensity=0;}
 }
 
+// Last resort (rule: never throw). A failure drops the live effects; repeated failures switch this part off and the game goes on without it.
+let errs=0,dead=false;
+function fail(err){
+ try{console.warn('2.5D fx: effect dropped after an error.',err);}catch(e){}
+ try{clearAll();}catch(e){}
+ if(++errs>=3){dead=true;pMesh.visible=rMesh.visible=dMesh.visible=bMesh.visible=wave.visible=false;lights[0].intensity=lights[1].intensity=0;}
+}
+
 return{
  layout(){
   if(lastMode!==L.mode){if(lastMode)clearAll();lastMode=L.mode;measureGround();}   // lane positions moved: drop effects placed for the old layout
@@ -525,21 +550,26 @@ return{
  },
  quality(q){Q=q;bMesh.castShadow=q>1;},
  event(ev){
-  switch(ev.t){
-   case 'hit':onHit(ev);break;
-   case 'pulse':onPulse(ev);break;
-   case 'leak':onLeak(ev);break;
-   case 'move':onMove(ev);break;
-   case 'spawn':onSpawn(ev);break;
-   case 'wave':onWave();break;
-   case 'stage':clearAll();break;
-   case 'finish':onFinish(ev);break;
-  }
+  if(dead||!ev)return;
+  try{
+   switch(ev.t){
+    case 'hit':onHit(ev);break;
+    case 'pulse':onPulse(ev);break;
+    case 'leak':onLeak(ev);break;
+    case 'move':onMove(ev);break;
+    case 'spawn':onSpawn(ev);break;
+    case 'wave':onWave();break;
+    case 'stage':clearAll();break;
+    case 'finish':onFinish(ev);break;
+   }
+  }catch(err){fail(err);}
  },
  update(dt,t,G){
-  if(G.paused&&G.phase==='battle')return;   // the world is frozen: hold every effect where it is
-  stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
-  if(warm>0)warm--;   // everything is drawn (empty) for the first frames so shaders and buffers are ready before the first shot
+  if(dead||!(dt>=0)||(G.paused&&G.phase==='battle'))return;   // paused: the world is frozen, hold every effect where it is
+  try{
+   stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
+   if(warm>0)warm--;   // everything is drawn (empty) for the first frames so shaders and buffers are ready before the first shot
+  }catch(err){fail(err);}
  }
 };
 });})();

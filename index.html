@@ -352,7 +352,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.10-2';
+const BUILD='2026.11.10-3';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};

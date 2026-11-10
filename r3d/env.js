@@ -58,7 +58,7 @@ R3D.register('env',ctx=>{
    l=Math.min(l,u);r=Math.max(r,u);b=Math.min(b,v);t=Math.max(t,v);n=Math.min(n,w);f=Math.max(f,w);}
   const sc=sun.shadow.camera;sc.left=l-.5;sc.right=r+.5;sc.bottom=b-.5;sc.top=t+.5;sc.near=Math.max(1,n-45);sc.far=f+2;sc.updateProjectionMatrix();
  }
- const FOG_SIDE=mixHex(pal.fog,pal.haze,.34),FOG_BEHIND=mixHex(pal.fog,pal.haze,.5);
+ const FOG_SIDE=mixHex(pal.fog,pal.haze,.2),FOG_BEHIND=mixHex(pal.fog,pal.haze,.42);
  const fog=new THREE.Fog(FOG_SIDE,110,150);scene.fog=fog;scene.background=new THREE.Color(FOG_SIDE);
 
  /* ================= textures ================= */
@@ -78,29 +78,30 @@ R3D.register('env',ctx=>{
    for(let i=0;i<26;i++){const x=R()*W,y=R()*H,l=30+R()*90;c.strokeStyle='rgba(168,150,124,'+(.035+R()*.05)+')';c.lineWidth=3+R()*6;c.beginPath();c.moveTo(x,y);c.lineTo(x+l,y+(R()-.5)*14);c.stroke();}
    for(let i=0;i<18;i++){let x=R()*W,y=R()*H,a=R()*6.28;c.strokeStyle='rgba(10,13,14,'+(.25+R()*.2)+')';c.lineWidth=.7+R()*.8;c.beginPath();c.moveTo(x,y);for(let k=0,m=3+(R()*5|0);k<m;k++){a+=(R()-.5)*1.5;const l=6+R()*16;x+=Math.cos(a)*l;y+=Math.sin(a)*l;c.lineTo(x,y);}c.stroke();}
    for(let i=0;i<900;i++){c.fillStyle=R()>.4?'rgba(8,10,10,.22)':'rgba(190,176,150,.14)';c.fillRect(R()*W,R()*H,1+R(),1+R());}
-   for(let i=0;i<420;i++){const x=R()*W,y=R()*H,r=.8+R()*R()*3.6,sh=90+R()*50|0;
+   for(let i=0;i<420;i++){const x=R()*W,y=R()*H,r=.8+R()*R()*3.6,sh=72+R()*40|0;
     c.fillStyle='rgba(6,8,9,.4)';c.beginPath();c.ellipse(x-r*.6,y-r*.25,r*1.1,r*.8,0,0,6.3);c.fill();
     c.fillStyle='rgba('+sh+','+(sh-8)+','+(sh-22)+',.85)';c.beginPath();c.ellipse(x,y,r,r*(.6+R()*.4),R()*3,0,6.3);c.fill();}
    c.restore();}
  },{repeat:[1,1]});
 
  // One painted strip per lane: x from RX0 to RX1, RHW to either side of the lane centre. Drawn in world units.
- const RX0=-15.5,RX1=60.5,RHW=4.4;
+ // Half size when the game starts at the lowest quality (a phone screen does not resolve more).
+ const RX0=-15.5,RX1=60.5,RHW=4.4,ROADW=ctx.quality>0?2048:1024;
  function roadTex(lane){
   const acc=lane?pal.teal:pal.amber;
-  return canvasTex(2048,256,(c,W,H)=>{
-   const R=RNG(lane*91+7),sx=W/(RX1-RX0),sz=H/(2*RHW);
-   c.fillStyle='#465256';c.fillRect(0,0,W,H);
-   for(let i=0;i<7000;i++){const s=1+R()*2.4;c.fillStyle=R()>.5?'rgba(255,255,255,'+(.015+.05*R())+')':'rgba(0,0,0,'+(.04+.1*R())+')';c.fillRect(R()*W,R()*H,s,s);}
+  return canvasTex(ROADW,ROADW/8,(c,W,H)=>{
+   const R=RNG(lane*91+7),sx=W/(RX1-RX0),sz=H/(2*RHW),px=W/2048;
+   c.fillStyle='#4b585c';c.fillRect(0,0,W,H);
+   for(let i=0;i<7000;i++){const s=(1+R()*2.4)*px;c.fillStyle=R()>.5?'rgba(255,255,255,'+(.015+.05*R())+')':'rgba(0,0,0,'+(.04+.1*R())+')';c.fillRect(R()*W,R()*H,s,s);}
    c.setTransform(sx,0,0,sz,-RX0*sx,RHW*sz);
    const blot=(x,z,r,rgb,a)=>{const g=c.createRadialGradient(x,z,0,x,z,r);g.addColorStop(0,'rgba('+rgb+','+a+')');g.addColorStop(1,'rgba('+rgb+',0)');c.fillStyle=g;c.fillRect(x-r,z-r,2*r,2*r);};
    // forecourt of the facility: paler slabs
    c.fillStyle='rgba(126,134,128,.2)';c.fillRect(RX0,-RHW,-1-RX0,2*RHW);
-   for(let i=0;i<46;i++)blot(lerp(RX0,RX1,R()),lerp(-RHW,RHW,R()),1+R()*3.2,R()>.45?'16,22,24':'150,150,132',R()>.45?.24:.09);
+   for(let i=0;i<46;i++)blot(lerp(RX0,RX1,R()),lerp(-RHW,RHW,R()),1+R()*3.2,R()>.45?'16,22,24':'150,150,132',R()>.45?.15:.06);   // faint: the lane stays the most even surface on screen
    // paler wheel paths
    for(const z of [-1.75,1.75]){const g=c.createLinearGradient(0,z-1.2,0,z+1.2);g.addColorStop(0,'rgba(156,156,142,0)');g.addColorStop(.5,'rgba(156,156,142,.11)');g.addColorStop(1,'rgba(156,156,142,0)');c.fillStyle=g;c.fillRect(-1,z-1.2,RX1+1,2.4);}
    // slab joints
-   c.lineWidth=.08;c.strokeStyle='rgba(10,16,18,.55)';c.beginPath();for(let x=-12;x<RX1;x+=4){c.moveTo(x,-RHW);c.lineTo(x,RHW);}c.stroke();
+   c.lineWidth=.08;c.strokeStyle='rgba(10,16,18,.42)';c.beginPath();for(let x=-12;x<RX1;x+=4){c.moveTo(x,-RHW);c.lineTo(x,RHW);}c.stroke();
    c.lineWidth=.05;c.strokeStyle='rgba(176,186,180,.12)';c.beginPath();for(let x=-12;x<RX1;x+=4){c.moveTo(x+.1,-RHW);c.lineTo(x+.1,RHW);}c.stroke();
    c.strokeStyle='rgba(10,16,18,.28)';c.beginPath();c.moveTo(-1,0);c.lineTo(RX1,0);c.stroke();
    c.beginPath();for(let x=-14;x<-1;x+=2){c.moveTo(x,-RHW);c.lineTo(x,RHW);}for(const z of [-2.2,0,2.2]){c.moveTo(RX0,z);c.lineTo(-1,z);}c.stroke();
@@ -109,7 +110,7 @@ R3D.register('env',ctx=>{
     for(const o of [0,gap]){c.beginPath();for(let k=0;k<=12;k++){const x=x0+len*k/12,z=z0+o+Math.sin(k*.55+i*2)*.22;k?c.lineTo(x,z):c.moveTo(x,z);}c.stroke();}}
    // cracks
    c.lineCap='round';
-   for(let i=0;i<40;i++){let x=lerp(-14,RX1,R()),z=lerp(-RHW,RHW,R()),a=R()*6.28;c.strokeStyle='rgba(6,10,12,'+(.35+R()*.3)+')';c.lineWidth=.035+R()*.045;c.beginPath();c.moveTo(x,z);for(let k=0,m=3+(R()*5|0);k<m;k++){a+=(R()-.5)*1.6;const l=.3+R()*.9;x+=Math.cos(a)*l;z+=Math.sin(a)*l;c.lineTo(x,z);}c.stroke();}
+   for(let i=0;i<32;i++){let x=lerp(-14,RX1,R()),z=lerp(-RHW,RHW,R()),a=R()*6.28;c.strokeStyle='rgba(6,10,12,'+(.28+R()*.26)+')';c.lineWidth=.035+R()*.045;c.beginPath();c.moveTo(x,z);for(let k=0,m=3+(R()*5|0);k<m;k++){a+=(R()-.5)*1.6;const l=.3+R()*.9;x+=Math.cos(a)*l;z+=Math.sin(a)*l;c.lineTo(x,z);}c.stroke();}
    c.lineCap='butt';
    // painted edge lines in the lane colour
    for(const z of [-3.6,3.6])for(let x=1;x<53.6;x+=.8){if(R()<.06)continue;c.fillStyle=css(acc,.5+R()*.4);c.fillRect(x,z-.13,R()<.14?.5:.82,.26);}
@@ -128,9 +129,10 @@ R3D.register('env',ctx=>{
    for(const [bx,dx] of [[-9.2,1],[-1.6,-1]])for(const [bz,dz] of [[-3.95,1],[3.95,-1]]){c.beginPath();c.moveTo(bx+dx*1.5,bz);c.lineTo(bx,bz);c.lineTo(bx,bz+dz*1.5);c.stroke();}
    // wear over the paint
    for(let i=0;i<520;i++){c.fillStyle='rgba(70,82,86,'+(.3+R()*.5)+')';const r=.05+R()*.22;c.beginPath();c.ellipse(lerp(-10,54,R()),lerp(-RHW,RHW,R()),r*(1+R()*2),r,0,0,6.3);c.fill();}
-   // scorch and sand where the column breaks through
-   for(let i=0;i<22;i++)blot(lerp(48,60,R()),lerp(-4,4,R()),.6+R()*2.2,'10,10,10',.2+R()*.25);
-   let g=c.createLinearGradient(44,0,RX1,0);g.addColorStop(0,'rgba(170,120,76,0)');g.addColorStop(.6,'rgba(170,120,76,.34)');g.addColorStop(1,'rgba(190,136,84,.75)');c.fillStyle=g;c.fillRect(44,-RHW,RX1-44,2*RHW);
+   // scorch and sand where the column breaks through: only behind the spawn point (x > 53), machines walk on clean road
+   for(let i=0;i<8;i++)blot(lerp(46,53,R()),lerp(-4,4,R()),.5+R()*1.4,'10,10,10',.12+R()*.12);
+   for(let i=0;i<16;i++)blot(lerp(53.5,60,R()),lerp(-4,4,R()),.6+R()*2.2,'10,10,10',.2+R()*.25);
+   let g=c.createLinearGradient(53,0,RX1,0);g.addColorStop(0,'rgba(170,120,76,0)');g.addColorStop(.45,'rgba(170,120,76,.34)');g.addColorStop(1,'rgba(190,136,84,.75)');c.fillStyle=g;c.fillRect(53,-RHW,RX1-53,2*RHW);
    // dirt creeping in from the verges and the far ends
    for(let i=0;i<150;i++){const s=R()>.5?1:-1;blot(lerp(-1,RX1,R()),s*lerp(3.5,4.5,R()),.3+R()*.9,'60,56,48',.3+R()*.3);}
    for(const s of [-1,1]){g=c.createLinearGradient(0,s*3.75,0,s*RHW);g.addColorStop(0,'rgba(58,54,46,0)');g.addColorStop(1,'rgba(58,54,46,.9)');c.fillStyle=g;c.fillRect(RX0,Math.min(s*3.75,s*RHW),RX1-RX0,RHW-3.75);}
@@ -147,8 +149,12 @@ R3D.register('env',ctx=>{
   const n=GNX*GNZ,pos=new Float32Array(n*3),uv=new Float32Array(n*2),col=new Float32Array(n*3),idx=[];
   for(let j=0;j<GNZ;j++)for(let i=0;i<GNX;i++){const k=j*GNX+i,x=gxs[i],z=gzs[j];pos[k*3]=x;pos[k*3+1]=groundH(x,z);pos[k*3+2]=z;uv[k*2]=x/TILE;uv[k*2+1]=z/TILE;}
   for(let j=0;j<GNZ-1;j++)for(let i=0;i<GNX-1;i++){const a=j*GNX+i,b=a+1,c=a+GNX,d=c+1;idx.push(a,c,b,b,c,d);}
+  // coarse version for the lowest quality: every other row and column (a quarter of the triangles)
+  const pick=n=>{const v=[];for(let i=0;i<n-1;i+=2)v.push(i);v.push(n-1);return v;},ci=pick(GNX),cj=pick(GNZ),lo=[];
+  for(let j=0;j<cj.length-1;j++)for(let i=0;i<ci.length-1;i++){const a=cj[j]*GNX+ci[i],b=cj[j]*GNX+ci[i+1],c=cj[j+1]*GNX+ci[i],d=cj[j+1]*GNX+ci[i+1];lo.push(a,c,b,b,c,d);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setAttribute('color',new THREE.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
-  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:dirtTex,vertexColors:true,flatShading:true,roughness:1,metalness:0}));m.receiveShadow=true;m.frustumCulled=false;scene.add(m);return m;
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:dirtTex,vertexColors:true,flatShading:true,roughness:1,metalness:0}));m.receiveShadow=true;m.frustumCulled=false;scene.add(m);
+  m.userData.hi=g.index;m.userData.lo=new THREE.BufferAttribute(new Uint16Array(lo),1);return m;
  })();
  // Large-scale tint of the ground: warm and cool patches, dust along the roads, glow towards the sun, dark foreground.
  function paintGround(L){
@@ -156,7 +162,7 @@ R3D.register('env',ctx=>{
   for(let j=0;j<GNZ;j++)for(let i=0;i<GNX;i++){
    const x=gxs[i],z=gzs[j],n=fbm(x*.05+11,z*.05+3),n2=vnoise(x*.17+5,z*.17+8);
    let r=lerp(.8,1.08,n),g=lerp(.9,1.02,n),b=lerp(1.1,.9,n),v=.62+.3*n2;
-   const far=sm(sat((x-34)/30));r*=1+far*.3;g*=1+far*.16;v*=1+far*.15;
+   const far=sm(sat((x-34)/30)),br=sm(sat((x-45)/10));r*=(1+far*.3)*(1+br*.4);g*=(1+far*.16)*(1+br*.18);v*=(1+far*.15)*(1+br*.3);   // sunlit dust towards the breach end (the roads lie on top and stay clean)
    const dl=Math.min(Math.abs(z-L.laneZ[0]),Math.abs(z-L.laneZ[1]));if(x>-16&&x<62)v*=1+(1-sm(sat((dl-4)/3.5)))*.14;
    v*=1-sm(sat((z-cz+4.5)/4.5))*.38*(side?1:sm(sat((x+16)/8)));   // grounded cliff foot
    if(side)v*=1-sm(sat((-LZ-4.6-z)/8))*.42;                   // dark near foreground
@@ -197,8 +203,8 @@ R3D.register('env',ctx=>{
  const lampGeo=(()=>{const P=[];for(const s of [-1,1])for(const x of LAMPX)B(P,.3,.16,.3,x,.87,s*LAMPZ,0xffffff);B(P,.06,1.5,.34,53.95,3.4,5.95,0xffffff);return merge(P);})();
  const lanes=[0,1].map(i=>{
   const g=new THREE.Group(),acc=i?pal.teal:pal.amber;
-  const road=new THREE.Mesh(roadGeo,new THREE.MeshStandardMaterial({map:roadTex(i),roughness:.9,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}));
-  road.position.y=.025;road.receiveShadow=true;
+  const road=new THREE.Mesh(roadGeo,new THREE.MeshStandardMaterial({map:roadTex(i),roughness:.9,metalness:0}));
+  g.userData.road=road;road.position.y=.03;   // plain height, no polygon offset: a slope-scaled offset would bury other parts' ground pools (y = .1) at low pixel ratiosroad.receiveShadow=true;
   const lampMat=new THREE.MeshBasicMaterial({color:acc,fog:false});
   g.add(road,solid(laneParts(i),i*7+3,{foot:.9}),new THREE.Mesh(lampGeo,lampMat));scene.add(g);g.userData.lampMat=lampMat;g.userData.acc=new THREE.Color(acc);g.userData.glow=new THREE.Color(i?0x46d6c6:0xffa53e);return g;
  });
@@ -220,7 +226,6 @@ R3D.register('env',ctx=>{
 
  /* ================= scenery ================= */
  const CLIFF_SIDE=24.4,CLIFF_BEHIND=13.6; // world z of the cliff foot line in each layout
- const hazeAlb=new THREE.Color(mixHex(pal.haze,0x7a7470,.6));
  // Rock wall: a strip of displaced rows climbing away from the foot line (local z >= 0), with bays and buttresses.
  const cliff=(()=>{
   // rows alternate steep rises and narrow ledges; three columns share one block so the face breaks into chunky pillars
@@ -230,15 +235,18 @@ R3D.register('env',ctx=>{
    for(let j=0;j<NV;j++){const mid=j>0&&j<NV-1,top=j>8?2.4:1;   // the plateau behind the rim is rougher
     row.push([x+(mid?(hash(i,j+20)-.5)*.5*top:0),Math.max(0,prof[j][1]*hk+(mid?(hash(i*1.7,j*3.1)-.5)*.5*top:0)),Math.max(0,f*(j<8?1:.4)+prof[j][0]+(mid?(hash(i*2.3,j*5.7)-.5)*.6*top:0))]);}
    pts.push(row);}
-  const pos=[],col=[],steep=[new THREE.Color(0x4c4843),new THREE.Color(0x3f3e3e),new THREE.Color(0x565049),new THREE.Color(0x39393a)],ledge=new THREE.Color(0x6b6359),c=new THREE.Color();
+  const pos=[],col=[],nor=[],steep=[new THREE.Color(0x46433f),new THREE.Color(0x3b3b3c),new THREE.Color(0x4e4944),new THREE.Color(0x363738)],ledge=new THREE.Color(0x625a51),cool=new THREE.Color(0x2b3236),c=new THREE.Color();
+  // The wall is a backdrop: it must stay quieter than the lanes. Facet normals are pulled halfway towards one common
+  // direction (less light/dark chatter between neighbouring facets) and the rock gets darker and cooler towards the rim.
+  const N0=new THREE.Vector3(0,.45,-.89).normalize();
   const tri=(a,b,d,k)=>{const cy=(a[1]+b[1]+d[1])/3,cx=(a[0]+b[0]+d[0])/3;
-   _a.set(b[0]-a[0],b[1]-a[1],b[2]-a[2]);_b.set(d[0]-a[0],d[1]-a[1],d[2]-a[2]);const ny=Math.abs(_a.cross(_b).normalize().y);
-   if(ny>.8)c.copy(ledge);else c.copy(steep[(Math.floor(cy/1.5+vnoise(cx*.06,1.3)*1.8)+8)%4]);
-   c.multiplyScalar(.88+.24*hash(k,3)).lerp(hazeAlb,sat((cy-6)/10)*.35).multiplyScalar(lerp(.55,1,sat(cy/2.2)));
-   pos.push(a[0],a[1],a[2],b[0],b[1],b[2],d[0],d[1],d[2]);for(let q=0;q<3;q++)col.push(c.r,c.g,c.b);};
+   _a.set(b[0]-a[0],b[1]-a[1],b[2]-a[2]);_b.set(d[0]-a[0],d[1]-a[1],d[2]-a[2]);_a.cross(_b).normalize();const ny=Math.abs(_a.y);
+   if(ny>.8)c.copy(ledge);else{c.copy(steep[(Math.floor(cy/1.5+vnoise(cx*.06,1.3)*1.8)+8)%4]);_a.lerp(N0,.5).normalize();}
+   c.multiplyScalar(.9+.2*hash(k,3)).lerp(cool,sm(sat((cy-3.5)/9))*.55).multiplyScalar(lerp(.55,1,sat(cy/2.2))*lerp(1,.32,sm(sat((cy-1.5)/8.5))));
+   pos.push(a[0],a[1],a[2],b[0],b[1],b[2],d[0],d[1],d[2]);for(let q=0;q<3;q++){col.push(c.r,c.g,c.b);nor.push(_a.x,_a.y,_a.z);}};
   for(let i=0;i<NX-1;i++)for(let j=0;j<NV-1;j++){const a=pts[i][j],b=pts[i+1][j],d=pts[i][j+1],e=pts[i+1][j+1],k=i*NV+j;if((i+j)&1){tri(a,d,b,k);tri(b,d,e,k+.5);}else{tri(a,d,e,k);tri(a,e,b,k+.5);}}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(col),3));g.computeVertexNormals();
-  const m=new THREE.Mesh(g,stdMat());m.receiveShadow=true;m.frustumCulled=false;scene.add(m);return m;
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(col),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0}));m.receiveShadow=true;m.frustumCulled=false;scene.add(m);return m;
  })();
 
  const RK=[0x47443f,0x3b3b3b,0x504a42,0x403d3a];
@@ -286,7 +294,7 @@ R3D.register('env',ctx=>{
  function decalMesh(list){
   const n=list.length,pos=new Float32Array(n*12),uv=new Float32Array(n*8),col=new Float32Array(n*16),idx=[],K=[-1,-1,1,-1,1,1,-1,1];
   for(let i=0;i<n;i++){const d=list[i],cs=Math.cos(d[5]),sn=Math.sin(d[5]),u0=(d[0]&1)*.5+.012,v0=(d[0]<2?.5:0)+.012,u1=u0+.476,v1=v0+.476;
-   for(let k=0;k<4;k++){const a=K[k*2]*d[3]/2,b=K[k*2+1]*d[4]/2,o=i*12+k*3;pos[o]=d[1]+a*cs+b*sn;pos[o+1]=.035;pos[o+2]=d[2]-a*sn+b*cs;col[i*16+k*4]=col[i*16+k*4+1]=col[i*16+k*4+2]=1;col[i*16+k*4+3]=d[6];}
+   for(let k=0;k<4;k++){const a=K[k*2]*d[3]/2,b=K[k*2+1]*d[4]/2,o=i*12+k*3;pos[o]=d[1]+a*cs+b*sn;pos[o+1]=.05;pos[o+2]=d[2]-a*sn+b*cs;col[i*16+k*4]=col[i*16+k*4+1]=col[i*16+k*4+2]=1;col[i*16+k*4+3]=d[6];}
    uv.set([u0,v0,u0,v1,u1,v1,u1,v0],i*8);idx.push(i*4,i*4+1,i*4+2,i*4,i*4+2,i*4+3);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setAttribute('color',new THREE.BufferAttribute(col,4));g.setIndex(idx);
   const m=new THREE.Mesh(g,decalMat);m.renderOrder=-3;return m;
@@ -357,28 +365,37 @@ R3D.register('env',ctx=>{
  const radar=(()=>{const P=[];B(P,2.6,.62,.12,0,.6,0,0x7d8c8c);B(P,2.2,.1,.5,0,.34,.2,pal.metal);B(P,.3,.3,.5,0,.55,.25,pal.metalDark);CY(P,.13,.17,.5,6,0,0,0,pal.metalDark);const m=solid(P,61,{foot:0});scene.add(m);return m;})();
 
  /* ================= additive glow batch: lamp pools and halos, breach glow, beacons, light shafts (one draw call) ================= */
- // k: 'b' billboard, 'f' flat on the ground, 's' shaft along the sun direction. lane>=0: z is relative to that lane. mode: 0 both, 1 side, 2 behind.
- // a: 0 static, 1 lamp, 2 breach, 3 shaft, 4 beacon, 5 dust puff
+ // k: 'b' billboard, 'f' flat on the ground, 's' light shaft (see SHAFT_SIDE / SHAFT_BEHIND). lane>=0: z is relative to that lane. mode: 0 both, 1 side, 2 behind.
+ // a: 0 static, 1 lamp, 2 breach, 3 shaft, 4 beacon, 5 dust puff. lo: decoration that is dropped at the lowest quality.
  const GQ=[],sunC=new THREE.Color(pal.sun),hazeC=new THREE.Color(pal.haze),amberC=new THREE.Color(pal.amber),creamC=new THREE.Color(0xffe6bf);
- const glowQ=(k,lane,mode,x,y,z,w,h,c,i,a,ph,len)=>GQ.push({k,lane,mode,x,y,z,w,h,c,i,a,ph:ph||0,len:len||0,on:false});
+ const glowQ=(k,lane,mode,x,y,z,w,h,c,i,a,ph,len,lo)=>GQ.push({k,lane,mode,x,y,z,w,h,c,i,a,ph:ph||0,len:len||0,lo:!!lo,on:false});
+ const PUFF_RUN=4.2;   // how far a dust puff rolls out of the breach before it has faded
  (()=>{
   const R=RNG(77);
-  for(let lane=0;lane<2;lane++){const acc=lanes[lane].userData.glow;
-   for(const s of [-1,1])for(const x of LAMPX){const ph=R();glowQ('f',lane,0,x,.07,s*4.25,3.8,3.8,acc,.4,1,ph);glowQ('b',lane,0,x,.9,s*LAMPZ,1.25,1.25,acc,.7,1,ph);}
-   glowQ('b',lane,0,53.9,3.4,5.95,1.5,2.8,acc,.45,1,.3);
-   glowQ('f',lane,0,50.5,.08,0,19,8.8,hazeC,.2,2,.1+lane*.4);          // light spilling out of the breach onto the road
-   glowQ('b',lane,0,57,2.6,0,13,10,hazeC,.5,2,.5+lane*.3);
-   glowQ('b',lane,0,58.2,1.7,0,7,5.5,sunC,.75,2,.2+lane*.3);
-   for(let i=0;i<5;i++)glowQ('b',lane,0,56+i*.9,1+R()*2.2,(R()-.5)*6,4.5+R()*2.5,3.2+R()*1.5,hazeC,.15,5,i/5+R()*.1);
+  for(let lane=0;lane<2;lane++){const acc=lanes[lane].userData.glow,kl=lane?.8:1;   // teal reads brighter than amber on this ground
+   // Lane lamps are identity accents, not light sources: a small halo on the head and a faint pool on the verge (not on the road).
+   for(const s of [-1,1])for(const x of LAMPX){const ph=R();glowQ('f',lane,0,x,.07,s*4.95,2.8,2.4,acc,.2*kl,1,ph);glowQ('b',lane,0,x,.9,s*LAMPZ,.9,.9,acc,.5*kl,1,ph);}
+   glowQ('b',lane,0,53.9,3.4,5.95,1.3,2.6,acc,.4,1,.3);
+   // The breach glows BEHIND the spawn point (x > 54) and on the verges either side of the mouth, never on the road the machines walk on.
+   glowQ('f',lane,0,58,.08,0,8,9.4,hazeC,.26,2,.1+lane*.4);              // lit dust on the ground inside the breach
+   glowQ('f',lane,0,54,.07,7,12,4.4,hazeC,.4,2,.3+lane*.4);              // spill on the ground either side of the mouth (verge and median)
+   glowQ('f',lane,0,54,.07,-7,12,4.4,hazeC,.4,2,.7+lane*.4);
+   glowQ('b',lane,1,55.4,1.2,0,3.6,7.4,sunC,.85,2,.6+lane*.3);           // 'side' shows the mouth only as a sliver at the screen edge: a tight hot glow there
+   glowQ('b',lane,0,59,2.4,0,9.6,8.4,hazeC,.5,2,.5+lane*.3);
+   glowQ('b',lane,0,56.8,1.6,0,5.4,6.2,sunC,.75,2,.2+lane*.3);
+   for(let i=0;i<4;i++)glowQ('b',lane,0,59.4+i*.8,.8+R()*1.4,(R()-.5)*6,3.6+R()*1.4,2.4+R()*1,hazeC,.15,5,i/4+R()*.1,0,1);
   }
-  for(const x of SIDE_PYL)glowQ('b',-1,1,x,9,16.5,1.5,1.5,amberC,1.1,4,R());
-  glowQ('b',-1,1,BUNKX,2.9,24.1,2.6,1.5,creamC,.8,0);glowQ('f',-1,1,BUNKX,.07,23.2,5.6,3.8,creamC,.26,0);   // bunker door light
-  glowQ('b',-1,1,22,10,-25.6,1.6,1.6,amberC,.9,4,R());
-  for(const x of BEH_PYL)glowQ('b',-1,2,x,9,-15.5,1.5,1.5,amberC,1.1,4,R());
-  // shafts: x,z is where the beam meets the ground
-  for(const [x,z,w,l,i] of [[22,18.6,3.2,44,.3],[35,22.4,2.6,33,.26],[5,15.4,2.2,62,.15],[30,0,2.6,34,.2],[27,-17,3,37,.16]])glowQ('s',-1,1,x,0,z,w,0,sunC,i,3,R(),l);
-  for(const [x,z,w,l,i] of [[40,-7,5,34,.18],[42,7,5,34,.18],[26,-17,4,36,.2],[14,0,3,30,.12],[34,12,3.4,30,.16]])glowQ('s',-1,2,x,0,z,w,0,sunC,i,3,R(),l);
+  for(const x of SIDE_PYL)glowQ('b',-1,1,x,9,16.5,1.1,1.1,amberC,.8,4,R());
+  glowQ('b',-1,1,BUNKX,2.9,24.1,2.2,1.3,creamC,.5,0);glowQ('f',-1,1,BUNKX,.07,23.2,5,3.4,creamC,.16,0,0,0,1);   // bunker door light
+  glowQ('b',-1,1,22,10,-25.6,1.2,1.2,amberC,.7,4,R());
+  for(const x of BEH_PYL)glowQ('b',-1,2,x,9,-15.5,1.1,1.1,amberC,.8,4,R());
+  // shafts: x,z is where the beam meets the ground. They stay over the scenery, never across a lane.
+  for(const [x,z,w,l,i] of [[21,17.6,3,34,.15],[36,20.5,2.4,28,.13],[5,16.2,2.2,38,.09]])glowQ('s',-1,1,x,0,z,w,0,sunC,i,3,R(),l,1);
+  for(const [x,z,w,l,i] of [[27,-17.5,3.6,34,.16],[44,-22,4,30,.12],[33,15.6,3,30,.11]])glowQ('s',-1,2,x,0,z,w,0,sunC,i,3,R(),l,1);
  })();
+ // Direction a shaft climbs in, per layout: a fake chosen for the picture. In 'side' the true sun direction would lie almost flat across
+ // the screen and smear over the lanes; here the beams lean away up the cliff. In 'behind' they stay inside their own flank.
+ const SHAFT_SIDE=new THREE.Vector3(.8,.45,.2).normalize(),SHAFT_BEHIND=new THREE.Vector3(.84,.54,0).normalize();
  // atlas: left half = soft round glow, right half = beam (soft across, fading towards both ends)
  const glowTex=canvasTex(128,64,c=>{
   c.save();c.beginPath();c.rect(64,0,64,64);c.clip();   // the clip keeps 'destination-in' from wiping the other half
@@ -398,17 +415,18 @@ R3D.register('env',ctx=>{
  const setV=(o,x,y,z)=>{gPos[o]=x;gPos[o+1]=y;gPos[o+2]=z;};
  // The camera never turns, so billboards are simply laid out against its axes once per layout.
  function layoutGlow(L){
-  const e=camera.matrixWorld.elements,rx=e[0],ry=e[1],rz=e[2],ux=e[4],uy=e[5],uz=e[6],md=L.mode==='side'?1:2;
-  const sd=_d.set(e[8],e[9],e[10]).cross(sunDir).normalize();  // across a shaft, facing the camera
+  const e=camera.matrixWorld.elements,rx=e[0],ry=e[1],rz=e[2],ux=e[4],uy=e[5],uz=e[6],md=L.mode==='side'?1:2,sh=md===1?SHAFT_SIDE:SHAFT_BEHIND;
+  const sd=_d.set(e[8],e[9],e[10]).cross(sh).normalize();  // across a shaft, facing the camera
   for(let i=0;i<GN;i++){const q=GQ[i],o=i*12;
-   if(q.mode&&q.mode!==md){for(let k=0;k<12;k+=3)setV(o+k,0,-60,0);setQuadCol(i,q.c,0);q.on=false;continue;}   // not part of this layout: collapsed and dark
+   if((q.mode&&q.mode!==md)||(q.lo&&lowQ)){for(let k=0;k<12;k+=3)setV(o+k,0,-60,0);setQuadCol(i,q.c,0);q.on=false;continue;}   // not part of this layout (or cut at low quality): collapsed, costs no fill
    const z=q.z+(q.lane>=0?L.laneZ[q.lane]:0),w=q.w/2,h=q.h/2;
    if(q.k==='f'){setV(o,q.x-w,q.y,z-h);setV(o+3,q.x+w,q.y,z-h);setV(o+6,q.x+w,q.y,z+h);setV(o+9,q.x-w,q.y,z+h);}
    else if(q.k==='b'){setV(o,q.x-rx*w-ux*h,q.y-ry*w-uy*h,z-rz*w-uz*h);setV(o+3,q.x+rx*w-ux*h,q.y+ry*w-uy*h,z+rz*w-uz*h);setV(o+6,q.x+rx*w+ux*h,q.y+ry*w+uy*h,z+rz*w+uz*h);setV(o+9,q.x-rx*w+ux*h,q.y-ry*w+uy*h,z-rz*w+uz*h);}
-   else{const x1=q.x+sunDir.x*q.len,y1=q.y+sunDir.y*q.len,z1=z+sunDir.z*q.len;setV(o,q.x-sd.x*w,q.y-sd.y*w,z-sd.z*w);setV(o+3,q.x+sd.x*w,q.y+sd.y*w,z+sd.z*w);setV(o+6,x1+sd.x*w,y1+sd.y*w,z1+sd.z*w);setV(o+9,x1-sd.x*w,y1-sd.y*w,z1-sd.z*w);}
+   else{const x1=q.x+sh.x*q.len,y1=q.y+sh.y*q.len,z1=z+sh.z*q.len;setV(o,q.x-sd.x*w,q.y-sd.y*w,z-sd.z*w);setV(o+3,q.x+sd.x*w,q.y+sd.y*w,z+sd.z*w);setV(o+6,x1+sd.x*w,y1+sd.y*w,z1+sd.z*w);setV(o+9,x1-sd.x*w,y1-sd.y*w,z1-sd.z*w);}
    setQuadCol(i,q.c,q.i);q.on=true;gBase[i*4]=gPos[o];gBase[i*4+1]=gPos[o+3];gBase[i*4+2]=gPos[o+6];gBase[i*4+3]=gPos[o+9];}
   glow.geometry.attributes.position.needsUpdate=true;glow.geometry.attributes.color.needsUpdate=true;
  }
+ let lowQ=ctx.quality===0;
  const pulse=[0,0],live=[1,1]; // breach flare per lane (set by 'spawn' events); how alive each lane's lamps are (they die with the facility)
  function animGlow(t){
   let moved=false;
@@ -418,7 +436,7 @@ R3D.register('env',ctx=>{
    else if(q.a===2)f=.8+.2*Math.sin(t*1.1+q.ph*6.28)+pulse[q.lane]*1.1;
    else if(q.a===3)f=.7+.3*Math.sin(t*.33+q.ph*6.28);
    else if(q.a===4){const u=t*.45+q.ph;f=u-Math.floor(u)<.14?1:.07;}
-   else{const u=t*.11+q.ph,w=u-Math.floor(u),dx=-w*5.5,o=i*12;f=Math.sin(w*PI)*(1+pulse[q.lane]*1.4);   // dust rolling out of the breach
+   else{const u=t*.11+q.ph,w=u-Math.floor(u),dx=-w*PUFF_RUN,o=i*12;f=Math.sin(w*PI)*(1+pulse[q.lane]*1.4);   // dust rolling out of the breach
     gPos[o]=gBase[i*4]+dx;gPos[o+3]=gBase[i*4+1]+dx;gPos[o+6]=gBase[i*4+2]+dx;gPos[o+9]=gBase[i*4+3]+dx;moved=true;}
    setQuadCol(i,q.c,q.i*f);}
   glow.geometry.attributes.color.needsUpdate=true;if(moved)glow.geometry.attributes.position.needsUpdate=true;
@@ -438,20 +456,21 @@ R3D.register('env',ctx=>{
    hPos[o]=lerp(lerp(ax,bx,fu),lerp(cx,dx,fu),fv);hPos[o+1]=lerp(lerp(ay,by,fu),lerp(cy,dy,fu),fv);hPos[o+2]=lerp(lerp(az,bz,fu),lerp(cz,dz,fu),fv);
    hCol[o]=col.r*k;hCol[o+1]=col.g*k;hCol[o+2]=col.b*k;}
  }
- const hazeWarm=new THREE.Color(pal.haze).lerp(new THREE.Color(pal.sun),.25);
+ const hazeWarm=new THREE.Color(pal.haze).lerp(new THREE.Color(pal.sun),.25),hazeDim=hazeWarm.clone().lerp(new THREE.Color(0x8c8480),.45);
  function layoutHaze(L){
   if(L.mode==='side'){const z=CLIFF_SIDE;
-   sheet(0,90,.2,z-2.2,-50,.2,z-2.2,90,17,z+7.5,-50,17,z+7.5,hazeWarm,(u,v)=>(.09+.8*v*v)*(1.2-.7*u));    // veil climbing the cliff face
-   sheet(1,90,0,z-9,-50,0,z-9,90,3.2,z-3,-50,3.2,z-3,hazeWarm,(u,v)=>.1*(1.2-.8*u));                         // ground mist in front of it
+   // The cliff is the top band of the phone screen: a thin, greyed veil that is strongest low on the sun side, so the wall darkens upwards.
+   sheet(0,90,.2,z-2.2,-50,.2,z-2.2,90,17,z+7.5,-50,17,z+7.5,hazeDim,(u,v)=>(.085-.06*v)*(1.2-.8*u));        // veil on the cliff face
+   sheet(1,90,0,z-9,-50,0,z-9,90,3.2,z-3,-50,3.2,z-3,hazeDim,(u,v)=>.07*(1.2-.8*u));                           // ground mist in front of it
    sheet(2,0,0,0,0,0,0,0,0,0,0,0,0,hazeWarm,null);
-   sheet(3,84,.12,-34,40,.12,-34,84,.12,34,40,.12,34,hazeWarm,(u,v)=>.5*Math.pow(sat((84-44*u-45)/13),1.4));     // sunlit dust lying on the ground at the breach end
+   sheet(3,88,.12,-34,44,.12,-34,88,.12,34,44,.12,34,hazeWarm,(u,v)=>.5*Math.pow(sat((88-44*u-54)/11),1.4));     // sunlit dust on the ground behind the breach line (x > 54)
    sheet(4,0,0,0,0,0,0,0,0,0,0,0,0,hazeWarm,null);
   }else{const z=CLIFF_BEHIND;
-   sheet(0,61.5,0,-75,61.5,0,75,61.5,19,-75,61.5,19,75,hazeWarm,(u,v)=>.85*(1-v*.55));                       // bright dust beyond the far wall
-   sheet(1,-20,.2,z-1.2,66,.2,z-1.2,-20,17,z+8,66,17,z+8,hazeWarm,(u,v)=>.5*u*u*(.3+.7*v));                 // veil on the cliff, thicker with distance
-   sheet(2,-10,2.5,-70,66,2.5,-70,-10,2.5,-17,66,2.5,-17,hazeWarm,(u,v)=>.4*u*u*(1-v*.8));                    // haze pooling over the open flank
-   sheet(3,84,.12,-70,40,.12,-70,84,.12,70,40,.12,70,hazeWarm,(u,v)=>.45*Math.pow(sat((84-44*u-46)/13),1.4));
-   sheet(4,54.6,1.5,-80,54.6,1.5,80,58.5,5.5,-80,58.5,5.5,80,hazeWarm,(u,v)=>.9*v);                                      // the far wall and the gate tops melt into the dust
+   sheet(0,61.5,0,-75,61.5,0,75,61.5,19,-75,61.5,19,75,hazeWarm,(u,v)=>.7*(1-v*.55));                        // bright dust beyond the far wall
+   sheet(1,-20,.2,z-1.2,66,.2,z-1.2,-20,17,z+8,66,17,z+8,hazeDim,(u,v)=>.34*u*u*(.3+.7*v));                 // veil on the cliff, thicker with distance
+   sheet(2,-10,2.5,-70,66,2.5,-70,-10,2.5,-17,66,2.5,-17,hazeWarm,(u,v)=>.36*u*u*(1-v*.8));                   // haze pooling over the open flank
+   sheet(3,88,.12,-70,44,.12,-70,88,.12,70,44,.12,70,hazeWarm,(u,v)=>.45*Math.pow(sat((88-44*u-54)/11),1.4));
+   sheet(4,54.8,1.5,-80,54.8,1.5,80,58.5,5.5,-80,58.5,5.5,80,hazeWarm,(u,v)=>.7*v);                                      // the far wall and the gate tops melt into the dust
   }
   hazeMesh.geometry.attributes.position.needsUpdate=true;hazeMesh.geometry.attributes.color.needsUpdate=true;
  }
@@ -474,19 +493,28 @@ R3D.register('env',ctx=>{
  })();
 
  /* ================= part interface ================= */
- let q=ctx.quality,frame=0;
+ let q=ctx.quality,frame=0,laidKey='';
+ const big=[{mesh:ground,k:1.6},{mesh:cliff,k:1.5},{mesh:lanes[0].userData.road,k:1.3},{mesh:lanes[1].userData.road,k:1.3}];   // full-screen surfaces, see quality()
+ for(const b of big){b.hi=b.mesh.material;b.lo=null;}
+ // In 'behind' the cliff is the whole right flank of the picture, right beside a lane: it is toned down a little more there.
+ let cliffK=1;
+ const toneCliff=()=>{const b=big[1];b.hi.color.setScalar(cliffK);if(b.lo)b.lo.color.setScalar(cliffK*b.k);};
  const fwd=new THREE.Vector3();
  return{
   layout(L){
-   const side=L.mode==='side';
-   for(let i=0;i<2;i++)lanes[i].position.z=L.laneZ[i];
-   sideSet.visible=side;behindSet.visible=!side;
-   cliff.position.set(side?-16:0,0,side?CLIFF_SIDE:CLIFF_BEHIND);   // in 'side' the low end of the ridge is slid off screen
-   if(side)radar.position.set(BUNKX,4.35,27.2);else radar.position.set(17,2.85,-18.6);
-   for(let i=0;i<2;i++)kerbFill[i].position.z=(i?-1:1)*(L.LZ+KERBZ);
-   paintGround(L);layoutGlow(L);layoutHaze(L);
-   // Shadows cover the play area plus the scenery strip that is on screen in this layout.
-   if(side)fitShadow(-18,60,-18,27,12);else fitShadow(-18,60,-22,18,12);
+   const side=L.mode==='side',key=L.mode+'|'+L.laneZ[0]+'|'+L.laneZ[1];
+   // Everything below depends only on the layout mode (the camera never turns inside a mode), so a plain resize skips it.
+   if(key!==laidKey){laidKey=key;
+    for(let i=0;i<2;i++)lanes[i].position.z=L.laneZ[i];
+    sideSet.visible=side;behindSet.visible=!side;
+    cliff.position.set(side?-16:0,0,side?CLIFF_SIDE:CLIFF_BEHIND);   // in 'side' the low end of the ridge is slid off screen
+    cliffK=side?1:.8;toneCliff();
+    if(side)radar.position.set(BUNKX,4.35,27.2);else radar.position.set(17,2.85,-18.6);
+    for(let i=0;i<2;i++)kerbFill[i].position.z=(i?-1:1)*(L.LZ+KERBZ);
+    paintGround(L);layoutGlow(L);layoutHaze(L);
+    // Shadows cover the play area plus the scenery strip that is on screen in this layout.
+    if(side)fitShadow(-18,60,-18,27,12);else fitShadow(-18,60,-22,18,12);
+   }
    // Fog is measured along the view axis: it starts just past the far edge of the play area and thickens behind it.
    fwd.copy(L.camTarget).sub(L.camPos).normalize();
    const T=L.camTarget,dep=(x,y,z)=>L.dist+(x-T.x)*fwd.x+(y-T.y)*fwd.y+(z-T.z)*fwd.z;   // view depth of a world point (L.dist at the camera target)
@@ -510,10 +538,21 @@ R3D.register('env',ctx=>{
   },
   quality(nq){
    q=nq;
+   // The big surfaces (ground, roads, cliff) fill the whole screen: at the lowest quality they are shaded with the cheaper
+   // Lambert model, the ground uses its coarse index and the road paint is halved (pixel ratio is 1 there anyway).
+   const low=nq===0;
+   if(low&&!big[0].lo){for(const b of big){const m=b.hi;b.lo=new THREE.MeshLambertMaterial({map:m.map,vertexColors:m.vertexColors,flatShading:m.flatShading});b.lo.color.setScalar(b.k);}toneCliff();}   // k: makes up for the broad sheen the standard model adds on dark rough surfaces
+   if(big[0].lo)for(const b of big)b.mesh.material=low?b.lo:b.hi;
+   ground.geometry.setIndex(low?ground.userData.lo:ground.userData.hi);
+   if(low)for(let i=0;i<2;i++){const t=lanes[i].userData.road.material.map,im=t.image;
+    if(im&&im.width>1024){const c=document.createElement('canvas');c.width=1024;c.height=Math.round(im.height*1024/im.width);c.getContext('2d').drawImage(im,0,0,c.width,c.height);t.dispose();t.image=c;t.needsUpdate=true;}}
    const size=nq>=2?1536:1024,sh=sun.shadow;
-   if(sh.mapSize.x!==size){sh.mapSize.set(size,size);if(sh.map){sh.map.dispose();sh.map=null;}}
+   if(sh.map&&(sh.mapSize.x!==size||nq===0)){sh.map.dispose();sh.map=null;}   // also frees the shadow map when shadows are switched off
+   sh.mapSize.set(size,size);
    sun.castShadow=nq>0;
    dust.geometry.setDrawRange(0,nq>0?DUST:DUST/2);
+   // ...and no light shafts or rolling dust puffs (large additive quads = fill rate on a weak phone)
+   if(low!==lowQ){lowQ=low;if(laidKey)layoutGlow(ctx.L);}
   }
  };
 });})();

@@ -121,7 +121,7 @@ R3D.boot=function(G,field){
   else{L.LZ=7;L.laneZ=[-L.LZ,L.LZ];camera.fov=30;dir.set(-Math.cos(50*Math.PI/180),Math.sin(50*Math.PI/180),0).normalize();}
   camera.aspect=w/h;camera.near=2;camera.far=900;camera.updateProjectionMatrix();
   const zr=L.LZ+A.laneW/2+.5;fitPts.length=0;
-  for(const x of [A.xMin+2,A.spawnX+1.5])for(const z of [-zr,zr])fitPts.push(new THREE.Vector3(x,0,z));
+  for(const x of [A.xMin+2,A.spawnX+(L.mode==='side'?4.5:1.5)])for(const z of [-zr,zr])fitPts.push(new THREE.Vector3(x,0,z));
   for(const z of [-zr,zr])fitPts.push(new THREE.Vector3(A.droneX,A.droneH+1.2,z),new THREE.Vector3(A.facX,5,z));
   fit(new THREE.Vector3((A.xMin+A.spawnX)/2,0,0),fitPts,L.mode==='side'?{l:.015,r:.015,t:.13,b:.05}:{l:.03,r:.03,t:.075,b:.035});
   applyQuality();

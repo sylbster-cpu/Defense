@@ -99,22 +99,29 @@ function makeBatch(n,blending,order,flat){
 function spr(b,x,y,z,size,col,a){if(b.c>=b.n||a<=.004)return;const o=b.c++*8,d=b.d;d[o]=x;d[o+1]=y;d[o+2]=z;d[o+3]=size;d[o+4]=col.r;d[o+5]=col.g;d[o+6]=col.b;d[o+7]=a;}
 function flush(b){b.geo.instanceCount=b.c;b.ib.needsUpdate=true;b.mesh.visible=b.c>0;}
 const glowB=makeBatch(128,THREE.AdditiveBlending,3),smokeB=makeBatch(56,THREE.NormalBlending,2),poolB=makeBatch(12,THREE.AdditiveBlending,1,true);
+// The shared glow texture is too peaked for smoke (its dense core is a few pixels on a phone): the smoke batch gets a lumpy, flat-topped puff.
+smokeB.mesh.material.uniforms.map.value=util.canvasTex(64,64,(c,w,h)=>{
+ for(let i=0;i<7;i++){const a=util.rand(i*3.1)*TAU,d=i?5+util.rand(i*7.7)*7:0,x=w/2+Math.cos(a)*d,y=h/2+Math.sin(a)*d,r=i?10+util.rand(i*5.3)*5:17;
+  const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,255,255,.5)');g.addColorStop(.55,'rgba(255,255,255,.3)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,w,h);}
+},{srgb:false});
 
-const cA=new THREE.Color(0xff9a2e),cT=new THREE.Color(0x3fe3d2),cG=new THREE.Color(0x4dffb0),cR=new THREE.Color(0xff3b24),cW=new THREE.Color(0xffffff),
+const cA=new THREE.Color(0xff9a2e),cT=new THREE.Color(0x3fe3d2),cG=new THREE.Color(0x2fe89a),cR=new THREE.Color(0xff3b24),cW=new THREE.Color(0xffffff),
  cHot=new THREE.Color(0xffe2a8),cWarm=new THREE.Color(0xffb347),cSpark=new THREE.Color(0xffd08a),cZap=new THREE.Color(0xbfeeff),
- cSmoke=new THREE.Color(0x6a6058),cSteam=new THREE.Color(0xb3aa9d),laneCol=[cA,cT],tmpC=new THREE.Color();
+ // smoke starts warm (lit from below by the wreck) and pales as it thins: it must stay lighter than the dark ground behind it
+ cSmoke=new THREE.Color(0x9c7354),cAsh=new THREE.Color(0xa69d92),cSteam=new THREE.Color(0xb3aa9d),laneCol=[cA,cT],tmpC=new THREE.Color(),tmpP=new THREE.Color();
 const NP=72,parts=[];let pNext=0;
-for(let i=0;i<NP;i++)parts.push({on:false,add:false,t:0,life:1,x:0,y:0,z:0,vx:0,vy:0,vz:0,s0:1,s1:1,col:cW,a:1,grav:0});
-function emit(add,x,y,z,vx,vy,vz,life,s0,s1,col,a,grav){const p=parts[pNext];pNext=(pNext+1)%NP;
- p.on=true;p.add=add;p.t=0;p.life=life;p.x=x;p.y=y;p.z=z;p.vx=vx;p.vy=vy;p.vz=vz;p.s0=s0;p.s1=s1;p.col=col;p.a=a;p.grav=grav;}
+for(let i=0;i<NP;i++)parts.push({on:false,add:false,t:0,life:1,x:0,y:0,z:0,vx:0,vy:0,vz:0,s0:1,s1:1,col:cW,c1:null,a:1,grav:0});
+function emit(add,x,y,z,vx,vy,vz,life,s0,s1,col,a,grav,c1){const p=parts[pNext];pNext=(pNext+1)%NP;
+ p.on=true;p.add=add;p.t=0;p.life=life;p.x=x;p.y=y;p.z=z;p.vx=vx;p.vy=vy;p.vz=vz;p.s0=s0;p.s1=s1;p.col=col;p.c1=c1||null;p.a=a;p.grav=grav;}
 const rnd=()=>Math.random()-.5;
-function puff(x,y,z,big,col){emit(false,x+rnd()*.4,y,z+rnd()*.4,-.45+rnd()*.3,1.3+Math.random()*.6,.15+rnd()*.3,2.6+Math.random()*1.4,1.0*big,3.4*big,col,2.1,0);}
+// A puff must be a few units wide to be seen at all on a phone (one unit is about 6 px there). The wind carries it towards -X, away from the lanes.
+function puff(x,y,z,big,col,c1,a){emit(false,x+rnd()*.4,y,z+rnd()*.4,-.9+rnd()*.4,1.3+Math.random()*.4,.1+rnd()*.3,3.2+Math.random(),1.8*big,5*big,col,a||.9,0,c1);}
 function sparks(x,y,z,n,col,pow){for(let i=0;i<n;i++)emit(true,x,y,z,rnd()*pow,Math.random()*pow*.9+.6,rnd()*pow,.28+Math.random()*.3,.42,.06,col,1,9);}
 function updParticles(dt){
  for(let i=0;i<NP;i++){const p=parts[i];if(!p.on)continue;p.t+=dt;if(p.t>=p.life){p.on=false;continue;}
   p.vy-=p.grav*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.y<.1){p.y=.1;p.vy=-p.vy*.3;}
   const u=p.t/p.life,env=p.add?1-u*u:Math.min(1,u*6)*(1-u);
-  spr(p.add?glowB:smokeB,p.x,p.y,p.z,p.s0+(p.s1-p.s0)*u,p.col,p.a*env);}
+  spr(p.add?glowB:smokeB,p.x,p.y,p.z,p.s0+(p.s1-p.s0)*u,p.c1?tmpP.copy(p.col).lerp(p.c1,u):p.col,p.a*env);}
 }
 
 /* ================= 4. models ================= */
@@ -292,7 +299,7 @@ function makeFac(i){
  return F;
 }
 const fac=[makeFac(0),makeFac(1)];
-const gate=[0,1].map(i=>{const m=glowMat();const mesh=add(scene,laneGeo(i?C.lt:C.la),m,0);return{mesh,mat:m,fl:0,z:0};});
+const gate=[0,1].map(i=>{const m=glowMat();const mesh=add(scene,laneGeo(i?C.lt:C.la),m,0);return{mesh,mat:m,fl:0,ph:0,z:0};});
 const runMat=glowMat(),run=add(scene,gRun,runMat,0);run.position.set(A.hubX,0,0);
 const hub={g:new THREE.Group(),mat:glowMat(),col:new THREE.Color(0x4dffb0),dish:null,droop:0,ang:0,hit:0,last:100,beat:0,ts:0};
 hub.g.position.set(A.hubX,0,0);scene.add(hub.g);add(hub.g,gHub,hub.mat,1);hub.dish=add(hub.g,gDish,hub.mat,2);hub.dish.position.y=7.76;
@@ -322,7 +329,7 @@ function updFac(F,dt,t,G){
  const hum=1+.07*Math.sin(t*3.1+i*2),on=F.on*fl;
  setG(F.mat,0,cW,1.0*on*hum);F.lvl.x=f;
  F.weld=Math.max(0,F.weld-dt*5);
- setG(F.mat,1,cW,i?(.8+1.6*F.weld)*on:(1.25+.2*Math.sin(t*2.3))*on);
+ setG(F.mat,1,cW,i?(.8+1.6*F.weld)*on:(1.02+.16*Math.sin(t*2.3))*on);
  const blink=crit&&(t*2.6)%1<.5;
  setG(F.mat,2,cR,blink?2.2:0);
  // moving parts slow down with damage and stop when offline
@@ -339,9 +346,9 @@ function updFac(F,dt,t,G){
  // pooled smoke and sparks
  F.ts-=dt;F.tk-=dt;
  if(F.ts<=0){F.alt^=1;const half=Q===0&&F.alt;
-  if(!alive){F.ts=.24+Math.random()*.12;if(!half){fw(F,S[0],S[1]-.5,S[2]);puff(v.x,v.y,v.z,.8,cSmoke);}}
-  else if(crit){F.ts=.8+Math.random()*.5;if(!half){fw(F,S[3],S[4],S[5]);puff(v.x,v.y,v.z,.75,cSmoke);}}
-  else if(dmg){F.ts=1.9+Math.random();if(!half){fw(F,S[3],S[4],S[5]);puff(v.x,v.y,v.z,.6,cSteam);}}
+  if(!alive){F.ts=.24+Math.random()*.12;if(!half){fw(F,S[0],S[1]+.1,S[2]);puff(v.x,v.y,v.z,.9,cSmoke,cAsh);}}
+  else if(crit){F.ts=.8+Math.random()*.5;if(!half){fw(F,S[3],S[4],S[5]);puff(v.x,v.y,v.z,.7,cSmoke,cAsh);}}
+  else if(dmg){F.ts=1.9+Math.random();if(!half){fw(F,S[3],S[4],S[5]);puff(v.x,v.y,v.z,.55,cSteam,null,.6);}}
   else{F.ts=.55;if(deco&&!i){fw(F,2.4,1.8,2.05);emit(true,v.x+rnd()*.5,v.y,v.z+rnd()*.3,-.15,.8,0,1.5,.7,1.5,cWarm,.1,0);}}}   // heat over the vent
  if(F.tk<=0){
   if(!alive){F.tk=1.6+Math.random()*2.4;fw(F,S[0]+rnd()*2,S[1]-1,S[2]+rnd()*2);sparks(v.x,v.y,v.z,2,cSpark,3);}
@@ -351,11 +358,11 @@ function updFac(F,dt,t,G){
    if(i){F.weld=1;if(deco){fw(F,-1.75,.8,.1);sparks(v.x,v.y,v.z,2,cZap,2.6);}}else if(deco){F.arc=1;F.arcS=Math.random()<.5?-1:1;}}}
  // halos and the light pool on the ground
  const gk=on*(deco?hum:1);
- spr(poolB,F.wx,.1,F.wz,19,laneCol[i],(.1+.16*f)*gk*(i?1:1.7));
+ if(deco)spr(poolB,F.wx,.1,F.wz,19,laneCol[i],(.1+.16*f)*gk*(i?1:1.7));           // big additive quads cost fill rate: not at quality 0
  if(i){fw(F,-1.75,.9,.5);spr(glowB,v.x,v.y,v.z,3.4+F.weld,cT,(.3+.4*F.weld)*on);
   fw(F,-1.15,3.3,-1.7);spr(glowB,v.x,v.y,v.z,5,cT,.13*gk*f);
   if(f>.15){fw(F,-2.95,4.6-.6*sl,mv.position.z);spr(glowB,v.x,v.y,v.z,.9,cT,.6*on);fw(F,.95,4.6-.6*sl,mv.position.z);spr(glowB,v.x,v.y,v.z,.9,cT,.6*on);}}
- else{fw(F,0,2.7,PCZ);spr(glowB,v.x,v.y,v.z,5.4,cA,.42*gk);spr(glowB,v.x,v.y+.2,v.z,2.6,cHot,.4*gk);
+ else{fw(F,0,2.7,PCZ);spr(glowB,v.x,v.y,v.z,5.4,cA,.4*gk);spr(glowB,v.x,v.y+.2,v.z,2.4,cHot,.26*gk);
   if(f>.32){fw(F,-2.5,5.14,-2.5);spr(glowB,v.x,v.y,v.z,1.7,cA,.6*on);}
   if(f>.64){fw(F,2.5,5.14,-2.5);spr(glowB,v.x,v.y,v.z,1.7,cA,.6*on);}
   if(F.arc>0){F.arc=Math.max(0,F.arc-dt*6);if(alive)for(let j=1;j<9;j++){const u=j/9;           // crackle from a coil ball to the collector
@@ -363,18 +370,21 @@ function updFac(F,dt,t,G){
  if(blink){if(i)fw(F,3.05,2.55,-.8);else fw(F,3.05,2.5,2.55);spr(glowB,v.x,v.y,v.z,2.4,cR,.8);}
 }
 
+// cross-fade a lamp colour to red. A straight mix of teal and red passes through white, so the lane colour is dimmed faster than the red comes in.
+function toRed(c,m){const a=(1-m)*(1-m);c.r=c.r*a+cR.r*m;c.g=c.g*a+cR.g*m;c.b=c.b*a+cR.b*m;}
 function updGate(g,i,dt,t,G){
  g.fl=Math.max(0,g.fl-dt);
  const off=G.facilities[i]<=0,warn=clamp(1-near[i]/90,0,1),z=g.z;
  let k=.95+.1*Math.sin(t*2+i*3);tmpC.copy(laneCol[i]);
  if(off){tmpC.copy(cR);k=.55+.25*Math.sin(t*5.7)*Math.sin(t*13.1);}
- if(warn>0){tmpC.lerp(cR,warn*.9);k*=1+warn*(.5+.7*Math.sin(t*(7+9*warn)));}       // an enemy is about to cross: pulse towards red
- if(g.fl>0){const m=Math.min(1,g.fl*2.2);tmpC.lerp(cR,m);k+=((Math.sin(t*26)>0?2.3:.5)-k)*m;}                 // leak: red strobe for about a second
+ // An enemy is about to cross: red blinks, longer and faster as it nears. The phase is integrated: t*rate would jump wildly while the rate changes.
+ if(warn>0&&!off){g.ph=(g.ph+dt*(1.5+2.5*warn))%1;if(g.ph<.2+.55*warn){tmpC.copy(cR);k=1.15;}}else g.ph=0;
+ if(g.fl>0){const m=Math.min(1,g.fl*2.2);toRed(tmpC,m);k+=((Math.sin(t*26)>0?1.5:.35)-k)*m;}               // leak: red strobe for about a second
  setG(g.mat,0,tmpC,k);
  setG(g.mat,1,cW,.9*fac[i].on);
  const a=Math.min(.9,.32*k);
  spr(glowB,0,1.25,z-4.95,1.5+g.fl,tmpC,a);spr(glowB,0,1.25,z+4.95,1.5+g.fl,tmpC,a);
- if(g.fl>0){const m=Math.min(1,g.fl*1.6);spr(glowB,0,.7,z,13,cR,.4*m);spr(poolB,-.5,.55,z,17,cR,.7*m);}
+ if(g.fl>0){const m=Math.min(1,g.fl*1.5),m2=m*m;spr(glowB,0,.7,z,9,cR,.32*m2);spr(poolB,-.5,.55,z,13,cR,.55*m2);}   // short red wash; fx.js adds the blast
  // power flowing from the facility to the hub
  if(Q>0&&fac[i].on>.5){const sg=z<0?-1:1,b=Math.abs(z)-2.4;
   for(let j=0;j<2;j++){const u=(t*.3+j*.5+i*.27)%1,s=u*(2.4+b),e=Math.sin(u*Math.PI);
@@ -386,16 +396,16 @@ function updHub(dt,t,G){
  if(!alive)k=0;
  else if(c<28){tmpC.copy(cR);k=(t*3.4)%1<.5?2.4:.2;}
  else if(c<50){tmpC.copy(cWarm);k=1.1+.6*Math.sin(t*4.2);}
- else{tmpC.copy(cG);k=.85+.2*Math.sin(t*1.5);}
+ else{tmpC.copy(cG);k=.72+.16*Math.sin(t*1.5);}
  if(c<hub.last-.01)hub.hit=1;hub.last=c;hub.hit=Math.max(0,hub.hit-dt*2.2);            // the core just took damage: flash red
  if(alive){hub.col.lerp(tmpC,1-Math.exp(-6*dt));if(hub.hit>0){hub.col.lerp(cR,hub.hit*.8);k+=1.6*hub.hit*(Math.sin(t*30)>0?1:.3);}}
  setG(hub.mat,0,hub.col,k);setG(hub.mat,1,hub.col,alive?.8:0);hub.mat.userData.lvl.y=f;setG(hub.mat,2,cW,alive?.9:0);
  hub.droop=damp(hub.droop,alive?0:1,3,dt);hub.mat.color.setScalar(1-.4*hub.droop);
- if(!alive){hub.ts-=dt;if(hub.ts<=0){hub.ts=.45+Math.random()*.2;puff(A.hubX,6.5,0,.7,cSmoke);}}                 // a dead hub smokes
+ if(!alive){hub.ts-=dt;if(hub.ts<=0){hub.ts=.45+Math.random()*.2;puff(A.hubX,6.5,0,.7,cSmoke,cAsh);}}                 // a dead hub smokes
  if(alive&&Q>0)hub.ang+=dt*.32;
  hub.dish.rotation.set(0,hub.ang,-.55*hub.droop);
  spr(glowB,A.hubX,10.2,0,4,hub.col,Math.min(.8,.42*k));
- spr(glowB,A.hubX,6.5,0,3.2,hub.col,alive?.16*f:0);spr(poolB,A.hubX,.1,0,13,hub.col,.11*k);
+ spr(glowB,A.hubX,6.5,0,3.2,hub.col,alive?.16*f:0);if(Q>0)spr(poolB,A.hubX,.1,0,13,hub.col,Math.min(.3,.2*k));
  if(alive&&Q>0){hub.beat=(hub.beat+dt*(c<28?.9:c<50?.55:.3))%1;spr(glowB,A.hubX,10.2,0,2+9*hub.beat,hub.col,.2*(1-hub.beat));}   // transmit pulse
 }
 
@@ -418,9 +428,9 @@ function updTurrets(dt,t,G){
   if(pierce){setG(T.mat,2,cHot,1.7);T.lvl.z=1.1;}else{setG(T.mat,2,cA,1.2*dim);T.lvl.z=frac;}
   const cy=Math.cos(T.yaw),sy=Math.sin(T.yaw),cp=Math.cos(T.pit),sp=Math.sin(T.pit),m=MUZZLE-.4*T.kick*T.kick;
   const mx=T.x+cy*cp*m,my=T.y+sp*m,mz=T.z-sy*cp*m;
-  if(T.flash>0){spr(poolB,mx,.3,mz,7,cWarm,.5*T.flash);spr(glowB,mx,my,mz,1.4+2.2*T.flash,cHot,T.flash);spr(glowB,mx+cy*.5,my,mz-sy*.5,.9+1.2*T.flash,cW,T.flash);}
+  if(T.flash>0){spr(poolB,mx,.3,mz,5.5,cWarm,.42*T.flash);spr(glowB,mx,my,mz,1.4+2.2*T.flash,cHot,T.flash);spr(glowB,mx+cy*.5,my,mz-sy*.5,.9+1.2*T.flash,cW,T.flash);}
   if(pierce)spr(glowB,mx,my,mz,1.5+.3*Math.sin(t*11+i),cHot,.75);
-  if(frac>0)spr(glowB,T.x,1.7,T.z,2.2+1.6*frac+(pierce?.6:0),pierce?cHot:cA,(.1+.3*frac)*(pierce?1.4:1));
+  if(frac>0)spr(glowB,T.x,1.7,T.z,2.3+2.1*frac+(pierce?.4:0),pierce?cHot:cA,.2+.45*frac);          // the charge has to read at phone size, where the ring is a few pixels
   if(shopDown){T.tk-=dt;if(T.tk<=0){T.tk=.5+Math.random()*1.1;T.zap=1;if(Q>0||i)sparks(T.x-.5,T.y-.3,T.z,2,cZap,2.8);}
    if(T.zap>0)spr(glowB,T.x-.4,T.y,T.z,1.8,cZap,.7*T.zap);}
  }
@@ -456,10 +466,10 @@ return{
   else if(ev.t==='leak'){const F=fac[ev.lane],g=gate[ev.lane];if(!F)return;
    g.fl=1;F.jt=0;F.ja=ev.down?.6:.28;
    fw(F,0,1.6,0);sparks(v.x+2.5,1.2,v.z,ev.down?4:3,cSpark,4);
-   if(ev.down){ctx.shake(.3);const S=SRC[F.i],n=Q?7:4;
-    for(let k=0;k<n;k++){fw(F,rnd()*4,1+Math.random()*2.5,rnd()*4);puff(v.x,v.y,v.z,1.15,cSmoke);}
-    fw(F,S[0],S[1]-.6,S[2]);sparks(v.x,v.y,v.z,Q?10:5,cSpark,6);emit(true,v.x,v.y,v.z,0,.5,0,.5,7,11,cWarm,.8,0);}
-   else puff(v.x+2.6,1,v.z,.6,cSteam);}
+   if(ev.down){const S=SRC[F.i],n=Q?4:2;                                                 // fx.js owns the blast, the fireball and the camera shake
+    for(let k=0;k<n;k++){fw(F,rnd()*4,1+Math.random()*2.5,rnd()*4);puff(v.x,v.y,v.z,.9,cSmoke,cAsh);}
+    fw(F,S[0],S[1]-.6,S[2]);sparks(v.x,v.y,v.z,Q?8:4,cSpark,6);}
+   else puff(v.x+2.6,1,v.z,.5,cSteam,null,.45);}
   else if(ev.t==='stage'){                                                               // new operation: everything is repaired at once
    for(let i=0;i<NP;i++)parts[i].on=false;
    for(let i=0;i<2;i++){const F=fac[i];F.on=1;F.slump=0;F.sv=0;F.sp=1;F.jt=9;F.weld=0;gate[i].fl=0;tur[i].kick=tur[i].flash=tur[i].zap=0;}
