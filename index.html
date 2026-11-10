@@ -238,6 +238,20 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .status-row .name,.status-row .value{font-size:9px;line-height:1.15;white-space:nowrap}
  .bar{height:5px}
 }
+
+/* Phone landscape is held with both hands at the ends: lane buttons on the left edge, overload on the right edge, battlefield in the middle. */
+@media(orientation:landscape) and (max-height:520px) and (max-width:1100px){
+ .dashboard{grid-template-columns:clamp(78px,13vw,118px) minmax(0,1fr) clamp(140px,23vw,205px);grid-template-rows:auto auto minmax(0,1fr)}
+ .left,.controls{display:contents}
+ .field{grid-column:2;grid-row:1/4}
+ #leftBtn,#rightBtn{grid-column:1;grid-row:1/4;height:calc(50% - var(--ui-gap)/2)}
+ #leftBtn{align-self:start}#rightBtn{align-self:end}
+ .right{grid-column:3;grid-row:1;height:auto}
+ .right .panel{height:auto}
+ .right .mission{display:none}
+ .inline-help{grid-column:3;grid-row:2}
+ #pulseBtn{grid-column:3;grid-row:3}
+}
 </style>
 </head>
 <body>
@@ -320,6 +334,8 @@ function baseEffects(){return{droneRange:BAL.droneRange,moveBase:BAL.moveBase,pu
 // A same-lane-only bonus was tested and stayed weak: leaks come from the lane the drone is not covering.
 function focusBonus(){return effects.focusCap>0?Math.min(effects.focusCap,effects.focusRamp*drone.stay):0;}
 let effects=baseEffects(),surges=[];
+// Shown on the first and the result screens. Change it with every published build.
+const BUILD='2026.11.10-1';
 let audio=null,mute=false,toastExpiry=0,frameTime=0,logLines=[];
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
@@ -425,7 +441,7 @@ function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.ca
 function finish(victory){phase='finish';const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sound(victory?660:125,.4,'triangle',.07);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
  const progress='작전 '+String(op).padStart(2,'0')+' / 05 · '+(victory?'전체 방어 성공':'도전 종료');
- renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>{reset();newStage(1);});updateControls();updateUI();}
+ renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>{reset();newStage(1);});updateControls();updateUI();}
 let tutorialStep=0,practiced={move:false,pulse:false},practice={task:null,done:false,timer:0};
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=50*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
@@ -470,7 +486,7 @@ function renderOverlay(content,screen='intro'){
  showOverlay(true);
  fitDialog();requestAnimationFrame(fitDialog);
 }
-function intro(){phase='intro';hideCoach();renderOverlay(`<div class="tiny">RIDGE RELAY / DEFENSE LAB</div><h2>중계선<br>최후의 방어</h2><div class="tutorial-menu"><button type="button" class="primary" id="tutorialBtn"><span>튜토리얼 시작</span><span>→</span></button><button type="button" class="secondary" id="skipBtn">바로 시작</button></div>`,'intro');
+function intro(){phase='intro';hideCoach();renderOverlay(`<div class="tiny">RIDGE RELAY / DEFENSE LAB · 판 ${BUILD}</div><h2>중계선<br>최후의 방어</h2><div class="tutorial-menu"><button type="button" class="primary" id="tutorialBtn"><span>튜토리얼 시작</span><span>→</span></button><button type="button" class="secondary" id="skipBtn">바로 시작</button></div>`,'intro');
  $('tutorialBtn').addEventListener('click',()=>{reset();phase='tutorial';tutorialStep=0;practiced={move:false,pulse:false};showTutorial();});
  $('skipBtn').addEventListener('click',()=>{reset();newStage(1);});
 }
@@ -528,7 +544,7 @@ function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i
  ctx.restore();const max=100;rounded(x-37,572,74,5,3,'#0d1c21');rect(x-37,572,74*Math.max(0,hp/max),5,alive?(gold?'#f3c67d':'#8bd9cb'):'#a35751');text(alive?(gold?'발전소':'정비소'):'기능 정지',x,588,11,alive?'#e7ece2':'#e7998e','center',true);
  }
 }
-function drawTurrets(t){for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%':'AUTO',x,y+38,fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
+function drawTurrets(t){for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%':'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
 function drawDrone(now){const x=drone.x,y=drone.y,breath=Math.sin(now*.003)*2;circle(x,y,effects.droneRange,'rgba(106,202,186,.025)','rgba(112,202,185,.095)',1);circle(x,y,29+breath,'rgba(101,203,190,.09)','rgba(143,229,208,.33)',1);if(drone.burst>0)circle(x,y,40,null,'rgba(150,240,215,'+(.35+.5*Math.min(1,drone.burst))+')',3);if((phase==='battle'||phase==='practice')&&drone.pulseCooldown<=.01){ctx.save();ctx.setLineDash([6,8]);circle(x,y,effects.pulseRange,null,'rgba(240,196,123,.5)',1.5);ctx.restore();}ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);rounded(-18,-18,36,36,5,'#77b9ad','#d1e9d6',2);rounded(-11,-11,22,22,3,'#204249','#c1e9d5',1);ctx.restore();circle(x,y,7,'#f5d798','#c9e7cc',2);line(x-36,y,x-24,y,'#b3d6c7',2);line(x+24,y,x+36,y,'#b3d6c7',2);text('SUPPORT',x,y+46,10,'#d6e8d9','center',true);}
 function drawEnemy(e,now){let r=TYPES[e.type].r,x=e.x,y=e.y,c=e.flash>0?'#fff8d8':TYPES[e.type].color;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(now*.003+e.wiggle)*.07);circle(0,2,r+4,'rgba(0,0,0,.3)');if(e.type==='runner'){ctx.beginPath();ctx.moveTo(0,r);ctx.lineTo(-r,-r*.4);ctx.lineTo(-5,-r*.1);ctx.lineTo(0,-r);ctx.lineTo(5,-r*.1);ctx.lineTo(r,-r*.4);ctx.closePath();ctx.fillStyle=c;ctx.fill();line(-5,0,5,0,'#593d33',2);}else if(e.type==='grunt'){rounded(-r,-r,r*2,r*2,5,c,'#77483e',2);rounded(-r*.5,-r*.6,r,8,2,'#664a40');}else{rounded(-r,-r,r*2,r*2,7,'#6e4346','#dc9783',3);rounded(-r+4,-r+4,r*2-8,r*2-8,4,c,'#674844',1);line(-r+7,0,r-7,0,'#593f3d',4);if(e.type==='boss'){circle(0,0,9,'#ffd39a','#7a5550',2);circle(-r-4,0,4,'#e9bd8d');circle(r+4,0,4,'#e9bd8d');}}
  ctx.restore();if(e.slow>0){ctx.save();ctx.setLineDash([3,4]);circle(x,y,r+6,null,'rgba(214,170,124,.85)',2);ctx.restore();}rounded(x-r-4,y-r-13,r*2+8,4,2,'#142225');rect(x-r-3,y-r-12,(r*2+6)*Math.max(0,e.hp/e.maxHp),2,'#f1c37c');}
@@ -625,7 +641,7 @@ function drawCompact(now){
   rounded(x-17*scale,y-3*scale,10*scale,6*scale,2,turret.flash>0?'#fff2ad':'#f2d7a4');
   circle(x,y,4*scale,'#e0caa3');
   const fb=focusBonus();
-  if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,18*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();text('+'+Math.round(fb*100)+'%',x,y+(turret.lane===0?-24:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
+  if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,18*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();text('+'+Math.round(fb*100)+'%',x,y+(turret.lane===0?-28:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
  }
  // The support drone moves between the two rows as the old horizontal movement interpolates.
  const droneX=px(drone.y),droneY=py(drone.x);
