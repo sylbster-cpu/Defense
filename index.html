@@ -322,41 +322,54 @@ function focusBonus(){return effects.focusCap>0?Math.min(effects.focusCap,effect
 let effects=baseEffects(),surges=[];
 let audio=null,mute=false,toastExpiry=0,frameTime=0,logLines=[];
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
-// [time, lane(0 power / 1 workshop), type]. Clumps call for overload; cross-lane pairs are surges one drone cannot cover alone.
-const stages={
-  1:[[.5,0,'runner'],[2.0,1,'grunt'],[4.0,0,'grunt'],[5.5,1,'runner'],[7.0,0,'brute'],
-     [11.0,1,'grunt'],[11.4,1,'grunt'],[11.8,1,'grunt'],[12.2,1,'grunt'],[12.6,1,'grunt'],[14.5,0,'runner'],[16.0,0,'grunt'],[18.0,1,'brute'],[19.5,0,'runner'],
-     [23.0,0,'brute'],[23.0,1,'brute'],[23.6,0,'grunt'],[23.6,1,'grunt'],[24.2,0,'grunt'],[24.2,1,'grunt'],[24.8,1,'runner'],
-     [28.5,0,'grunt'],[28.9,0,'grunt'],[29.3,0,'grunt'],[29.7,0,'grunt'],[30.1,0,'grunt'],[30.5,0,'grunt'],[31.0,1,'runner'],[32.5,1,'brute']],
-  2:[[.5,1,'grunt'],[1.5,0,'runner'],[3.0,0,'grunt'],[3.0,1,'grunt'],[5.0,1,'brute'],[6.5,0,'runner'],
-     [9.0,0,'grunt'],[9.4,0,'grunt'],[9.8,0,'grunt'],[10.2,0,'grunt'],[10.6,0,'brute'],
-     [14.0,1,'grunt'],[14.4,1,'grunt'],[14.8,1,'grunt'],[15.2,1,'grunt'],[15.6,1,'grunt'],[16.0,1,'grunt'],[17.0,0,'brute'],[19.0,0,'runner'],[20.5,1,'runner'],
-     [22.0,0,'brute'],[22.0,1,'brute'],[22.6,0,'grunt'],[22.6,1,'grunt'],
-     [28.0,1,'boss'],[29.0,0,'grunt'],[29.4,0,'grunt'],[29.8,0,'grunt'],[30.2,0,'grunt'],[32.0,1,'grunt'],[32.4,1,'grunt'],[34.0,0,'brute'],[34.0,1,'brute'],[36.0,0,'runner'],[36.0,1,'runner']]
-};
-// Five operations, three timed waves each. The first two patterns are extended, not replaced.
+// Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
+// each operation asks for a different way of playing.
+//  pack = tight group in one lane (overload)      row  = steady single file in one lane (holding)
+//  zig  = groups alternating between the lanes (moving)
+//  both = the same enemy in both lanes at once (a surge one drone cannot cover)
+//  meet = a slow leader plus faster followers timed to close up behind it beside the drone, so mixed speeds arrive as one clump
+const R='runner',G='grunt',B='brute',X='boss',MEET_AT=200;
+const pack=(t,l,types,gap=.45)=>types.map((ty,i)=>[t+i*gap,l,ty]);
+const row=(t,l,types,gap=1.4)=>pack(t,l,types,gap);
+const zig=(t,l,groups,gap=2.6)=>groups.flatMap((g,i)=>pack(t+i*gap,(l+i)%2,g));
+const both=(t,ty)=>[[t,0,ty],[t,1,ty]];
+const meet=(t,l,lead,followers,gap=.4)=>[[t,l,lead],...followers.map((ty,i)=>[t+MEET_AT/TYPES[lead].speed-MEET_AT/TYPES[ty].speed+(i+1)*gap,l,ty])];
+// Three waves per operation; times inside a wave are relative to its section of `len` seconds.
+function combineWaves(len,parts){return parts.flatMap((part,i)=>part.flat().map(([t,l,type])=>[+(t+len*i).toFixed(2),l,type])).sort((a,b)=>a[0]-b[0]);}
 const TOTAL_OPS=5;
-stages[1]=stages[1].map(([t,l,type])=>[+(t*1.55).toFixed(2),l,type]);
-stages[2]=stages[2].map(([t,l,type])=>[+(t*1.45).toFixed(2),l,type==='boss'?'brute':type]);
-// Each later operation has a tactical theme: simultaneous fronts, heavy-vs-fast, final siege.
-// Arrival times within each of the three waves are relative to their 22-second section.
-function combineWaves(parts){return parts.flatMap((part,i)=>part.map(([t,l,type])=>[t+22*i,l,type])).sort((a,b)=>a[0]-b[0]);}
-stages[3]=combineWaves([
- [[.7,0,'runner'],[.7,1,'runner'],[3,0,'grunt'],[3,1,'grunt'],[6.5,0,'runner'],[7.2,1,'runner'],[10,0,'grunt'],[10,1,'grunt'],[14,0,'brute'],[14,1,'brute']],
- [[.8,0,'grunt'],[.8,1,'grunt'],[1.4,0,'grunt'],[1.4,1,'grunt'],[4.5,0,'runner'],[4.5,1,'runner'],[8,0,'brute'],[8,1,'brute'],[12.2,0,'grunt'],[12.2,1,'grunt'],[15,0,'runner'],[15,1,'runner']],
- [[1,0,'brute'],[1,1,'brute'],[4,0,'grunt'],[4,1,'grunt'],[4.6,0,'grunt'],[4.6,1,'grunt'],[8,0,'runner'],[8,1,'runner'],[11.8,0,'brute'],[11.8,1,'brute'],[14,0,'grunt'],[14,1,'grunt'],[14.6,0,'grunt'],[14.6,1,'grunt'],[18,0,'runner'],[18,1,'runner']]
-]);
-stages[4]=combineWaves([
- [[.6,0,'brute'],[2.5,1,'runner'],[3.1,1,'runner'],[3.7,1,'runner'],[7.5,0,'grunt'],[8.1,0,'grunt'],[11,1,'grunt'],[12.2,0,'brute'],[14,1,'grunt'],[15.2,1,'grunt']],
- [[.6,1,'brute'],[2.2,0,'runner'],[2.8,0,'runner'],[3.4,0,'runner'],[5.2,1,'grunt'],[5.8,1,'grunt'],[9,0,'grunt'],[9.6,0,'grunt'],[11.8,1,'brute'],[14,0,'runner'],[14.6,0,'runner']],
- [[.6,0,'brute'],[.6,1,'grunt'],[3.2,0,'grunt'],[3.2,1,'brute'],[5.6,0,'runner'],[5.9,1,'grunt'],[6.5,1,'grunt'],[9.2,0,'brute'],[9.2,1,'brute'],[12,0,'grunt'],[12,1,'grunt'],[13,0,'grunt'],[13,1,'grunt'],[17,0,'runner'],[17,1,'runner']]
-]);
-stages[5]=combineWaves([
- [[.7,0,'grunt'],[.7,1,'grunt'],[3.6,0,'brute'],[5.2,1,'brute'],[8,0,'runner'],[8.6,0,'runner'],[11.2,1,'grunt'],[11.8,1,'grunt'],[14,0,'brute'],[15,1,'runner']],
- [[.7,0,'brute'],[.7,1,'brute'],[4,0,'grunt'],[4,1,'grunt'],[4.5,0,'grunt'],[4.5,1,'grunt'],[8,0,'runner'],[8,1,'runner'],[12,0,'brute'],[12,1,'brute'],[16,0,'grunt'],[16,1,'grunt']],
- [[.8,1,'boss'],[1.4,0,'grunt'],[2.1,0,'grunt'],[5,0,'brute'],[6.6,1,'grunt'],[7.3,1,'grunt'],[10,0,'brute'],[10,1,'brute'],[12.6,0,'runner'],[13.2,0,'runner'],[15.5,1,'grunt'],[16.2,1,'grunt'],[18,0,'grunt'],[18.6,1,'runner']]
-]);
-const WAVES={1:[15.5,34.1],2:[17.4,37.7],3:[22,44],4:[22,44],5:[22,44]};
+const stages={
+ // 1 첫 대응: one gentle example of each shape.
+ 1:combineWaves(17,[
+  [zig(.6,0,[[R],[G],[G],[R]],2.2),pack(10.5,0,[G,G,G],.5),[[13.5,1,R]]],
+  [meet(.5,1,B,[G,G,R]),row(1.5,0,[R,G],4),pack(10,0,[G,G,G]),[[12.5,1,G]]],
+  [both(.5,B),row(4,0,[G,G,G,G],1.1),pack(8.1,1,[R,R],.5),meet(11,1,B,[G,R])]
+ ]),
+ // 2 전선 집중: long single files, one lane at a time.
+ 2:combineWaves(18,[
+  [row(.5,0,[G,G,B,G,G],1.5),[[2.75,1,R]],[[7.3,1,R]],pack(11,1,[G,G,G]),[[13,0,R]]],
+  [row(.5,1,[B,G,G,G,B],1.5),pack(5.5,0,[R,R,R],.4),meet(10.5,0,B,[G,G,R])],
+  [both(.5,B),meet(4.5,1,B,[G,G,G,R]),row(6,0,[G,G,G],1.2),both(13,R)]
+ ]),
+ // 3 동시 포위: both lanes at once, then the first boss.
+ 3:combineWaves(22,[
+  [both(.7,R),both(3,G),meet(6.5,0,B,[G,G,R]),meet(9.5,1,B,[G,G,R]),both(16,R)],
+  [both(.8,B),pack(4,0,[G,G,G]),pack(4.3,1,[R,R,R],.4),both(9,G),meet(12,1,B,[G,G,R])],
+  [[[.8,0,X]],pack(2,1,[G,G],.5),pack(6.5,1,[R,R,R],.4),[[10,1,B]],pack(13,1,[G,G],.5),[[13.5,0,G]],both(17.5,R)]
+ ]),
+ // 4 교차 압박: groups alternate between the lanes.
+ 4:combineWaves(22,[
+  [zig(.6,0,[[R,R,R],[G,G],[R,R,R],[G,G,B]],2.6),[[12.5,0,B]],pack(14,1,[R,R],.4)],
+  [meet(.6,1,B,[G,G,R]),meet(4.6,0,B,[G,G,R]),meet(8.6,1,B,[G,R,R]),[[1.6,0,R]],[[14,0,G]],[[15.5,1,G]]],
+  [[[.6,1,X]],zig(2,0,[[G,G],[R,R],[G,G,G],[R,R]],2.6),both(13,B),both(16.5,R)]
+ ]),
+ // 5 최후 방어: every shape under pressure.
+ 5:combineWaves(22,[
+  [row(.7,0,[G,B,G,G],1.6),meet(3,1,B,[G,G,R]),pack(11,1,[R,R,R],.4),both(16.5,G)],
+  [meet(.7,0,B,[G,G,R]),meet(3.7,1,B,[G,G,R]),zig(9,0,[[R,R],[G,G],[R,R]],2.4),both(17,B)],
+  [[[.8,1,X]],pack(1.4,0,[G,G],.7),meet(6,0,B,[G,R]),pack(8,1,[G,G],.7),both(12.6,R),[[17,0,G]],[[18,1,R]]]
+ ])
+};
+const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44]};
 const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
 function reset(){op=1;wave=0;stageTime=0;speed=1;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:292,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];$('speedBtn').textContent='속도 ×1';logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
@@ -374,7 +387,7 @@ function pulse(){if(phase==='practice'){if(practice.task!=='pulse'||practice.don
 function enemyLeak(e){const d=TYPES[e.type];leaks++;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,509,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave){showToast('제'+wave+'파 공격 시작',1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sound(240,.18,'square',.05);}}
-  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! 정비소 방면입니다.');sound(210,.22,'sawtooth',.07);}}
+  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
   for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=506){e.hp=-999;enemyLeak(e);}}
   for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y);sound(430,.03,'square',.012);}}}
