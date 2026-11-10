@@ -137,12 +137,12 @@ R3D.boot=function(G,field){
  window.addEventListener('orientationchange',()=>{needLayout=true;});
 
  /* ---------- frame ---------- */
- let last=0,shakeAmt=0,frameNo=0,slowAcc=0,slowN=0,modeSeen='';
+ let last=0,shakeAmt=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='';
  const shakeOff=new THREE.Vector3();
  function frame(now){
-  const dt=Math.min(.1,Math.max(0,(now-last)/1000||0));last=now;frameNo++;
+  const raw=Math.min(1,Math.max(0,(now-last)/1000||0)),dt=Math.min(.1,raw);last=now;frameNo++;
   const mode=G.compact()?'side':'behind';
-  if(needLayout||mode!==modeSeen){modeSeen=mode;layout();}
+  if(needLayout||mode!==modeSeen){modeSeen=mode;layout();settle=.6;slowAcc=0;slowN=0;}
   // dialogs cover the field: keep the scene alive but cheap
   const covered=G.phase!=='battle'&&G.phase!=='practice';
   const evs=G.events;
@@ -154,8 +154,16 @@ R3D.boot=function(G,field){
   if(shakeAmt>.001){shakeAmt*=Math.exp(-9*dt);const a=shakeAmt*.55;shakeOff.set((Math.random()-.5)*a,(Math.random()-.5)*a,(Math.random()-.5)*a);camera.position.copy(L.camPos).add(shakeOff);}
   else camera.position.copy(L.camPos);
   renderer.render(scene,camera);
-  // adaptive quality: only ever steps down, and only while actually playing
-  if(forcedQ===null&&!covered&&!G.paused&&dt>0){slowAcc+=dt;slowN++;if(slowN>=90){const avg=slowAcc/slowN;slowAcc=0;slowN=0;if(avg>.030&&ctx.quality>0)setQuality(ctx.quality-1);}}
+  // adaptive quality: measured in 1.5 s windows while actually playing. It only ever steps down (30 fps capped devices stay put),
+  // and if the lowest level is still far too slow the 2D canvas takes over.
+  if(forcedQ===null&&!covered&&!G.paused&&dt>0){
+   if(settle>0)settle-=raw;
+   else{slowAcc+=raw;slowN++;
+    if(slowAcc>=1.5&&slowN>=6){const avg=slowAcc/slowN;slowAcc=0;slowN=0;
+     if(ctx.quality>0){if(avg>.036){setQuality(avg>.06?0:ctx.quality-1);settle=.6;}}
+     else if(avg>.055){if(++tooSlow>=2){G.active=false;field.classList.remove('r3d-on');console.warn('2.5D view too slow on this device; using the 2D canvas.');}}
+     else tooSlow=0;}}
+  }
  }
  glc.addEventListener('webglcontextlost',ev=>{ev.preventDefault();G.active=false;field.classList.remove('r3d-on');});
  for(const p of inst)if(p.quality)p.quality(ctx.quality);
