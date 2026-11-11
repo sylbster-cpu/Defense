@@ -21,7 +21,7 @@ let fNum='',fSmall='',fPause='';
 let wFac=[34,34],wOff=46;
 let CW=16,IH=13,TP=4,TBW=11,TBH=3,IR=4.5,GW=44,gradSide=null,gradTop=null;
 // cached strings and their measured widths (rebuilt only when the number they show changes)
-let opKey=-1,opA='',opB='',opC='',opW=140,opBottom=18,fbKey=-1,fbStr='',fbStrP='',fbW=30;
+let opKey=-1,opA='',opB='',opC='',opD='',opW=140,opBottom=18,fbKey=-1,fbStr='',fbStrP='',fbW=30;
 function metrics(){
  s=L.hudScale>0?L.hudScale:1;
  ui=clamp(Math.sqrt(Math.min(L.w,L.h)/300),1,1.4);
@@ -142,7 +142,7 @@ function tray(G,ln,side,warn,pu){
  v.set(A.spawnX+1,0,lz+sg*(A.laneW*.5+(side&&sg>0?1.9:1.1)));ctx.project(v,p);
  if(!(p.z>-1&&p.z<1))return;
  let x,y,mirror=false;
- if(side){x=M+1;y=sg>0?p.y-2-h:p.y+2;}
+ if(side){x=sg>0?M+1:M+64;y=sg>0?p.y-2-h:p.y+2;}   // the near lane's tray clears the item button in the corner
  else{mirror=sg<0;x=mirror?p.x-3-w:p.x+3;y=p.y-h+2;}
  x=Math.round(clamp(x,M,L.w-M-w));y=Math.round(clamp(y,side?M:M+FS+5,L.h-M-h));
  rr(x+.5,y+.5,w-1,h-1,4);
@@ -176,10 +176,9 @@ function surgeGlow(side,pu){
 let waveFx=0;
 function opText(G,side){
  const op=G.op|0,wv=G.noWave()?-1:(G.wave|0),key=op*64+wv+1;
- if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
+ if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';opD=opA+' · '+opB;if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
  const y=M+2+FS*.5,col=waveFx>0?WAVE_HI:CREAM;opBottom=M+FS+5;
- if(side){text(opA,M+5,y,fNum,CREAM,'left');text(opB,L.w-M-5,y,fNum,col,'right');}
- else text(opC,L.w-M-5,y,fNum,col,'right');
+ text(opD,M+5,y,fNum,col,'left');   // one line on the left: the gear button owns the top-right corner
 }
 
 /* ---------- 5. facility labels ---------- */
@@ -208,7 +207,7 @@ function facility(G,ln,side,practice){
   if(x0<L.w*.5+half&&x0+wide>L.w*.5-half)return;
  }
  x=snap(x);y=snap(y);
- text(alive?FAC_NAME[ln]:FAC_OFF,x,y+FS*.5,fNum,alive?CREAM:OFF_COL,align);
+ // no name text: the tutorial explains the bars
  const bx=snap(align==='center'?x-bw*.5:align==='right'?x-bw:x),by=snap(y+FS+3);
  c.fillStyle=BACK;c.fillRect(bx-BD,by-BD,bw+2*BD,bh+2*BD);
  if(alive){c.fillStyle=hp<28?RED:FAC_FILL[ln];c.fillRect(bx,by,Math.max(1/s,snap(bw*clamp(hp/100,0,1))),bh);}
