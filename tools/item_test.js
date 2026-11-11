@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir='/home/user/defense';
+const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir=process.argv[2];
 let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
 const f=path.join(dir,'_it.html');fs.writeFileSync(f,s);
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));let bad=0;const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
