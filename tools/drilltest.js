@@ -12,6 +12,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_drill_'+pr
   const waitHold=async(need,ms=120000)=>{await p.waitForFunction(n=>window.__relay.hold===n,need,{timeout:ms,polling:150});await p.waitForTimeout(600);return (await T("$('coachTitle').textContent+' | '+$('coachMain').textContent")).slice(0,60);};
   const shot=n=>p.screenshot({path:path.join(out,`${n}_${tag}.png`)});
   try{
+   const film=await p.evaluate(()=>document.getElementById('title').classList.contains('film')&&getComputedStyle(document.getElementById('tutorialBtn').parentNode.parentNode).display==='none');log.push('film first: '+film);await p.click('#skipFilm');
    await p.click('#tutorialBtn');log.push(await waitHold('tap'));await shot('d1');await tapLane(0);
    log.push(await waitHold('tap'));await shot('d2');log.push('fac '+await T('JSON.stringify([facilities,core,+stageTime.toFixed(1)])'));
    // 잠긴 조작: 과부하 버튼과 이동이 막혀 있어야 한다
@@ -24,8 +25,11 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_drill_'+pr
    log.push(await waitHold('tap'));log.push('end '+await T('JSON.stringify([facilities,core,+stageTime.toFixed(1)])'));await shot('d6');await tapLane(0);
    await p.waitForFunction(()=>window.__relay.phase==='battle'&&!window.__relay.drill,null,{timeout:20000});log.push('run '+await T('JSON.stringify({op,lesson:lesson&&lesson.st,pulseLock,learned})'));
    // 실전 안내: 과부하
-   log.push(await waitHold('pulse',90000));await shot('l1');const n0=await T('enemies.filter(e=>e.lesson&&e.hp>0).length');
-   await p.click('#pulseBtn');await p.waitForTimeout(500);log.push('lesson '+await T('JSON.stringify({before:'+n0+',after:enemies.filter(e=>e.lesson&&e.hp>0).length,pc:+drone.pulseCooldown.toFixed(1),learned,pulseLock,lesson})'));
+   await p.waitForFunction(()=>/^(move|pulse)/.test(window.__relay.hold),null,{timeout:150000,polling:150});await p.waitForTimeout(600);
+   const hd=await p.evaluate(()=>window.__relay.hold);log.push('lesson asks '+hd+' at '+await T('stageTime.toFixed(1)')+'s, enemies total '+await T('enemies.length'));
+   if(hd.startsWith('move')){await shot('l0');await tapLane(+hd.slice(4));log.push(await waitHold('pulse',20000));}
+   await shot('l1');const inR="enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-DRONE_Y)<effects.pulseRange).length";const n0=await T(inR);
+   await p.click('#pulseBtn');await p.waitForTimeout(500);log.push('lesson '+await T('JSON.stringify({inRangeBefore:'+n0+',pc:+drone.pulseCooldown.toFixed(1),learned,pulseLock,lesson})'));
    if(!(await T('learned.pulse&&learned.drill&&!pulseLock&&drone.pulseCooldown>1')))bad++;
    const sc=await p.evaluate(()=>document.documentElement.scrollWidth+'x'+document.documentElement.scrollHeight);if(sc!==w+'x'+h){bad++;log.push('BAD scroll '+sc);}
   }catch(e){bad++;log.push('BAD '+e.message.split('\n')[0]+' | state '+await T('JSON.stringify({phase,hold:holdState&&holdState.need,drill:drill&&drill.step,facilities,core,n:enemies.length,st:+stageTime.toFixed(1)})'));await shot('fail');}

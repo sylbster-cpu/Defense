@@ -155,20 +155,22 @@ R3D.boot=function(G,field){
   else camera.position.copy(L.camPos);
   renderer.render(scene,camera);
   // adaptive quality: measured in 1.5 s windows while actually playing. It only ever steps down (30 fps capped devices stay put),
-  // and if the lowest level is still far too slow the 2D canvas takes over.
+  // The game is played in 2.5D only: a slow device stays at the lowest level; the 2D canvas is used only when WebGL cannot run at all.
   if(forcedQ===null&&!covered&&!G.paused&&dt>0){
    if(settle>0)settle-=raw;
    else{slowAcc+=raw;slowN++;
     if(slowAcc>=1.5&&slowN>=6){const avg=slowAcc/slowN;slowAcc=0;slowN=0;
      if(ctx.quality>0){if(avg>.036){setQuality(avg>.06?0:ctx.quality-1);settle=.6;}}
-     else if(avg>.055){if(++tooSlow>=2){G.active=false;field.classList.remove('r3d-on');console.warn('2.5D view too slow on this device; using the 2D canvas.');}}
-     else tooSlow=0;}}
+    }}
   }
  }
  glc.addEventListener('webglcontextlost',ev=>{ev.preventDefault();G.active=false;field.classList.remove('r3d-on');});
  for(const p of inst)if(p.quality)p.quality(ctx.quality);
  R3D.ctx=ctx;R3D.ready=true;
- R3D.api={frame,setQuality,get quality(){return ctx.quality;},info:()=>({q:ctx.quality,mode:L.mode,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geoms:renderer.info.memory.geometries,tex:renderer.info.memory.textures,pr:renderer.getPixelRatio()}),hudCanvas:hudc};
+ // which lane a touch belongs to: the boundary is the median strip as drawn, not the middle of the box
+ const tapV=new THREE.Vector3(),tapP={x:0,y:0,z:0};
+ function laneAt(cx,cy){const b=field.getBoundingClientRect();tapV.set(A.droneX,0,0);ctx.project(tapV,tapP);return L.mode==='side'?((cy-b.top)<tapP.y?0:1):((cx-b.left)<tapP.x?0:1);}
+ R3D.api={frame,setQuality,laneAt,get quality(){return ctx.quality;},info:()=>({q:ctx.quality,mode:L.mode,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geoms:renderer.info.memory.geometries,tex:renderer.info.memory.textures,pr:renderer.getPixelRatio()}),hudCanvas:hudc};
  return R3D.api;
 };
 })();

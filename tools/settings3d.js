@@ -12,8 +12,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_set_'+proc
   ck(w+'x'+h+' game holds while open',t0===t1&&await p.isVisible('#settings'),{t0,t1});
   const box=await p.locator('#settings').boundingBox();ck('panel inside screen',box.x>=0&&box.y>=0&&box.x+box.width<=w&&box.y+box.height<=h,box);
   await p.click('#setSpeed button[data-v="2"]');ck('speed x2',await T('speed')===2);
-  await p.click('#setView button[data-v="2d"]');await p.waitForTimeout(300);ck('2D view',!(await T('G3.active'))&&await p.evaluate(()=>getComputedStyle(document.getElementById('game3d')).display)==='none');
-  await p.click('#setView button[data-v="3d"]');await p.waitForTimeout(300);ck('back to 2.5D',await T('G3.active'));
+  ck('no view switch',await p.locator('#setView').count()===0);
   await p.locator('#setBright').fill('130');ck('brightness',(await p.evaluate(()=>document.getElementById('game3d').style.filter))==='brightness(1.3)');
   await p.locator('#setVol').fill('0');ck('volume 0',await T('prefs.vol')===0);
   await p.screenshot({path:path.join(dir,'..','_set_'+w+'.png')});
