@@ -73,10 +73,13 @@ R3D.boot=function(G,field){
   // lane index -> world z of the lane centre
   lz(lane){return L.laneZ[lane];},
   // game x (used by the drone while it slides between lanes) -> world z
-  gz(x){return lerp(L.laneZ[0],L.laneZ[1],(x-G.LANES[0])/(G.LANES[1]-G.LANES[0]));},
+  // Maps bend a lane toward the median in stretches: off() is the sideways shift of a lane at world x, laneZAt() its centre line there.
+  off(lane,x){const f=G.mapShape;if(!f)return 0;const k=f(lane,G.LEAK_Y-x/U);return k?-Math.sign(L.laneZ[lane])*(L.mode==='side'?2.7:2.05)*k:0;},
+  laneZAt(lane,x){return L.laneZ[lane]+ctx.off(lane,x);},
+  gz(x){return lerp(ctx.laneZAt(0,A.droneX),ctx.laneZAt(1,A.droneX),(x-G.LANES[0])/(G.LANES[1]-G.LANES[0]));},
   // world position of the support drone body / an enemy centre / a turret muzzle pivot
   dronePos(out){return out.set(A.droneX,A.droneH,ctx.gz(G.drone.x));},
-  enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;return out.set(ctx.wx(e.y),d.cy,L.laneZ[e.lane]);},
+  enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;const x=ctx.wx(e.y);return out.set(x,d.cy,L.laneZ[e.lane]+ctx.off(e.lane,x));},
   turretPos(lane,out){return out.set(A.turretX,A.turretH,Math.sign(L.laneZ[lane])*A.turretZ);},
   // world -> CSS pixel inside the battlefield box (for hud.js). Returns out with .x,.y and .z (ndc depth, >1 is behind far plane)
   project(v,out){v3.copy(v).project(camera);out.x=(v3.x*.5+.5)*L.w;out.y=(-v3.y*.5+.5)*L.h;out.z=v3.z;return out;},
@@ -137,11 +140,12 @@ R3D.boot=function(G,field){
  window.addEventListener('orientationchange',()=>{needLayout=true;});
 
  /* ---------- frame ---------- */
- let last=0,shakeAmt=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='';
+ let last=0,shakeAmt=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='',mapSeen='';
  const shakeOff=new THREE.Vector3();
  function frame(now){
   const raw=Math.min(1,Math.max(0,(now-last)/1000||0)),dt=Math.min(.1,raw);last=now;frameNo++;
   const mode=G.compact()?'side':'behind';
+  if(G.mapId!==mapSeen){mapSeen=G.mapId;L.map=mapSeen;needLayout=true;}   // a new map: every part lays itself out again
   if(needLayout||mode!==modeSeen){modeSeen=mode;layout();settle=.6;slowAcc=0;slowN=0;}
   // dialogs cover the field: keep the scene alive but cheap
   const covered=G.phase!=='battle'&&G.phase!=='practice';

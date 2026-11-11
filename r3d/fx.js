@@ -389,8 +389,8 @@ function onHit(ev){
   let c=C.amber,style=S_BOLT,w=1.25,life=.15,hot=1,alpha=1;
   if(src==='turret')ctx.turretPos(e.lane,vS);
   else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.05;life=.13;}
-  else if(src==='echo'){vS.set(A.droneX,A.droneH,L.laneZ[e.lane]);c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
-  else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,L.laneZ[e.lane]);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
+  else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
+  else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,ctx.laneZAt(e.lane,ctx.wx(ev.sy)));c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
   else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
   // stop at the hull on the side of the shooter, nudged towards the camera so the flash is not buried in the model
@@ -410,7 +410,7 @@ function onHit(ev){
 }
 function onPulse(ev){
  if(!isLane(ev.lane))return;
- const z=L.laneZ[ev.lane],x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
+ const z=ctx.laneZAt(ev.lane,A.droneX),x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
  wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);
  ribbon(S_COLUMN,x,y+8,z,x,GY,z,4.2,.26,C.amber,1.3,1.25);          // vertical flash through the drone
  emit(P.flash,x,y,z,0,0,0,5.2,C.white,C.amber);emit(P.glow,x,y,z,0,0,0,7,C.amber);
@@ -432,7 +432,7 @@ function onLeak(ev){
 }
 function onMove(ev){
  if(!isLane(ev.from)||!isLane(ev.to)||ev.from===ev.to)return;
- const z0=L.laneZ[ev.from],z1=L.laneZ[ev.to],x=A.droneX,y=A.droneH,sg=z1>z0?1:-1;
+ const z0=ctx.laneZAt(ev.from,A.droneX),z1=ctx.laneZAt(ev.to,A.droneX),x=A.droneX,y=A.droneH,sg=z1>z0?1:-1;
  ribbon(S_STREAK,x,y,z0,x,y,z1,2.1,.36,C.teal,1,1);
  emit(P.glow,x,y,z0,0,0,0,3,C.tealHot,C.teal);
  let n=cnt(8);for(let i=0;i<n;i++)emit(P.zip,x+(rnd()-.5)*.8,y+(rnd()-.5)*.6,z0,(rnd()-.5)*6,(rnd()-.4)*5,-sg*(4+rnd()*10),1,C.tealHot,C.teal);   // thruster kick

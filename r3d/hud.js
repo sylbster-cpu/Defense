@@ -65,7 +65,7 @@ function enemyBars(G,side){
   const e=list[i];if(!e||!(e.hp>0))continue;
   const ln=e.lane;if(ln!==0&&ln!==1)continue;
   const d=ENEMY[e.type]||ENEMY.grunt;
-  v.set(ctx.wx(e.y),d.h+.5,L.laneZ[ln]);ctx.project(v,p);
+  v.set(ctx.wx(e.y),d.h+.5,ctx.laneZAt(ln,ctx.wx(e.y)));ctx.project(v,p);
   if(!(p.z>-1&&p.z<1))continue;                                   // behind the camera or not a number
   const w=Math.round(Math.max(MINW[e.type]||15,1.85*d.r*ctx.pxPerUnit(v))),hw=w*.5;
   if(!(p.x+hw>0&&p.x-hw<L.w&&p.y>0&&p.y<L.h))continue;            // outside the box
@@ -262,14 +262,14 @@ function aidMarks(G,t,side){
  const a=G.aid;if(!a)return;
  if(a.wall>0){   // a bright bar across the stopped lane, just ahead of its leading machine
   const lz=L.laneZ[a.wallLane],list=G.enemies;let lead=-1e9;for(let i=0;i<list.length;i++){const e=list[i];if(e&&e.hp>0&&e.lane===a.wallLane&&e.y>lead)lead=e.y;}
-  const x=ctx.wx(lead>-1e8?Math.min(lead+26,G.LEAK_Y-8):G.DRONE_Y),hw=A.laneW*.5;
-  v.set(x,.6,lz-hw);ctx.project(v,p);v.set(x,.6,lz+hw);ctx.project(v,p2);
+  const x=ctx.wx(lead>-1e8?Math.min(lead+26,G.LEAK_Y-8):G.DRONE_Y),hw=A.laneW*.5,lzx=ctx.laneZAt(a.wallLane,x);
+  v.set(x,.6,lzx-hw);ctx.project(v,p);v.set(x,.6,lzx+hw);ctx.project(v,p2);
   if(p.z>-1&&p.z<1){const pu=.7+.3*Math.sin(t*14);c.lineCap='round';c.globalAlpha=.35*pu;c.strokeStyle='#f0c47b';c.lineWidth=11*ui;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();
    c.globalAlpha=pu;c.lineWidth=3.5*ui;c.strokeStyle='#ffe9b8';c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();c.globalAlpha=1;c.lineCap='butt';
    aidRing((p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'▦','#f0c47b');}
  }
- if(a.turret>0){v.set(A.droneX,1.4,L.laneZ[a.turretLane]);ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.turret/8,'⌖','#f0c47b');}
- if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,L.laneZ[1-G.drone.lane]);ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.clone/6,'❖','#8dd7d0');}
+ if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.turret/8,'⌖','#f0c47b');}
+ if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.clone/6,'❖','#8dd7d0');}
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
 }
 /* move cooldown: a ring around the drone that empties until it can move again */
@@ -291,7 +291,7 @@ function practiceHint(G,t){
  c.lineCap='round';
  if(task==='move'){
   // chevrons flowing from the drone toward lane 1 (정비소), the lane the player has to move to
-  v.set(A.droneX,A.droneH,L.laneZ[to]);ctx.project(v,p2);
+  v.set(A.droneX,A.droneH,ctx.laneZAt(to,A.droneX));ctx.project(v,p2);
   let dx=p2.x-p.x,dy=p2.y-p.y;const dist=Math.sqrt(dx*dx+dy*dy);if(!(dist>24))return;
   dx/=dist;dy/=dist;
   const r0=17*ui,gap=clamp((dist-r0-6*ui)/3,9,26*ui),hw=7*ui;

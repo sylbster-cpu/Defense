@@ -498,7 +498,7 @@ function updateDrone(dt,t,G){
  // range marks: every range runs along the lane, so they are brackets across it. They slide with the drone and dim in transit.
  markA=damp(markA,moving?.3:1,moving?18:6,dt);
  const dx=ef.droneRange*A.U,k=markA*(.5+.12*odS);
- bracket(x+dx,-1,z,k);bracket(x-dx,1,z,k);
+ {const z0=z-ctx.off(dr.lane,x);bracket(x+dx,-1,z0+ctx.off(dr.lane,x+dx),k);bracket(x-dx,1,z0+ctx.off(dr.lane,x-dx),k);}   // each mark sits on the lane where it is, also on a bent lane
  // overload ready: dashed amber frame over the stretch it would hit, and a blinking lamp under the nose
  pulseA=damp(pulseA,live&&dr.pulseCooldown<=.01&&!G.pulseLock?1:0,8,dt);   // hidden until the overload has been introduced
  if(pulseA>.02){
@@ -510,7 +510,7 @@ function updateDrone(dt,t,G){
  // echo: a flickering hologram of the drone keeps firing into the lane it just left, fading with burst
  const echo=G.echoOn();ghost.visible=echo;
  if(echo){ghostKick=damp(ghostKick,0,12,dt);
-  const gz=L.laneZ[dr.echoLane],gy=A.droneH+lift[dr.echoLane]+Math.sin(t*1.9+1)*.1;
+  const gz=ctx.laneZAt(dr.echoLane,A.droneX),gy=A.droneH+lift[dr.echoLane]+Math.sin(t*1.9+1)*.1;
   const a=clamp(dr.burst,0,1)*(.7+.3*Math.sin(t*37)*Math.sin(t*5.3))*(Math.random()<.06?.35:1);
   ghost.position.set(x,gy,gz);ghost.rotation.set(Math.sin(t*1.3)*.03,0,-.07);
   holoMat.uniforms.uA.value=a*(.85+ghostKick*.8);holoMat.uniforms.uT.value=t%100;

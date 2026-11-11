@@ -174,10 +174,9 @@ R3D.register('env',ctx=>{
  /* ================= lanes: road, kerbs, lamps, breach ================= */
  const LAMPX=[1.6,6.6,17.4,23.4,29.4,35.4,41.4,47.4,52.7],LAMPZ=4.78,KERBZ=4.22;
  const C1=0x565d5d,C2=0x4a5153,C3=0x646660,CD=0x33393b; // concrete tones
- const roadGeo=(()=>{const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([RX0,0,-RHW,RX1,0,-RHW,RX1,0,RHW,RX0,0,RHW]),3));
-  g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array([0,1,0,0,1,0,0,1,0,0,1,0]),3));
-  g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array([0,1,1,1,1,0,0,0]),2));g.setIndex([0,2,1,0,3,2]);return g;})();
+ const roadGeo=(()=>{const g=new THREE.BufferGeometry(),NS=152,pos=[],nor=[],uv=[],idx=[];   // 0.5 unit pieces, so the strip can follow a bent lane
+  for(let k=0;k<=NS;k++){const u=k/NS,x=RX0+(RX1-RX0)*u;pos.push(x,0,-RHW,x,0,RHW);nor.push(0,1,0,0,1,0);uv.push(u,1,u,0);if(k<NS){const a=k*2;idx.push(a,a+3,a+2,a,a+1,a+3);}}
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(uv),2));g.setIndex(idx);return g;})();
  function laneParts(lane){
   const P=[],R=RNG(lane*53+11),acc=lane?pal.tealDeep:pal.amberDeep,edge=mixHex(pal.roadEdge,pal.steel,.35);
   // kerbs: low enough to stay under the keep-clear corridor
@@ -209,11 +208,14 @@ R3D.register('env',ctx=>{
   g.add(road,solid(laneParts(i),i*7+3,{foot:.9}),new THREE.Mesh(lampGeo,lampMat));scene.add(g);g.userData.lampMat=lampMat;g.userData.acc=new THREE.Color(acc);g.userData.glow=new THREE.Color(i?0x46d6c6:0xffa53e);return g;
  });
 
+ // Maps bend the lanes: every lane mesh gets its own geometry and its vertices are shifted sideways by ctx.off(lane, x).
+ const bendable=[];lanes.forEach((g,i)=>g.children.forEach(m=>{if(!m.geometry||!m.geometry.attributes.position)return;m.geometry=m.geometry.clone();const pos=m.geometry.attributes.position;bendable.push({lane:i,pos,base:pos.array.slice(),geo:m.geometry});}));
+ function bendLanes(){for(const b of bendable){const a=b.pos.array,o=b.base;for(let k=0;k<a.length;k+=3)a[k+2]=o[k+2]+ctx.off(b.lane,o[k]);b.pos.needsUpdate=true;b.geo.computeBoundingSphere();}}
  // kerb along the outer edge of each road beside the turret bunker (the inner edge there belongs to base.js)
  const kerbFill=[0,1].map(i=>{const P=[],e=mixHex(pal.roadEdge,pal.steel,.35);B(P,3.7,.2,.34,9.6,.1,0,e);B(P,3.7,.2,.34,13.6,.1,0,e,.012);const m=solid(P,40+i,{cast:false,foot:0});scene.add(m);return m;});
 
  /* ================= median strip (stays inside |z| < 2.4 so it fits both layouts; x 8..16 is left to the turret bunker) ================= */
- scene.add(solid((()=>{
+ const median=solid((()=>{
   const P=[],R=RNG(91),cA=0x5b6466,cB=0x6c7473;
   const run=(x0,x1)=>{for(let x=x0,k=0;x<x1-.6;x+=3.2,k++){const len=Math.min(3,x1-x);
    if(R()<.1){B(P,len,.34,.6,x+len/2,.17,(R()-.5)*.8,cA,(R()-.5)*.5);continue;}
@@ -222,7 +224,7 @@ R3D.register('env',ctx=>{
   for(const s of [-1,1]){B(P,6.4,.16,.4,4.2,.08,s*1.15,pal.metalDark);B(P,36.4,.16,.4,35,.08,s*1.15,pal.metalDark);
    for(let x=17.4;x<53;x+=3.6)B(P,.2,.24,.54,x,.12,s*1.15,pal.metal);
    for(const x of s>0?[21,33.8,46.6]:[27.4,40.2])B(P,.7,.74,.5,x,.37,s*1.72,x%2>1?pal.metal:0x3c4a4e,0);}
-  return P;})(),5,{foot:.7}));
+  return P;})(),5,{foot:.7});scene.add(median);
 
  /* ================= scenery ================= */
  const CLIFF_SIDE=24.4,CLIFF_BEHIND=13.6; // world z of the cliff foot line in each layout
@@ -419,7 +421,7 @@ R3D.register('env',ctx=>{
   const sd=_d.set(e[8],e[9],e[10]).cross(sh).normalize();  // across a shaft, facing the camera
   for(let i=0;i<GN;i++){const q=GQ[i],o=i*12;
    if((q.mode&&q.mode!==md)||(q.lo&&lowQ)){for(let k=0;k<12;k+=3)setV(o+k,0,-60,0);setQuadCol(i,q.c,0);q.on=false;continue;}   // not part of this layout (or cut at low quality): collapsed, costs no fill
-   const z=q.z+(q.lane>=0?L.laneZ[q.lane]:0),w=q.w/2,h=q.h/2;
+   const z=q.z+(q.lane>=0?ctx.laneZAt(q.lane,q.x):0),w=q.w/2,h=q.h/2;
    if(q.k==='f'){setV(o,q.x-w,q.y,z-h);setV(o+3,q.x+w,q.y,z-h);setV(o+6,q.x+w,q.y,z+h);setV(o+9,q.x-w,q.y,z+h);}
    else if(q.k==='b'){setV(o,q.x-rx*w-ux*h,q.y-ry*w-uy*h,z-rz*w-uz*h);setV(o+3,q.x+rx*w-ux*h,q.y+ry*w-uy*h,z+rz*w-uz*h);setV(o+6,q.x+rx*w+ux*h,q.y+ry*w+uy*h,z+rz*w+uz*h);setV(o+9,q.x-rx*w+ux*h,q.y-ry*w+uy*h,z-rz*w+uz*h);}
    else{const x1=q.x+sh.x*q.len,y1=q.y+sh.y*q.len,z1=z+sh.z*q.len;setV(o,q.x-sd.x*w,q.y-sd.y*w,z-sd.z*w);setV(o+3,q.x+sd.x*w,q.y+sd.y*w,z+sd.z*w);setV(o+6,x1+sd.x*w,y1+sd.y*w,z1+sd.z*w);setV(o+9,x1-sd.x*w,y1-sd.y*w,z1-sd.z*w);}
@@ -502,10 +504,11 @@ R3D.register('env',ctx=>{
  const fwd=new THREE.Vector3();
  return{
   layout(L){
-   const side=L.mode==='side',key=L.mode+'|'+L.laneZ[0]+'|'+L.laneZ[1];
+   const side=L.mode==='side',key=L.mode+'|'+L.laneZ[0]+'|'+L.laneZ[1]+'|'+(L.map||'');
    // Everything below depends only on the layout mode (the camera never turns inside a mode), so a plain resize skips it.
    if(key!==laidKey){laidKey=key;
     for(let i=0;i<2;i++)lanes[i].position.z=L.laneZ[i];
+    bendLanes();median.visible=!L.map||L.map==='straight';   // bent lanes run over the median strip, so it is cleared on those maps
     sideSet.visible=side;behindSet.visible=!side;
     cliff.position.set(side?-16:0,0,side?CLIFF_SIDE:CLIFF_BEHIND);   // in 'side' the low end of the ridge is slid off screen
     cliffK=side?1:.8;toneCliff();
