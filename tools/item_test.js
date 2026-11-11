@@ -1,0 +1,18 @@
+const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir='/home/user/defense';
+let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
+const f=path.join(dir,'_it.html');fs.writeFileSync(f,s);
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));let bad=0;const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
+ const T=x=>p.evaluate(x=>window.__t(x),x);await p.goto('file://'+f+'?q=0');await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});
+ await T("$('title').hidden=true;mute=true;learned.item=true;learned.pulse=true;beginRun();");await p.waitForTimeout(400);
+ ck('empty slot is disabled',await p.isDisabled('#itemBtn'));
+ const use=async id=>{await T("item='"+id+"';updateControls();");await p.waitForTimeout(200);await p.click('#itemBtn');await p.waitForTimeout(150);};
+ await T('for(let i=0;i<4;i++)spawn(1,"grunt");for(let i=0;i<60;i++)update(1/30);');
+ await use('wall');const y0=await T('enemies.filter(e=>e.lane===1).map(e=>+e.y.toFixed(1)).join()');await p.waitForTimeout(1200);const y1=await T('enemies.filter(e=>e.lane===1&&e.hp>0).map(e=>+e.y.toFixed(1)).join()');ck('wall stops the other lane',y0===y1&&await T('aid.wall>2&&aid.wallLane===1&&item===null'),{y0,y1});
+ await T('facilities=[40,90];');await use('repair');ck('repair +30 on the weaker facility',await T('facilities[0]===70&&facilities[1]===90'));
+ await T('drone.moveCooldown=2;drone.pulseCooldown=9;');await use('charge');ck('overcharge clears both cooldowns',await T('drone.moveCooldown===0&&drone.pulseCooldown<=.05'));
+ await T('aid.wall=0;');const k0=await T('kills');await use('turret');await p.waitForTimeout(2500);ck('temporary turret shoots the other lane',await T('aid.turret>4&&aid.turretLane===1')&&await T('enemies.filter(e=>e.lane===1).some(e=>e.hp<e.maxHp)||kills>'+k0));
+ await use('jam');ck('jammer on',await T('aid.jam>4'));await use('clone');ck('second drone on',await T('aid.clone>5'));
+ await T('enemies=[];spawn(0,"runner");enemies[0].rare=true;enemies[0].y=DRONE_Y-40;item=null;');await p.waitForTimeout(1500);ck('rare kill gives an item',await T('item!==null'),await T('item'));
+ await T('aid.wall=aid.turret=aid.jam=aid.clone=0;item=null;op=5;enemies=[];spawn(0,"boss");');const fb=await T('JSON.stringify({final:enemies[0].final,hops:enemies[0].hops,hp:enemies[0].hp})');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.4,0,0,"drone");');const l1=await T('enemies[0].lane');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.3,0,0,"drone");');const l2=await T('enemies[0].lane');
+ ck('final boss changes lanes at 2/3 and 1/3 hull',l1===1&&l2===0,{fb,l1,l2});ck('no errors',!errs.length,errs.slice(0,2));
+ await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();

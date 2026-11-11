@@ -25,7 +25,10 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_drill_'+pr
    log.push(await waitHold('tap'));log.push('end '+await T('JSON.stringify([facilities,core,+stageTime.toFixed(1)])'));await shot('d6');await tapLane(0);
    await p.waitForFunction(()=>window.__relay.phase==='battle'&&!window.__relay.drill,null,{timeout:20000});log.push('run '+await T('JSON.stringify({op,lesson:lesson&&lesson.st,pulseLock,learned})'));
    // 실전 안내: 과부하
-   await p.waitForFunction(()=>/^(move|pulse)/.test(window.__relay.hold),null,{timeout:150000,polling:150});await p.waitForTimeout(600);
+   for(let i=0;i<700;i++){const hh=await p.evaluate(()=>window.__relay.hold);if(/^(move|pulse)/.test(hh))break;
+    if(hh==='tap'){await p.waitForTimeout(600);log.push('item lesson: '+(await T("$('coachTitle').textContent")));await shot('item');await tapLane(await T('drone.lane'));}   // 아이템 안내가 먼저 나오면 넘긴다
+    await p.waitForTimeout(200);}
+   await p.waitForTimeout(600);
    const hd=await p.evaluate(()=>window.__relay.hold);log.push('lesson asks '+hd+' at '+await T('stageTime.toFixed(1)')+'s, enemies total '+await T('enemies.length'));
    if(hd.startsWith('move')){await shot('l0');await tapLane(+hd.slice(4));log.push(await waitHold('pulse',20000));}
    await shot('l1');const inR="enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-DRONE_Y)<effects.pulseRange).length";const n0=await T(inR);

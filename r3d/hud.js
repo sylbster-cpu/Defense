@@ -176,7 +176,7 @@ function surgeGlow(side,pu){
 let waveFx=0;
 function opText(G,side){
  const op=G.op|0,wv=G.noWave()?-1:(G.wave|0),key=op*64+wv+1;
- if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';opD=opA+' · '+opB;if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
+ if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';opD='WAVE '+op+'-'+(wv<0?1:wv);if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
  const y=M+2+FS*.5,col=waveFx>0?WAVE_HI:CREAM;opBottom=M+FS+5;
  text(G.drill?'훈련':opD,M+5,y,fNum,col,'left');   // one line on the left: the gear button owns the top-right corner
 }
@@ -243,6 +243,35 @@ function pauseVeil(){
  c.fillStyle='rgba(8,18,22,.64)';c.fillRect(0,0,L.w+1,L.h+1);
  text('일시정지',L.w*.5,L.h*.5,fPause,HOT,'center');
 }
+/* rare machines: a gold diamond over the machine (its body also glows in units.js) */
+function rareMarks(G,t){
+ const list=G.enemies;if(!list)return;
+ for(let i=0;i<list.length;i++){const e=list[i];if(!e||!e.rare||!(e.hp>0))continue;
+  const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,v);v.y=d.h+1.5;ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+  const r=(4.5+1.2*Math.sin(t*6))*ui,x=p.x,y=p.y-3*ui;
+  c.globalAlpha=1;c.fillStyle='rgba(5,13,16,.75)';c.beginPath();c.moveTo(x,y-r-1.5);c.lineTo(x+r+1.5,y);c.lineTo(x,y+r+1.5);c.lineTo(x-r-1.5,y);c.closePath();c.fill();
+  c.fillStyle='#ffd866';c.beginPath();c.moveTo(x,y-r);c.lineTo(x+r,y);c.lineTo(x,y+r);c.lineTo(x-r,y);c.closePath();c.fill();}
+}
+/* item effects in play: the wall across a lane, the temporary turret, the second drone, the jammer */
+function aidRing(x,y,k,label,col){
+ const r=13*ui;c.globalAlpha=1;c.fillStyle='rgba(8,18,22,.78)';c.beginPath();c.arc(x,y,r,0,6.2832);c.fill();
+ c.lineWidth=2.6*ui;c.strokeStyle=col;c.beginPath();c.arc(x,y,r,-1.5708,-1.5708+6.2832*clamp(k,0,1));c.stroke();
+ text(label,x,y+.5,fNum,col,'center');
+}
+function aidMarks(G,t,side){
+ const a=G.aid;if(!a)return;
+ if(a.wall>0){   // a bright bar across the stopped lane, just ahead of its leading machine
+  const lz=L.laneZ[a.wallLane],list=G.enemies;let lead=-1e9;for(let i=0;i<list.length;i++){const e=list[i];if(e&&e.hp>0&&e.lane===a.wallLane&&e.y>lead)lead=e.y;}
+  const x=ctx.wx(lead>-1e8?Math.min(lead+26,G.LEAK_Y-8):G.DRONE_Y),hw=A.laneW*.5;
+  v.set(x,.6,lz-hw);ctx.project(v,p);v.set(x,.6,lz+hw);ctx.project(v,p2);
+  if(p.z>-1&&p.z<1){const pu=.7+.3*Math.sin(t*14);c.lineCap='round';c.globalAlpha=.35*pu;c.strokeStyle='#f0c47b';c.lineWidth=11*ui;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();
+   c.globalAlpha=pu;c.lineWidth=3.5*ui;c.strokeStyle='#ffe9b8';c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();c.globalAlpha=1;c.lineCap='butt';
+   aidRing((p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'▦','#f0c47b');}
+ }
+ if(a.turret>0){v.set(A.droneX,1.4,L.laneZ[a.turretLane]);ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.turret/8,'⌖','#f0c47b');}
+ if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,L.laneZ[1-G.drone.lane]);ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.clone/6,'❖','#8dd7d0');}
+ if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
+}
 /* move cooldown: a ring around the drone that empties until it can move again */
 function moveRing(G){
  const d=G.drone,cd=d?+d.moveCooldown:0;if(!(cd>.02))return;
@@ -299,7 +328,7 @@ function frame(dt,t,G){
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
  opText(G,side);
  if(practice||G.hold)practiceHint(G,t);
- if(battle)moveRing(G);
+ if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);}
  if(battle&&G.paused)pauseVeil();
 }
 

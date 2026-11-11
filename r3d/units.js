@@ -351,9 +351,11 @@ function drawEnemy(S,dt,t){
 
  // pose: spawn pop-in with a small overshoot, weight shift from the walk cycle, idle sway from e.wiggle
  let sc=1;if(S.age<POP){const b=S.age/POP-1;sc=Math.max(.05,1+2.2*b*b*b+1.2*b*b);}
+ sc*=e.final?1.22:.9;   // machines are drawn a little smaller than their envelope; the last boss larger
  let sy=sc,sxz=sc,y=GY-T.hip*(1-Math.cos(T.amp*sn))*sc;   // sink a little while the legs are spread: the standing foot stays down
  let roll=sn*T.roll,yaw=Math.sin(t*T.swf+wig)*T.sway,pitch=Math.cos(ph*2)*T.roll*.4;
  let flash=clamp((e.flash||0)/.12,0,1),dull=S.slowK;
+ if(e.rare)flash=Math.max(flash,.42+.2*Math.sin(t*7));   // rare machines glow
  if(!T.hip)y+=Math.abs(Math.sin(ph*5.3))*.025;            // tracked: engine rumble
  if(S.stunK>.02){   // overload stun: rocked back on its heels, shaking, arcs crawling over the hull
   const sk=S.stunK;

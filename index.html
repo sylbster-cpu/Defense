@@ -267,6 +267,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .fbtn{position:absolute;z-index:6;display:grid;place-items:center;padding:0;margin:0;font-family:inherit;color:#eae9dc;border:1px solid #55666b;background:rgba(18,30,36,.82);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
 #gearBtn{position:fixed;z-index:10001;right:calc(12px + env(safe-area-inset-right,0px));top:calc(11px + env(safe-area-inset-top,0px));width:34px;height:34px;font-size:19px;line-height:1}
 #itemBtn{left:10px;bottom:10px;width:50px;height:50px;border-radius:13px;border:2px dashed #7d9094;color:#8fa0a2;font-size:21px;opacity:.75;cursor:default}
+#itemBtn.has{border-style:solid;border-color:#84d8d0;color:#eaf7f5;background:rgba(32,56,59,.92);opacity:1;font-size:25px;cursor:pointer}#itemBtn.has:disabled{opacity:.6}
 #pulseBtn{right:10px;bottom:10px;width:58px;height:58px;border-radius:15px;border:2px solid var(--amber);color:#f5cf8a;--cd:0;background:conic-gradient(rgba(10,18,22,.9) calc(var(--cd)*360deg),rgba(70,52,38,.94) 0)}
 #drillSkip{left:8px;top:30px;height:30px;padding:0 11px;font-size:12px;font-weight:700}#drillSkip[hidden]{display:none}
 #pulseBtn .ico{font-size:28px;line-height:1}
@@ -426,7 +427,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.11-3';
+const BUILD='2026.11.11-4';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -438,10 +439,29 @@ prefs.speed=prefs.speed===2?2:1;prefs.vol=Math.max(0,Math.min(100,+prefs.vol||0)
 function savePrefs(){try{localStorage.setItem('relayPrefs',JSON.stringify(prefs));}catch(e){}}
 let settingsOpen=false,pcMax=0;
 // What the player has already been taught (kept in this browser): the drill, and the overload lesson given during a real operation.
-const learned={drill:false,pulse:false};try{Object.assign(learned,JSON.parse(localStorage.getItem('relayLearn')||'{}'));}catch(e){}
+const learned={drill:false,pulse:false,item:false};try{Object.assign(learned,JSON.parse(localStorage.getItem('relayLearn')||'{}'));}catch(e){}
 function saveLearned(){try{localStorage.setItem('relayLearn',JSON.stringify(learned));}catch(e){}}
 // drill = the scripted tutorial running on the real rules. lesson = the overload lesson waiting inside operation 1. holdState = the game is held until the player does one thing.
 let drill=null,lesson=null,holdState=null,pulseLock=false;
+// Items: one slot, used with the button at the bottom left. They are single rescues, not standing upgrades.
+const ITEMS={wall:{name:'차단벽',icon:'▦',desc:'기체가 없는 전선의 적을 4초 동안 멈춥니다'},repair:{name:'긴급 수리',icon:'✚',desc:'더 많이 부서진 시설의 내구도를 30 회복합니다'},charge:{name:'과충전',icon:'⚡',desc:'이동 대기와 과부하 재충전을 즉시 끝냅니다'},turret:{name:'임시 포탑',icon:'⌖',desc:'기체가 없는 전선에 8초 동안 포탑을 세웁니다'},jam:{name:'전파 교란',icon:'≋',desc:'모든 적을 5초 동안 느리게 합니다'},clone:{name:'분신 기체',icon:'❖',desc:'6초 동안 반대 전선에도 기체가 사격합니다'}};
+let item=null,liveRun=false,waveHurt=false;const aid={wall:0,wallLane:0,turret:0,turretLane:0,turretCool:0,jam:0,clone:0,cloneCool:0};
+function applyItem(id){const other=1-drone.lane;
+ if(id==='wall'){aid.wall=4;aid.wallLane=other;}
+ else if(id==='repair'){const l=facilities[0]<=facilities[1]?0:1;facilities[l]=Math.min(100,facilities[l]+30);}
+ else if(id==='charge'){drone.moveCooldown=0;drone.pulseCooldown=0;}
+ else if(id==='turret'){aid.turret=8;aid.turretLane=other;aid.turretCool=0;}
+ else if(id==='jam')aid.jam=5;
+ else if(id==='clone'){aid.clone=6;aid.cloneCool=0;}
+ ev3({t:'item',id,lane:other});sound(520,.18,'triangle',.06);}
+function useItem(){if(!item||phase!=='battle'||paused||holdState||drill)return;const id=item;item=null;applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
+// Earned by destroying a rare machine or a mid boss, or by getting through a wave without a breach. A rare machine destroyed with the slot full fires its item at once.
+function grantItem(now){if(drill)return;const ids=Object.keys(ITEMS),id=ids[Math.random()*ids.length|0];
+ if(item){if(now){applyItem(id);showToast('레어 격파 · '+ITEMS[id].name+' 즉시 발동',2000);}return;}
+ item=id;showToast('아이템 획득 · '+ITEMS[id].name,2000);sound(880,.14,'sine',.05);updateControls();}
+function aidStep(dt){if(aid.wall>0)aid.wall-=dt;if(aid.jam>0)aid.jam-=dt;
+ if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,BAL.turretRange);if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'echo');shotSound('turret');}}}
+ if(aid.clone>0){aid.clone-=dt;aid.cloneCool-=dt;if(aid.cloneCool<=0){const l=1-drone.lane,e=pickTarget(l,drone.y,effects.droneRange);if(e){aid.cloneCool=BAL.droneRate;damageEnemy(e,BAL.droneDmg,LANES[l],drone.y,'echo');shotSound('echo');}}}}
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
 // each operation asks for a different way of playing.
@@ -490,34 +510,51 @@ const stages={
   [[[.8,1,X]],pack(1.4,0,[G,G],.7),meet(6,0,B,[G,R]),pack(8,1,[G,G],.7),both(12.6,R),[[17,0,G]],[[18,1,R]]]
  ])
 };
+// More, smaller machines: every third runner or grunt in a schedule brings one extra runner close behind it, and ordinary machines have less hull (HP_SCALE).
+for(const k in stages){const add=[];let n=0;for(const ev of stages[k])if(ev[2]==='runner'||ev[2]==='grunt'){if(++n%3===0)add.push([ev[0]+.45,ev[1],'runner']);}stages[k]=stages[k].concat(add).sort((a,b)=>a[0]-b[0]);}
+const HP_SCALE=.85,RARE_P=.05;
 const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44]};
 const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
-function reset(){op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
-function newStage(index){op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('작전 '+String(index).padStart(2,'0')+' · '+OP_NAMES[index],2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
+function reset(){item=null;liveRun=false;waveHurt=false;aid.wall=aid.turret=aid.jam=aid.clone=0;op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
+function newStage(index){waveHurt=false;aid.wall=aid.turret=aid.jam=aid.clone=0;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+OP_NAMES[index],2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
-function spawn(lane,type){const m=TYPES[type],hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]);const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};enemies.push(e);ev3({t:'spawn',e});}
-function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sound(360,.035,'triangle',.025);}}
+function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
+ if(!drill){if(type==='boss'){if(op===TOTAL_OPS){final=true;hp=Math.round(hp*1.5);}}else if(Math.random()<RARE_P){rare=true;hp=Math.round(hp*1.6);}}   // rare machines drop an item; the last boss changes lanes twice
+ const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
+function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;
+ if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);shotSound('boom');ev3({t:'spawn',e});}
+ ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');shotSound(e.type==='boss'?'boom':'kill');if(e.rare)grantItem(true);else if(e.type==='boss'&&!e.final)grantItem(false);}}
 function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
+// Shots and blasts: a falling tone plus a filtered noise crack. [from Hz, to Hz, seconds, wave, tone level, noise level, noise cutoff]
+const SHOT={turret:[210,62,.13,'square',.07,.085,1100],drone:[1050,380,.08,'sawtooth',.04,.03,3200],echo:[780,330,.07,'triangle',.028,.018,2400],kill:[300,55,.22,'sawtooth',.075,.1,800],boom:[150,34,.5,'sawtooth',.11,.14,480]};
+let noiseBuf=null;const shotAt={};
+function shotSound(kind){if(mute||prefs.vol<=0)return;try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const a=audio,t=a.currentTime,P=SHOT[kind],v=prefs.vol/100;
+ if(shotAt[kind]&&t-shotAt[kind]<.05)return;shotAt[kind]=t;
+ const o=a.createOscillator(),g=a.createGain();o.type=P[3];o.frequency.setValueAtTime(P[0],t);o.frequency.exponentialRampToValueAtTime(P[1],t+P[2]);g.gain.setValueAtTime(P[4]*v,t);g.gain.exponentialRampToValueAtTime(.0001,t+P[2]);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+P[2]+.02);
+ if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate*.6|0,a.sampleRate);const d=noiseBuf.getChannelData(0);let x=12345;for(let i=0;i<d.length;i++){x=(x*1103515245+12345)&0x7fffffff;d[i]=x/0x3fffffff-1;}}
+ const n=a.createBufferSource(),f=a.createBiquadFilter(),ng=a.createGain();n.buffer=noiseBuf;f.type='lowpass';f.frequency.setValueAtTime(P[6],t);f.frequency.exponentialRampToValueAtTime(P[6]*.35,t+P[2]);ng.gain.setValueAtTime(P[5]*v,t);ng.gain.exponentialRampToValueAtTime(.0001,t+P[2]*.9);n.connect(f);f.connect(ng);ng.connect(a.destination);n.start(t,(t*7.3)%.08,P[2]);
+ }catch(e){}}
 function sound(freq,duration=.08,type='sine',volume=.05){if(mute||prefs.vol<=0)return;volume*=prefs.vol/100;try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();}if(audio.state==='suspended')audio.resume();const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.72),t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration);}catch(e){mute=true;}}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
 function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sound(510,.13,'sine',.035);addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
 function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange);if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sound(165,.28,'sawtooth',.09);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
-function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('제'+wave+'파 공격 시작',1600);addLog('제'+wave+'파 공격 감지.');}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;waveHurt=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
+function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);if(!waveHurt)grantItem(false);waveHurt=false;addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sound(240,.18,'square',.05);}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
-  for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y){e.hp=-999;enemyLeak(e);}}
-  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}sound(430,.03,'square',.012);}}}
-  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');sound(750,.025,'triangle',.012);}}
+  for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y){e.hp=-999;enemyLeak(e);}}
+  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}shotSound('turret');}}}
+  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');shotSound('drone');}}
   if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y,'echo');}}}
+  aidStep(dt);
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
   if(core<=0){if(drill){drillCoreDown();return;}finish(false);return;}
-  if(nextSpawn>=pattern.length&&enemies.length===0){if(op<TOTAL_OPS)upgradeScreen();else finish(true);}
+  if(nextSpawn>=pattern.length&&enemies.length===0){if(!waveHurt&&!drill)grantItem(false);if(op<TOTAL_OPS)upgradeScreen();else finish(true);}
 }
 // Two offers follow facility state and one rotates per operation. Repeating a card raises its rank
 // without resetting other skills; the run has exactly four choices. Stats per rank live in BAL.card.
@@ -538,7 +575,7 @@ function upgradeScreen(){phase='upgrade';stageReports.push({op,facilities:[...fa
  offeredUpgrades=[...facilityOffers,alternatives[(op-1)%alternatives.length]];
  const tags={stable:'발전소 생존',emergency:'발전소 붕괴',precision:'정비소 생존',rubble:'정비소 붕괴'};
  const choices=offeredUpgrades.map((id,i)=>({id,label:CARD_NAMES[id],rank:upgradeRanks[id],tag:i<facilityOffers.length?tags[id]:'추가 선택',desc:cardDescription(id)}));
- const html=`<div class="tiny">작전 ${String(op).padStart(2,'0')} / 05 · 강화 ${upgradeHistory.length+1} / 04</div><h2>강화 선택</h2><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
+ const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / 04</div><h2>강화 선택</h2><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
  renderOverlay(html,'upgrade');for(const btn of document.querySelectorAll('[data-choice]'))btn.addEventListener('click',()=>choose(btn.dataset.choice));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id])return;const n=++upgradeRanks[id];
@@ -546,7 +583,7 @@ function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.ca
  upgradeHistory.push({op,id,rank:n});offeredUpgrades=[];sound(680,.3,'sine',.055);addLog('강화 기술 적용: '+CARD_NAMES[id]+' Lv.'+n);newStage(op+1);}
 function finish(victory){phase='finish';ev3({t:'finish',victory});const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sound(victory?660:125,.4,'triangle',.07);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
- const progress='작전 '+String(op).padStart(2,'0')+' / 05 · '+(victory?'전체 방어 성공':'도전 종료');
+ const progress='WAVE '+op+'-'+wave+' · '+(victory?'전체 방어 성공':'도전 종료');
  renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());updateControls();updateUI();}
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=50*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
@@ -607,7 +644,7 @@ const sideWord=l=>wantsCompactCanvas()?(l?'아래쪽':'위쪽'):(l?'오른쪽':'
 function hold(need,title,main,hint,then){holdState={need,then,t0:performance.now()};$('toast').classList.remove('show');setCoach(title,main,hint||(need==='tap'?'화면을 터치하면 계속':''));$('coach').classList.add('hold');updateControls();}
 function releaseHold(){const h=holdState;if(!h)return;holdState=null;hideCoach();$('coach').classList.remove('hold');lastTime=performance.now();if(h.then)h.then();updateControls();}
 function holdTick(dt){drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);fxStep(dt);}
-function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
+function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);liveRun=true;lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
 
 /* ---------- drill: the tutorial is a scripted fight on the real rules ----------
    Part 1 shows a loss: the drone is held on the workshop lane while the power-plant lane is overrun, the plant falls, then the hub falls.
@@ -630,7 +667,7 @@ function drillTick(dt){const d=drill;update(dt*d.speed);if(!drill||holdState)ret
   const threat=l=>enemies.some(e=>e.hp>0&&e.lane===l&&e.y>=DRONE_Y-(l?150:120));
   if(drone.lane===0&&threat(1)&&!d.saidA){d.saidA=true;hold('move1','정비소 전선 위기',sideWord(1)+' 전선에 적이 몰렸습니다. 포탑만으로는 막지 못합니다. 전장의 '+sideWord(1)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(1)+' 터치',()=>showToast('옮긴 뒤 '+BAL.moveBase+'초 동안은 다시 옮길 수 없습니다',3000));}
   else if(drone.lane===1&&threat(0)&&!d.saidB){d.saidB=true;hold('move0','발전소 전선 위기','이번에는 '+sideWord(0)+' 전선입니다. 전장의 '+sideWord(0)+'을 터치해 되돌아가세요.','전장 '+sideWord(0)+' 터치');}
-  else if(nextSpawn>=pattern.length-1&&enemies.length===0){d.step='end';hold('tap','훈련 종료','작전은 다섯 번입니다. 작전이 끝날 때마다 강화 기술을 하나 고르고, 다섯 번째 작전까지 송신소를 지키면 승리합니다.','화면을 터치하면 작전 시작',()=>{learned.drill=true;saveLearned();beginRun();});}
+  else if(nextSpawn>=pattern.length-1&&enemies.length===0){d.step='end';hold('tap','훈련 종료','전투는 WAVE 1-1부터 5-3까지 이어집니다. 공격을 세 번 막을 때마다 강화 기술을 하나 고릅니다. 3-3과 4-3에는 중간 보스가, 5-3에는 최종 보스가 나옵니다.','화면을 터치하면 작전 시작',()=>{learned.drill=true;saveLearned();beginRun();});}
  }
 }
 $('drillSkip').addEventListener('click',()=>{if(!drill)return;holdState=null;hideCoach();$('coach').classList.remove('hold');learned.drill=true;saveLearned();beginRun();});
@@ -643,7 +680,8 @@ function drillCoreDown(){const d=drill;ev3({t:'finish',victory:false});sound(125
    No enemies are added. The overload stays locked until three machines of one lane are inside the overload range at once
    (in operation 1 that is the pack on the workshop lane at about 23 s; from operation 2 on, two are enough). Then the game holds and asks for the overload. */
 const LESSON_AFTER=8;
-function lessonTick(){if(!lesson||phase!=='battle'||stageTime<LESSON_AFTER)return;
+function lessonTick(){if(liveRun&&item&&!learned.item&&phase==='battle'&&stageTime>1.5){hold('tap','아이템 획득 · '+ITEMS[item].name,ITEMS[item].desc+'. 왼쪽 아래 버튼을 누르면 사용합니다. 아이템은 한 번에 하나만 들 수 있고, 레어 적이나 중간 보스를 잡거나 피해 없이 공격을 넘기면 얻습니다.',null,()=>{learned.item=true;saveLearned();});return;}
+ if(!lesson||phase!=='battle'||stageTime<LESSON_AFTER)return;
  const need=op===1?3:2;let lane=-1;
  for(const l of [drone.lane,1-drone.lane]){let n=0;for(const e of enemies)if(e.hp>0&&e.lane===l&&Math.abs(e.y-DRONE_Y)<effects.pulseRange-12)n++;if(n>=need){lane=l;break;}}
  if(lane<0)return;
@@ -655,6 +693,7 @@ window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog)
 let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
 function updateControls(){const playing=phase==='battle';const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
  pb.disabled=settingsOpen||(holdState?!want:(!playing||paused||cd>.01||locked));pb.classList.toggle('coach-target',want);pb.classList.toggle('locked',locked);$('drillSkip').hidden=!drill;
+ const ib=$('itemBtn');ib.disabled=settingsOpen||!(item&&playing&&!paused&&!holdState&&!drill);ib.textContent=item?ITEMS[item].icon:'▢';ib.classList.toggle('has',!!item);ib.setAttribute('aria-label',item?'아이템 사용: '+ITEMS[item].name:'아이템 없음');
  if(cd>.01){if(cd>pcMax)pcMax=cd;}else pcMax=0;pb.classList.toggle('cooling',cd>.01);pb.style.setProperty('--cd',cd>.01?(cd/pcMax).toFixed(3):'0');$('pulseDetail').textContent=cd>.01?Math.ceil(cd):'';}
 function updateUI(){setBar('hubBar',core,100);$('hubNum').textContent=Math.round(core);$('hubChip').style.visibility=phase==='battle'?'visible':'hidden';updateControls();}
 function noWave(){return phase==='intro';}
@@ -733,7 +772,7 @@ function drawCompact(now){
  line(xEnd+15,ys[1],hubX-7,hubY,'#578b84',1.2);
  circle(hubX-4,hubY,7,core>0?'#477e72':'#7e4641','#a0cdb6',1.2);
  // Header is compact and stays out of the incoming enemies.
- text(drill?'훈련':'작전 '+String(op).padStart(2,'0')+' / 05 · 공격 '+(noWave()?'—':wave)+' / 03',8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
+ text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave),8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
  // Preview the next five seconds of arrivals in each lane without using tiny top-of-canvas icons.
  if(phase==='battle'){
   const warn=surges.some(s=>s.t-stageTime>=-.3&&s.t-stageTime<=3.5);
@@ -807,7 +846,7 @@ function drawCompact(now){
 }
 function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact(now);return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop(now);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)drawEnemy(e,now);drawDrone(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
 function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(drill)drillTick(dt);else{lessonTick();update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
-$('pulseBtn').addEventListener('click',pulse);
+$('pulseBtn').addEventListener('click',pulse);$('itemBtn').addEventListener('click',useItem);
 function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(holdState&&holdState.need==='tap'){if(performance.now()-holdState.t0>450)releaseHold();return;}if(phase!=='battle')return;if(G3.active&&G3.renderer.laneAt){switchLane(G3.renderer.laneAt(ev.clientX,ev.clientY));return;}const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
 canvas.addEventListener('pointerdown',fieldTap);
 /* Settings: opened with the gear, the P or Esc key, or the browser's back button. The game holds while it is open. */
@@ -828,7 +867,7 @@ window.addEventListener('blur',()=>{if(phase==='battle'&&!paused){paused=true;up
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='battle'&&!paused){paused=true;updateControls();}});
 // 2.5D view (r3d/): loaded only when WebGL exists. If a script or the renderer fails, the 2D canvas keeps working. ?2d=1 forces 2D.
 Object.assign(G3,{W,H,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,LANE_LEN,BAL,TYPES,COLORS,focusBonus,pierceOn,echoOn,noWave,compact:wantsCompactCanvas});
-Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
+Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},item:{get:()=>item},aid:{get:()=>aid},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
 window.__relay=G3;
 (function load3d(){if(/[?&]2d\b/.test(location.search)||!window.WebGLRenderingContext)return;
  const files=['three.min.js','core.js','env.js','base.js','units.js','fx.js','hud.js'];let i=0;
