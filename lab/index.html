@@ -372,7 +372,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow"><label for="setBright">화면 밝기</label><input type="range" id="setBright" min="70" max="150" step="5"></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=lab1"></script>
+<script src="sfx.js?v=lab2"></script>
 <script>
 'use strict';
 (() => {
@@ -428,7 +428,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.11-7-lab1';   // lab build: the game of build 2026.11.11-7 with set C sounds and the reworked impact feedback. The game in the folder above is untouched.
+const BUILD='2026.11.11-7-lab2';   // lab build: the game of build 2026.11.11-7 with set C sounds and the reworked impact feedback. The game in the folder above is untouched.
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -568,7 +568,7 @@ function buzz(p){if(mute||prefs.vol<=0)return;try{if(navigator.vibrate)navigator
 let stopT=0;const stopQ=[];
 function hitStop(sec,delay=0){if(drill)return;if(delay>0)stopQ.push([performance.now()+delay*1000,sec]);else stopT=Math.max(stopT,sec);}
 function stopTick(dt){const now=performance.now();for(let i=stopQ.length-1;i>=0;i--)if(now>=stopQ[i][0]){stopT=Math.max(stopT,stopQ[i][1]);stopQ.splice(i,1);}if(stopT>0){stopT-=dt;return true;}return false;}
-const SHOT_C={turret:'turret',drone:({b:'drone_b',c:'drone_c'})[new URLSearchParams(location.search).get('drone')]||'drone',echo:'echo'};   // the drone gun has three candidates: A by default, ?drone=b or ?drone=c for the other two
+const SHOT_C={turret:'turret',drone:({d:'drone',e:'drone_b',f:'drone_c'})[new URLSearchParams(location.search).get('drone')]||'drone_b',echo:'echo'};   // the drone gun has three candidates: E by default, ?drone=d or ?drone=f for the other two
 function shotSound(kind){if(SHOT_C[kind]){sfx(SHOT_C[kind]);return;}if(kind==='boom'){sfx('kill_brute',0,.78);return;}if(mute||prefs.vol<=0)return;try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const a=audio,t=a.currentTime,P=SHOT[kind],v=prefs.vol/100;
  if(shotAt[kind]&&t-shotAt[kind]<.05)return;shotAt[kind]=t;
  const o=a.createOscillator(),g=a.createGain();o.type=P[3];o.frequency.setValueAtTime(P[0],t);o.frequency.exponentialRampToValueAtTime(P[1],t+P[2]);g.gain.setValueAtTime(P[4]*v,t);g.gain.exponentialRampToValueAtTime(.0001,t+P[2]);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+P[2]+.02);

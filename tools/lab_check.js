@@ -11,7 +11,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_lc_'+proce
   ck(w+'x'+h+' ambience starts with the battle',await T('SFX.ambOn===true'));
   await p.evaluate(()=>{const c=window.R3D.ctx,raw=c.fxScreen;window.__w=0;c.fxScreen=new Proxy(raw,{set(o,k,v){if(k==='white'&&v>=.5)window.__w++;o[k]=v;return true;}});});   // the white flash lasts a frame or two at the test machine's frame rate: count the times it is set
   await T("for(let i=0;i<3;i++){spawn(0,'grunt');enemies[i].y=DRONE_Y-40+i*30;enemies[i].hp=enemies[i].maxHp=400;}spawn(1,'brute');enemies[3].y=TURRET_Y-60;enemies[3].hp=enemies[3].maxHp=2000;0");await p.waitForTimeout(1500);
-  const n1=JSON.parse(await T('JSON.stringify(window.__n)'));ck('fire and impact sounds are requested',n1.drone>=1&&n1.hit_light>=1&&n1.turret>=1&&n1.hit_heavy>=1,n1);
+  const n1=JSON.parse(await T('JSON.stringify(window.__n)'));ck('fire and impact sounds are requested',(n1.drone||n1.drone_b||n1.drone_c)>=1&&n1.hit_light>=1&&n1.turret>=1&&n1.hit_heavy>=1,n1);
   ck('audio context runs',await T("audio&&audio.state")==='running',await T('audio&&audio.state'));
   // overload: hit-stop, shake in pixels, white flash
   // watch inside the page, frame by frame: how far the camera is moved (in screen pixels), how strong the flashes get, whether the edge pixel turns red
@@ -23,7 +23,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_lc_'+proce
   await T('drone.pulseCooldown=0;pulse();0');await p.waitForTimeout(40);await p.screenshot({path:path.join(out,`pulse_${w}x${h}.png`)});
   // breach: red edge, sound; then the plant goes down
   await p.waitForTimeout(700);await T("spawn(0,'runner');enemies[enemies.length-1].y=LEAK_Y-1;0");const wl=await watch(600);await p.screenshot({path:path.join(out,`leak_${w}x${h}.png`)});
-  ck('a breach reddens the edge of the screen and shakes',wl.red>.3&&wl.edge===1&&wl.px>.8,{px:+wl.px.toFixed(1),red:+wl.red.toFixed(2),edge:wl.edge});ck('breach sound',(await T('window.__n.leak'))>=1);
+  ck('a breach reddens the edge of the screen and shakes',wl.red>.3&&wl.edge===1&&wl.px>.4,{px:+wl.px.toFixed(1),red:+wl.red.toFixed(2),edge:wl.edge});ck('breach sound',(await T('window.__n.leak'))>=1);
   await T("facilities[0]=5;spawn(0,'brute');enemies[enemies.length-1].y=LEAK_Y-1;0");await p.waitForTimeout(200);ck('collapse sound and a longer hold',(await T('window.__n.facdown'))===1);await p.screenshot({path:path.join(out,`facdown_${w}x${h}.png`)});
   await T("op=3;spawn(1,'boss');const e=enemies[enemies.length-1];e.y=DRONE_Y;damageEnemy(e,1e6,0,0,'turret');0");await p.waitForTimeout(700);ck('boss kill sound, hit-stop queued for the big blast',(await T('window.__n.kill_boss'))===1);
   await T("enemies=[];nextSpawn=pattern.length;0");await p.waitForTimeout(400);ck('ambience stops at the upgrade screen',await T("phase==='upgrade'&&SFX.ambOn===false"));

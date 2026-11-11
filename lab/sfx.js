@@ -44,15 +44,17 @@ const RECIPES={
  // heavy autocannon: crack, a saturated low body, the breech cycling a moment later, a short tail
  turret:[4,1.1,2.4,.8,.62,.5,(o,h,R)=>{noise(h,0,.009,'hp',1800,1800,.7,.7,R,.0004);sweep(o,0,.16,250,82,1,'sine',.002,.55);sweep(o,0,.07,520,170,.4,'square',.001);noise(h,.002,.1,'bp',900,380,.8,.5,R);noise(h,.004,.24,'lp',2600,260,.7,.3,R);noise(h,.006,.16,'hp',2000,3200,.7,.07,R,.003);
    modal(h,.045+R()*.01,[[780,.06,1],[1310,.05,.7],[2150,.035,.5],[3240,.025,.3]],.12,R);},4.2],
- // the support drone's rapid gun, three candidates. A: the turret's smaller sibling, a light autocannon with its own breech click
- drone:[4,.8,2.4,.7,.5,.4,(o,h,R)=>{noise(h,0,.007,'hp',2200,2200,.7,.7,R,.0004);sweep(o,0,.12,330,105,1,'sine',.002,.55);sweep(o,0,.055,680,230,.4,'square',.001);noise(h,.002,.08,'bp',1100,450,.8,.5,R);noise(h,.004,.18,'lp',2800,300,.7,.3,R);
-   modal(h,.03+R()*.008,[[1040,.04,1],[1750,.035,.7],[2870,.025,.45]],.1,R);},3.4],
- // B: an electric pulse with a low thump under it, kin to the overload
- drone_b:[4,.8,2.2,.6,.45,.4,(o,h,R)=>{noise(h,0,.006,'hp',2500,2500,.7,.6,R,.0004);sweep(o,0,.11,260,90,1,'sine',.002,.55);
-   const z=new Float32Array(N(.09));sweep(z,0,.09,300,170,1,'saw',.001);sweep(z,0,.09,600,340,.5,'square',.001);for(let i=0;i<z.length;i++)z[i]=Math.abs(z[i])*(.6+.4*R());hp1(z,200);add(h,z,.002,.35);
-   noise(h,.003,.1,'bp',1800,700,1.2,.3,R);crackle(h,.02,.12,700,60,.25,R);},3],
- // C: a dull, dry machine gun: almost no top end
- drone_c:[4,.7,2.6,.6,.4,.4,(o,h,R)=>{noise(h,0,.004,'hp',1800,1800,.7,.4,R,.0004);sweep(o,0,.1,240,80,1,'sine',.0015,.5);sweep(o,0,.04,480,200,.5,'tri',.001);noise(h,.001,.06,'lp',1600,350,.8,.6,R);noise(o,.004,.14,'lp',500,120,.9,.5,R,.004);},2.2],
+ // the support drone's rapid gun. A gunshot is noise, not a note: the body is band-limited noise, and the only pitched part is a very short knock near 100 Hz.
+ // (the first three candidates had one clear partial near 200 Hz carrying 67-79% of the energy, which is the sound of a tom: "tong")
+ // D: a dry machine gun
+ drone:[4,.8,2.6,.7,.5,.4,(o,h,R)=>{noise(h,0,.006,'hp',1800,1800,.7,.9,R,.0003);noise(h,.001,.06,'bp',900,350,.7,.55,R,.001);noise(o,.001,.1,'bp',340,170,.8,2.6,R,.001);sweep(o,0,.045,105,85,.3,'sine',.001);
+   noise(h,.004,.16,'lp',2600,300,.7,.25,R);modal(h,.03+R()*.008,[[2100,.02,1],[3300,.015,.6]],.05,R);},1.5],
+ // E: a heavier autocannon, more low noise and a longer tail
+ drone_b:[4,.9,2.8,.8,.6,.4,(o,h,R)=>{noise(h,0,.008,'hp',1500,1500,.7,1,R,.0003);noise(h,.001,.09,'bp',600,220,.8,1,R,.001);noise(o,.001,.14,'bp',260,130,.8,2.2,R,.001);sweep(o,0,.07,92,70,.4,'sine',.001);
+   noise(h,.004,.2,'lp',2400,300,.7,.3,R);modal(h,.04+R()*.01,[[1500,.025,1],[2500,.02,.6]],.05,R);},1.5],
+ // F: closest to the reference games: a low body that drops fast, under a wide noise burst
+ drone_c:[4,.8,2.6,.7,.5,.4,(o,h,R)=>{noise(h,0,.007,'hp',2000,2000,.7,.9,R,.0003);sweep(o,0,.06,170,72,.28,'sine',.001,.35);noise(o,.001,.09,'bp',300,150,.8,1.6,R,.001);noise(h,.001,.07,'bp',1200,400,.6,1,R,.001);
+   noise(h,.004,.18,'lp',3000,300,.7,.3,R);},1.6],
  echo:[2,.6,1.6,.6,.45,.26,(o,h,R)=>{sweep(o,0,.07,520,210,1,'sine',.002,.6);sweep(h,0,.06,1560,640,.3,'tri',.001);sweep(h,.012,.06,1640,700,.2,'tri',.001);noise(h,0,.06,'bp',2200,900,1.1,.35,R);noise(h,.002,.1,'lp',2400,400,.7,.15,R);},2.2],
  // rounds landing on armour
  hit_light:[4,.3,0,.3,.25,.2,(o,h,R)=>{noise(h,0,.004,'hp',2500,2500,.7,.8,R,.0003);modal(h,0,[[1850,.035,1],[2900,.03,.7],[4300,.02,.4]],.5,R,.85+R()*.3);sweep(h,0,.04,300,140,.5,'sine',.001);noise(h,.001,.03,'bp',1200,700,1,.3,R);},1],
@@ -95,6 +97,6 @@ function ambience(sec=6){const R=rng(4242),n=N(sec),x=new Float32Array(n+N(1));n
  for(let i=0;i<x.length;i++){const t=i/SR;x[i]=x[i]*(.55+.45*Math.sin(TAU*t/sec*1+1))*(.7+.3*Math.sin(TAU*t/sec*3+2))+y[i]*.9+Math.sin(TAU*55*t)*.05+Math.sin(TAU*110*t)*.03+Math.sin(TAU*165.3*t)*.012;}
  const o=new Float32Array(n),f=N(1);for(let i=0;i<n;i++)o[i]=x[i];for(let i=0;i<f;i++){const u=i/f;o[i]=o[i]*u+x[n+i]*(1-u);}let m=0;for(let i=0;i<n;i++)m=Math.max(m,Math.abs(o[i]));for(let i=0;i<n;i++)o[i]*=.5/m;return o;}
 // playback level of each sound: sets the order of loudness (collapse and overload on top, the frequent fire at the bottom)
-const VOL={"facdown":0.825,"kill_boss":1.0,"pulse":0.835,"leak":0.855,"boss_warn":0.632,"kill_brute":0.68,"kill_grunt":0.621,"surge_warn":0.67,"kill_runner":0.554,"item_get":0.265,"upgrade":0.39,"item_use":0.461,"win":0.533,"lose":0.883,"turret":0.666,"move":0.483,"drone":0.479,"echo":0.443,"hit_heavy":0.664,"hit_light":0.686,"drone_b":0.542,"drone_c":0.592};
+const VOL={"facdown":0.825,"kill_boss":1.0,"pulse":0.835,"leak":0.855,"boss_warn":0.632,"kill_brute":0.68,"kill_grunt":0.621,"surge_warn":0.67,"kill_runner":0.554,"item_get":0.265,"upgrade":0.39,"item_use":0.461,"win":0.533,"lose":0.883,"turret":0.666,"move":0.483,"drone":0.437,"echo":0.443,"hit_heavy":0.664,"hit_light":0.686,"drone_b":0.714,"drone_c":0.693};
 g.RELAY_SFX={SR,bake,ambience,META,VOL,names:Object.keys(RECIPES)};
 })(typeof window!=='undefined'?window:globalThis);
