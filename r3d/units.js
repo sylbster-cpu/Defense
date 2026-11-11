@@ -498,7 +498,7 @@ function updateDrone(dt,t,G){
  const dx=ef.droneRange*A.U,k=markA*(.5+.12*odS);
  bracket(x+dx,-1,z,k);bracket(x-dx,1,z,k);
  // overload ready: dashed amber frame over the stretch it would hit, and a blinking lamp under the nose
- pulseA=damp(pulseA,live&&dr.pulseCooldown<=.01?1:0,8,dt);
+ pulseA=damp(pulseA,live&&dr.pulseCooldown<=.01&&!G.pulseLock?1:0,8,dt);   // hidden until the overload has been introduced
  if(pulseA>.02){
   const px=ef.pulseRange*A.U,hz=A.laneW/2-.75,k2=pulseA*markA*(.62+.2*Math.sin(t*4)),r=cAmber.r*k2,g=cAmber.g*k2,b=cAmber.b*k2,off=(t*1.1)%1.7;
   dashes(x-px,z-hz,1,0,px*2,off,r,g,b);dashes(x+px,z-hz,0,1,hz*2,off,r,g,b);dashes(x+px,z+hz,-1,0,px*2,off,r,g,b);dashes(x-px,z+hz,0,-1,hz*2,off,r,g,b);

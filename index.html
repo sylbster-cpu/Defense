@@ -265,21 +265,23 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .field{position:fixed!important;left:calc(4px + env(safe-area-inset-left,0px));right:calc(4px + env(safe-area-inset-right,0px));top:calc(4px + env(safe-area-inset-top,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));width:auto!important;height:auto!important}
 .field-sticker{display:none}
 .fbtn{position:absolute;z-index:6;display:grid;place-items:center;padding:0;margin:0;font-family:inherit;color:#eae9dc;border:1px solid #55666b;background:rgba(18,30,36,.82);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
-#gearBtn{z-index:10001;right:8px;top:7px;width:34px;height:34px;font-size:19px;line-height:1}
+#gearBtn{position:fixed;z-index:10001;right:calc(12px + env(safe-area-inset-right,0px));top:calc(11px + env(safe-area-inset-top,0px));width:34px;height:34px;font-size:19px;line-height:1}
 #itemBtn{left:10px;bottom:10px;width:50px;height:50px;border-radius:13px;border:2px dashed #7d9094;color:#8fa0a2;font-size:21px;opacity:.75;cursor:default}
 #pulseBtn{right:10px;bottom:10px;width:58px;height:58px;border-radius:15px;border:2px solid var(--amber);color:#f5cf8a;--cd:0;background:conic-gradient(rgba(10,18,22,.9) calc(var(--cd)*360deg),rgba(70,52,38,.94) 0)}
 #pulseBtn .ico{font-size:28px;line-height:1}
 #pulseBtn .sub{display:none;font-size:20px;font-weight:800;color:#eae9dc}
 #pulseBtn.cooling{border-color:#7a6a52}#pulseBtn.cooling .ico{display:none}#pulseBtn.cooling .sub{display:block}
-#pulseBtn:disabled:not(.cooling){opacity:.5}
+#pulseBtn:disabled:not(.cooling){opacity:.5}#pulseBtn.locked{opacity:.28;border-color:#55666b}
 #pulseBtn.coach-target{box-shadow:0 0 0 3px rgba(240,196,123,.7);animation:coachPulse 1.1s ease-in-out infinite}
 .hubchip{position:absolute;z-index:4;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:9px;border:1px solid #47585d;background:rgba(18,30,36,.8);font-size:12px;font-weight:800;color:#eae9dc;pointer-events:none}
 .hubchip span{color:#a6d4a9;font-size:10px}.hubchip i{display:block;width:54px;height:4px;border-radius:2px;background:#2b3c42;overflow:hidden}
 .hubchip b{display:block;height:100%;width:100%;background:#a6d4a9}.hubchip b.danger{background:var(--red,#f17c6f)}.hubchip em{font-style:normal;min-width:22px;text-align:right}
 .coach{max-width:calc(100% - 150px)}
 @media(orientation:portrait){.coach{bottom:76px;max-width:94%}}
+/* In portrait the base is at the bottom of the screen, so a held explanation moves to the top and leaves the buildings in view. */
+@media(orientation:portrait){.coach.hold{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}}
 @media(max-width:560px){.hubchip{top:30px}}
-.settings{position:absolute;z-index:10002;right:6px;top:46px;width:min(calc(100% - 12px),270px);max-height:calc(100% - 52px);overflow:auto;display:grid;gap:9px;padding:11px 12px;border-radius:12px;border:1px solid #55666b;background:rgba(22,36,43,.97);color:#eae9dc;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.55)}
+.settings{position:fixed;z-index:10002;right:calc(10px + env(safe-area-inset-right,0px));top:calc(50px + env(safe-area-inset-top,0px));width:min(calc(100% - 20px),270px);max-height:calc(100dvh - 60px);overflow:auto;display:grid;gap:9px;padding:11px 12px;border-radius:12px;border:1px solid #55666b;background:rgba(22,36,43,.97);color:#eae9dc;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.55)}
 .settings[hidden]{display:none}
 .settings h3{margin:0;font-size:15px;color:var(--amber);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .settings h3 small{font-size:10.5px;font-weight:600;color:#9fb0b0}
@@ -290,6 +292,32 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .settings input[type=range]{width:100%;accent-color:#84d8d0;height:24px;margin:0}
 .sclose{font:inherit;font-weight:800;font-size:14px;color:var(--amber);background:#2c2a22;border:1px solid var(--amber);border-radius:9px;padding:9px 0;cursor:pointer}
 @media(max-height:330px){.settings{gap:5px;padding:7px 10px;top:44px}.seg button{padding:4px 0}.sclose{padding:6px 0}}
+/* Tutorial and in-play coaching: while a hold is on, the coach box waits for the named action. */
+.coach.hold{pointer-events:none;border-color:var(--amber);box-shadow:0 6px 22px rgba(0,0,0,.5)}
+.coach.hold small{color:var(--amber);font-weight:700}
+/* Title screen: looping gameplay film, logo, two start buttons. */
+.title{position:fixed;inset:0;z-index:10000;background:#0b1418;overflow:hidden;display:grid}
+.title[hidden]{display:none}
+.title video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b1418 center/cover no-repeat}
+.title-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,14,18,.55) 0,rgba(8,14,18,.08) 30%,rgba(8,14,18,.2) 52%,rgba(8,14,18,.93) 100%)}
+.title-body{position:relative;align-self:end;justify-self:center;width:min(100%,560px);padding:0 22px calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:10px;text-align:center}
+.title-kicker{font-size:11px;font-weight:800;letter-spacing:.32em;color:var(--amber);text-shadow:0 1px 6px #000}
+.title h1{margin:0;font-size:clamp(44px,13vw,76px);line-height:.98;font-weight:900;letter-spacing:-.02em;color:#f6f1e4;text-shadow:0 3px 22px rgba(0,0,0,.75),0 0 2px #000}
+.title h1 span{display:block;margin-top:8px;font-size:.36em;letter-spacing:.34em;font-weight:800;color:var(--amber);text-indent:.34em}
+.title-tag{margin:2px 0 6px;font-size:clamp(13px,3.6vw,15px);line-height:1.5;font-weight:600;color:#d6e2de;text-shadow:0 1px 8px #000;word-break:keep-all}
+.title-actions{display:grid;gap:8px}
+.tbtn{font:inherit;font-weight:800;font-size:16px;min-height:50px;border-radius:12px;border:1px solid #6d7f83;background:rgba(18,30,36,.78);color:#eae9dc;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 18px;cursor:pointer;touch-action:manipulation;backdrop-filter:blur(4px)}
+.tbtn.primary{justify-content:space-between;border-color:var(--amber);background:linear-gradient(180deg,#f3cf8f,#e0a956);color:#2a1f0f;box-shadow:0 6px 24px rgba(240,196,123,.28)}
+.title-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#93a5a6;margin-top:2px}
+.title-foot button{font:inherit;font-weight:700;color:#c9d6d3;background:transparent;border:1px solid #47585d;border-radius:999px;padding:6px 12px;cursor:pointer}
+.title-foot button[aria-pressed="true"]{color:var(--amber);border-color:var(--amber)}
+@media(orientation:landscape){
+ .title-body{align-self:center;justify-self:start;text-align:left;width:min(52%,460px);padding:0 0 0 calc(30px + env(safe-area-inset-left,0px));gap:7px}
+ .title-shade{background:linear-gradient(90deg,rgba(8,14,18,.94) 0,rgba(8,14,18,.72) 34%,rgba(8,14,18,.1) 66%,rgba(8,14,18,.3) 100%)}
+ .title h1{font-size:clamp(34px,13dvh,64px)}.title-tag{margin:0 0 2px}.title-tag br{display:none}
+ .title-actions{grid-template-columns:1.25fr 1fr}.tbtn{min-height:44px;font-size:14px}
+}
+@media(orientation:landscape) and (max-height:330px){.title-kicker{font-size:9px}.title-tag{font-size:12px}.tbtn{min-height:38px}}
 </style>
 </head>
 <body>
@@ -302,17 +330,8 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
         <div class="coach" id="coach" role="status" aria-live="polite" hidden><strong id="coachTitle"></strong><span id="coachMain"></span><small id="coachHint"></small></div>
         <div class="hubchip" id="hubChip" role="img" aria-label="중앙 송신소 내구도"><span>●</span><i><b id="hubBar"></b></i><em id="hubNum">100</em></div>
-        <button type="button" class="fbtn" id="gearBtn" aria-label="설정 열기">⚙</button>
         <button type="button" class="fbtn item" id="itemBtn" aria-label="아이템 (준비 중)" disabled>▢</button>
         <button type="button" class="fbtn pulse" id="pulseBtn" aria-label="과부하 방출"><span class="ico">✳</span><span class="sub" id="pulseDetail"></span></button>
-        <div class="settings" id="settings" role="dialog" aria-label="설정" hidden>
-          <h3>설정 <small>열려 있는 동안 게임이 멈춥니다</small></h3>
-          <div class="srow"><span>속도</span><div class="seg" id="setSpeed"><button type="button" data-v="1">×1</button><button type="button" data-v="2">×2</button></div></div>
-          <div class="srow"><label for="setVol">음량</label><input type="range" id="setVol" min="0" max="100" step="5"></div>
-          <div class="srow"><label for="setBright">화면 밝기</label><input type="range" id="setBright" min="70" max="150" step="5"></div>
-          <div class="srow"><span>화면</span><div class="seg" id="setView"><button type="button" data-v="3d">2.5D</button><button type="button" data-v="2d">2D</button></div></div>
-          <button type="button" class="sclose" id="setClose">닫고 계속</button>
-        </div>
         <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="게임 화면">
           <div class="overlay-card"><div id="overlayContent"></div></div>
         </div>
@@ -335,6 +354,26 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
       </div>
     </aside>
   </main>
+</div>
+<div class="title" id="title" hidden>
+  <video id="titleVid" muted loop playsinline preload="metadata"></video>
+  <div class="title-shade"></div>
+  <div class="title-body">
+    <div class="title-kicker">RIDGE RELAY · SECTOR 02</div>
+    <h1>중계선<span>최후의 방어</span></h1>
+    <p class="title-tag">두 개의 전선, 한 대의 지원 기체. <br>중앙 송신소가 끊기기 전에 막아라.</p>
+    <div class="title-actions"><button type="button" class="tbtn primary" id="tutorialBtn"><span>훈련 후 작전 시작</span><span>→</span></button><button type="button" class="tbtn" id="skipBtn">바로 작전 시작</button></div>
+    <div class="title-foot"><button type="button" id="bgmBtn" aria-pressed="false">♪ 음악 켜기</button><span id="titleBuild"></span></div>
+  </div>
+</div>
+<button type="button" class="fbtn" id="gearBtn" aria-label="설정 열기">⚙</button>
+<div class="settings" id="settings" role="dialog" aria-label="설정" hidden>
+  <h3>설정 <small>열려 있는 동안 게임이 멈춥니다</small></h3>
+  <div class="srow"><span>속도</span><div class="seg" id="setSpeed"><button type="button" data-v="1">×1</button><button type="button" data-v="2">×2</button></div></div>
+  <div class="srow"><label for="setVol">음량</label><input type="range" id="setVol" min="0" max="100" step="5"></div>
+  <div class="srow"><label for="setBright">화면 밝기</label><input type="range" id="setBright" min="70" max="150" step="5"></div>
+  <div class="srow"><span>화면</span><div class="seg" id="setView"><button type="button" data-v="3d">2.5D</button><button type="button" data-v="2d">2D</button></div></div>
+  <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
 <script>
 'use strict';
@@ -394,17 +433,22 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.11-1';
+const BUILD='2026.11.11-2';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
 function ev3(o){if(G3.active){G3.events.push(o);if(G3.events.length>500)G3.events.splice(0,250);}}
 let audio=null,mute=false,toastExpiry=0,frameTime=0,logLines=[];
 // Player settings (kept in this browser). Volume 100 is the original loudness.
-const prefs={speed:1,vol:100,bright:100,view:'3d'};try{Object.assign(prefs,JSON.parse(localStorage.getItem('relayPrefs')||'{}'));}catch(e){}
+const prefs={speed:1,vol:100,bright:100,view:'3d',bgm:true};try{Object.assign(prefs,JSON.parse(localStorage.getItem('relayPrefs')||'{}'));}catch(e){}
 prefs.speed=prefs.speed===2?2:1;prefs.vol=Math.max(0,Math.min(100,+prefs.vol||0));prefs.bright=Math.max(70,Math.min(150,+prefs.bright||100));prefs.view=prefs.view==='2d'?'2d':'3d';
 function savePrefs(){try{localStorage.setItem('relayPrefs',JSON.stringify(prefs));}catch(e){}}
 let settingsOpen=false,pcMax=0;
+// What the player has already been taught (kept in this browser): the drill, and the overload lesson given during a real operation.
+const learned={drill:false,pulse:false};try{Object.assign(learned,JSON.parse(localStorage.getItem('relayLearn')||'{}'));}catch(e){}
+function saveLearned(){try{localStorage.setItem('relayLearn',JSON.stringify(learned));}catch(e){}}
+// drill = the scripted tutorial running on the real rules. lesson = the overload lesson waiting inside operation 1. holdState = the game is held until the player does one thing.
+let drill=null,lesson=null,holdState=null,pulseLock=false;
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
 // each operation asks for a different way of playing.
@@ -465,11 +509,11 @@ function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
 function sound(freq,duration=.08,type='sine',volume=.05){if(mute||prefs.vol<=0)return;volume*=prefs.vol/100;try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();}if(audio.state==='suspended')audio.resume();const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.72),t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration);}catch(e){mute=true;}}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
 function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
-function switchLane(lane){if(phase==='practice'){if(practice.task!=='move'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
+function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase==='practice'){if(practice.task!=='move'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sound(510,.13,'sine',.035);addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');if(phase==='practice')practiceDone();updateControls();}
-function pulse(){if(phase==='practice'){if(practice.task!=='pulse'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange);if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sound(165,.28,'sawtooth',.09);addLog('과부하 방출. '+close.length+'개 목표에 타격.');if(phase==='practice')practiceDone();updateControls();}
+function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase==='practice'){if(practice.task!=='pulse'||practice.done)return;}else if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange);if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sound(165,.28,'sawtooth',.09);addLog('과부하 방출. '+close.length+'개 목표에 타격.');if(phase==='practice')practiceDone();updateControls();}
 function enemyLeak(e){const d=TYPES[e.type];leaks++;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
-function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave){ev3({t:'wave',wave});showToast('제'+wave+'파 공격 시작',1600);addLog('제'+wave+'파 공격 감지.');}
+function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('제'+wave+'파 공격 시작',1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sound(240,.18,'square',.05);}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
@@ -479,7 +523,7 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
   if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y,'echo');}}}
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
-  if(core<=0){finish(false);return;}
+  if(core<=0){if(drill){drillCoreDown();return;}finish(false);return;}
   if(nextSpawn>=pattern.length&&enemies.length===0){if(op<TOTAL_OPS)upgradeScreen();else finish(true);}
 }
 // Two offers follow facility state and one rotates per operation. Repeating a card raises its rank
@@ -510,7 +554,7 @@ function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.ca
 function finish(victory){phase='finish';ev3({t:'finish',victory});const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sound(victory?660:125,.4,'triangle',.07);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
  const progress='작전 '+String(op).padStart(2,'0')+' / 05 · '+(victory?'전체 방어 성공':'도전 종료');
- renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>{reset();newStage(1);});updateControls();updateUI();}
+ renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());updateControls();updateUI();}
 let tutorialStep=0,practiced={move:false,pulse:false},practice={task:null,done:false,timer:0};
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=50*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
@@ -555,9 +599,79 @@ function renderOverlay(content,screen='intro'){
  showOverlay(true);
  fitDialog();requestAnimationFrame(fitDialog);
 }
-function intro(){phase='intro';hideCoach();renderOverlay(`<div class="tiny">RIDGE RELAY / DEFENSE LAB · 판 ${BUILD}</div><h2>중계선<br>최후의 방어</h2><div class="tutorial-menu"><button type="button" class="primary" id="tutorialBtn"><span>튜토리얼 시작</span><span>→</span></button><button type="button" class="secondary" id="skipBtn">바로 시작</button></div>`,'intro');
- $('tutorialBtn').addEventListener('click',()=>{reset();phase='tutorial';tutorialStep=0;practiced={move:false,pulse:false};showTutorial();});
- $('skipBtn').addEventListener('click',()=>{reset();newStage(1);});
+/* ---------- title screen: gameplay film and intro music ---------- */
+// The music file holds the 20 s loop more than once; playback repeats the stretch from 3 s to 23 s, so the join is seamless whatever padding the decoder adds.
+let bgmBuf=null,bgmSrc=null,bgmGain=null,bgmLoading=false;const BGM_LOOP=[3,23];
+function titleMedia(){const v=$('titleVid'),k=innerWidth>innerHeight?'l':'p';if(v.dataset.k!==k){v.dataset.k=k;v.style.backgroundImage='url(media/title-'+k+'.jpg?v='+BUILD+')';v.poster='media/title-'+k+'.jpg?v='+BUILD;v.src='media/title-'+k+'.mp4?v='+BUILD;}const pr=v.play();if(pr&&pr.catch)pr.catch(()=>{});}
+function bgmVolume(){return .6*prefs.vol/100;}
+function bgmPlay(){if(!prefs.bgm||mute||prefs.vol<=0||phase!=='intro'||bgmSrc)return;
+ try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const a=audio;
+  if(!bgmBuf){if(bgmLoading)return;bgmLoading=true;fetch('media/intro.mp3?v='+BUILD).then(r=>r.arrayBuffer()).then(d=>new Promise((ok,no)=>a.decodeAudioData(d,ok,no))).then(buf=>{bgmBuf=buf;bgmLoading=false;bgmPlay();}).catch(()=>{bgmLoading=false;});return;}
+  bgmGain=a.createGain();bgmGain.gain.setValueAtTime(0,a.currentTime);bgmGain.gain.linearRampToValueAtTime(bgmVolume(),a.currentTime+1.2);
+  bgmSrc=a.createBufferSource();bgmSrc.buffer=bgmBuf;bgmSrc.loop=true;bgmSrc.loopStart=BGM_LOOP[0];bgmSrc.loopEnd=BGM_LOOP[1];bgmSrc.connect(bgmGain);bgmGain.connect(a.destination);bgmSrc.start();
+ }catch(e){}}
+function bgmStop(){if(!bgmSrc)return;try{const a=audio,g=bgmGain,n=bgmSrc;bgmSrc=null;g.gain.cancelScheduledValues(a.currentTime);g.gain.setValueAtTime(g.gain.value,a.currentTime);g.gain.linearRampToValueAtTime(0,a.currentTime+.8);n.stop(a.currentTime+.9);}catch(e){bgmSrc=null;}}
+function bgmButton(){const on=!!prefs.bgm;$('bgmBtn').textContent=on?'♪ 음악 끄기':'♪ 음악 켜기';$('bgmBtn').setAttribute('aria-pressed',String(on));}
+function intro(){phase='intro';drill=null;lesson=null;holdState=null;pulseLock=false;hideCoach();showOverlay(false);$('title').hidden=false;$('titleBuild').textContent='시제품 · 판 '+BUILD;titleMedia();bgmButton();bgmPlay();
+ // first-time players are led to the drill; afterwards the direct start is the main button
+ const t=$('tutorialBtn'),k=$('skipBtn');t.classList.toggle('primary',!learned.drill);k.classList.toggle('primary',learned.drill);t.firstElementChild.textContent=learned.drill?'훈련 다시 하기':'훈련 후 작전 시작';k.style.order=learned.drill?'-1':'';
+ updateUI();}
+function leaveTitle(){$('title').hidden=true;$('titleVid').pause();bgmStop();}
+$('tutorialBtn').addEventListener('click',()=>{leaveTitle();startDrill();});
+$('skipBtn').addEventListener('click',()=>{leaveTitle();beginRun();});
+$('bgmBtn').addEventListener('click',()=>{prefs.bgm=!prefs.bgm;savePrefs();bgmButton();if(prefs.bgm)bgmPlay();else bgmStop();});
+// Browsers start sound only after a touch: the first touch on the title screen starts the music.
+$('title').addEventListener('pointerdown',()=>{if(audio&&audio.state==='suspended')audio.resume();bgmPlay();});
+window.addEventListener('resize',()=>{if(phase==='intro')titleMedia();});
+
+/* ---------- holds: the game stops until the player does one thing ---------- */
+const sideWord=l=>wantsCompactCanvas()?(l?'아래쪽':'위쪽'):(l?'오른쪽':'왼쪽');
+function hold(need,title,main,hint,then){holdState={need,then,t0:performance.now()};$('toast').classList.remove('show');setCoach(title,main,hint||(need==='tap'?'화면을 터치하면 계속':''));$('coach').classList.add('hold');updateControls();}
+function releaseHold(){const h=holdState;if(!h)return;holdState=null;hideCoach();$('coach').classList.remove('hold');lastTime=performance.now();if(h.then)h.then();updateControls();}
+function holdTick(dt){drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);fxStep(dt);}
+function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);lesson=learned.pulse?null:{st:'wait',at:LESSON_AT};pulseLock=!learned.pulse;updateControls();}
+
+/* ---------- drill: the tutorial is a scripted fight on the real rules ----------
+   Part 1 shows a loss: the drone is held on the workshop lane while the power-plant lane is overrun, the plant falls, then the hub falls.
+   Part 2 hands over control: the player has to move the drone to the lane under attack, twice. The overload and items are not shown here. */
+const DRILL={
+ fall:[[.4,'runner'],[.9,'runner'],[1.4,'grunt'],[2.0,'runner'],[2.6,'grunt'],[3.2,'brute'],[3.9,'runner'],[4.6,'grunt'],[5.3,'runner'],[6.0,'grunt'],[6.8,'brute'],[7.6,'runner'],[8.4,'grunt']],
+ hub:[[.3,'grunt'],[.9,'runner'],[1.5,'grunt'],[2.1,'brute'],[2.8,'runner'],[3.4,'grunt'],[4.0,'brute'],[4.7,'grunt'],[5.3,'runner'],[6.0,'brute'],[6.7,'grunt'],[7.4,'boss'],[8.4,'grunt'],[9.2,'brute'],[10,'grunt'],[10.8,'brute'],[11.6,'grunt'],[12.4,'brute']],
+ moveA:[[1.2,'grunt'],[1.9,'grunt'],[2.6,'runner'],[3.3,'grunt'],[4.0,'runner'],[4.7,'grunt']],
+ moveB:[[8.6,'grunt'],[9.3,'runner'],[10.0,'grunt'],[10.7,'grunt'],[11.4,'runner'],[12.1,'grunt']],
+};
+function drillStage(droneLane){newStage(1);$('toast').classList.remove('show');core=100;pattern=[[1e9,0,'runner']];surges=[];nextSpawn=0;drone.lane=droneLane;drone.x=LANES[droneLane];}
+function drillAdd(list,lane,t0){for(const [t,type] of list)pattern.push([t0+t,lane,type]);pattern.sort((a,b)=>a[0]-b[0]);}
+function startDrill(){reset();drill={step:'fall',lockMove:true,speed:1.25};drillStage(1);drillAdd(DRILL.fall,0,0);
+ hold('tap','훈련 1 · 방어선','지원 기체 한 대와 자동 포탑 두 대가 두 전선을 지킵니다. 기체는 지금 '+sideWord(1)+' 전선에 있고, 적은 '+sideWord(0)+' 전선으로 몰려옵니다. 어떻게 되는지 지켜보세요.');}
+function drillTick(dt){const d=drill;update(dt*d.speed);if(!drill||holdState)return;
+ if(d.step==='fall'&&facilities[0]<=0){d.step='hub';drillAdd(DRILL.hub,0,stageTime);
+  hold('tap','발전소 기능 정지','방어선을 넘은 적이 '+sideWord(0)+' 전선 끝의 발전소를 부쉈습니다. 건물 옆 막대가 시설의 내구도입니다. 발전소가 멈추면 기체의 이동 대기 시간이 1.5배로 늘고, 반대편 정비소가 멈추면 포탑 사격이 느려집니다.');}
+ else if((d.step==='fall'||d.step==='hub')&&nextSpawn>=pattern.length-1&&enemies.length===0)drillAdd(DRILL.hub,0,stageTime);   // keep the pressure on until the lesson has happened
+ else if(d.step==='move'){
+  const threat=l=>enemies.some(e=>e.hp>0&&e.lane===l&&e.y>=DRONE_Y-(l?150:120));
+  if(drone.lane===0&&threat(1)&&!d.saidA){d.saidA=true;hold('move1','정비소 전선 위기',sideWord(1)+' 전선에 적이 몰렸습니다. 포탑만으로는 막지 못합니다. 전장의 '+sideWord(1)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(1)+' 터치',()=>showToast('옮긴 뒤 '+BAL.moveBase+'초 동안은 다시 옮길 수 없습니다',3000));}
+  else if(drone.lane===1&&threat(0)&&!d.saidB){d.saidB=true;hold('move0','발전소 전선 위기','이번에는 '+sideWord(0)+' 전선입니다. 전장의 '+sideWord(0)+'을 터치해 되돌아가세요.','전장 '+sideWord(0)+' 터치');}
+  else if(nextSpawn>=pattern.length-1&&enemies.length===0){d.step='end';hold('tap','훈련 종료','작전은 다섯 번입니다. 작전이 끝날 때마다 강화 기술을 하나 고르고, 다섯 번째 작전까지 송신소를 지키면 승리합니다.','화면을 터치하면 작전 시작',()=>{learned.drill=true;saveLearned();beginRun();});}
+ }
+}
+function drillCoreDown(){const d=drill;ev3({t:'finish',victory:false});sound(125,.4,'triangle',.07);enemies=[];d.step='lost';
+ hold('tap','중앙 송신소 연결 끊김','시설이 멈춘 전선으로 넘어온 적은 중앙 송신소에 1.7배의 피해를 줍니다. 화면 위 가운데 ● 막대가 송신소 내구도이고, 0이 되면 작전 실패입니다.','화면을 터치하면 다시',()=>{
+  d.step='move';d.lockMove=false;d.speed=1;drillStage(0);drillAdd(DRILL.moveA,1,0);drillAdd(DRILL.moveB,0,0);
+  hold('tap','훈련 2 · 전선 이동','이번에는 직접 막습니다. 기체는 '+sideWord(0)+' 전선에 있습니다. 적이 몰리는 전선 쪽 전장을 터치하면 기체가 옮겨 갑니다. 곧 나올 적은 전선 입구에 미리 표시됩니다.');});}
+
+/* ---------- overload lesson, given once inside operation 1 ----------
+   The overload button stays locked until a tight pack of runners is sent down the drone's lane. When the pack is inside the overload range the game holds and asks for the overload. */
+const LESSON_AT=9,LESSON_PACK=7;
+function lessonTick(){const s=lesson;if(!s||op!==1||phase!=='battle')return;
+ if(s.st==='wait'){if(stageTime<s.at)return;s.st='pack';s.lane=drone.lane;const m=TYPES.runner;
+  for(let i=0;i<LESSON_PACK;i++){const e={id:Math.random(),lane:s.lane,type:'runner',x:LANES[s.lane],y:LANE_TOP-i*20,hp:m.hp,maxHp:m.hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0,lesson:true};enemies.push(e);ev3({t:'spawn',e});}
+  showToast('경고 · 적 밀집 대형 접근',1900);sound(240,.18,'square',.05);return;}
+ if(s.st!=='pack')return;
+ const pk=enemies.filter(e=>e.lesson&&e.hp>0);if(pk.length<2){s.st='wait';s.at=stageTime+6;return;}
+ let lead=-1e9;for(const e of pk)lead=Math.max(lead,e.y);if(lead<DRONE_Y-6)return;
+ const ask=()=>{pulseLock=false;drone.pulseCooldown=0;hold('pulse','과부하 방출','적이 한꺼번에 몰려와 사격만으로는 막을 수 없습니다. 오른쪽 아래 ✳ 버튼을 눌러 점선 범위 안의 적을 한꺼번에 공격하세요.','✳ 버튼',()=>{learned.pulse=true;saveLearned();lesson=null;setTimeout(()=>showToast('과부하는 쓰고 나면 재충전 시간이 필요합니다',3000),700);});};
+ if(drone.lane!==s.lane)hold('move'+s.lane,'적 밀집 대형',sideWord(s.lane)+' 전선으로 적이 한꺼번에 몰려옵니다. 전장의 '+sideWord(s.lane)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(s.lane)+' 터치',ask);else ask();
 }
 const tutorialSteps=[
  {title:'방어 목표',body:'왼쪽 발전소와 오른쪽 정비소를 지키세요. 적이 방어선을 통과하면 시설과 중앙 송신소의 내구도가 감소합니다. 포탑은 자동으로 쏘고, 곧 나올 적은 전장 위쪽에 미리 표시됩니다. 건물 옆 막대는 그 시설의 내구도이고, 화면 위 가운데 ● 막대는 중앙 송신소의 내구도입니다.',visual:'<div><span class="symbol">ϟ</span><strong>발전소</strong><small>무너지면 기체 이동 느려짐</small></div><div><span class="symbol">⌘</span><strong>정비소</strong><small>무너지면 포탑 사격 느려짐</small></div>',btn:'다음'},
@@ -586,8 +700,8 @@ function showTutorial(){
 window.addEventListener('resize',()=>{fitDialog();if(phase==='tutorial'){showTutorial();}else if(phase==='practice'&&practice.task==='move'&&!practice.done){setCoach('이동 연습',wantsCompactCanvas()?'지원 기체를 아래쪽 정비소로 옮기세요':'지원 기체를 오른쪽 정비소로 옮기세요',wantsCompactCanvas()?'화면 아래쪽 터치 · D':'화면 오른쪽 터치 · D');}});
 window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog));
 let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
-function updateControls(){const playing=phase==='battle',prac=phase==='practice';const pp=prac&&practice.task==='pulse'&&!practice.done;const pb=$('pulseBtn'),cd=drone.pulseCooldown;
- pb.disabled=settingsOpen||(prac?!pp:(!playing||paused||cd>.01));pb.classList.toggle('coach-target',pp);
+function updateControls(){const playing=phase==='battle',prac=phase==='practice';const pp=prac&&practice.task==='pulse'&&!practice.done;const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
+ pb.disabled=settingsOpen||(holdState?!want:(prac?!pp:(!playing||paused||cd>.01||locked)));pb.classList.toggle('coach-target',pp||want);pb.classList.toggle('locked',locked);
  if(cd>.01){if(cd>pcMax)pcMax=cd;}else pcMax=0;pb.classList.toggle('cooling',cd>.01);pb.style.setProperty('--cd',cd>.01?(cd/pcMax).toFixed(3):'0');$('pulseDetail').textContent=cd>.01?Math.ceil(cd):'';}
 function updateUI(){const opLabel=String(op).padStart(2,'0');$('operationStat').textContent=opLabel+' / 05';$('waveStat').textContent=(noWave()?'—':wave)+' / 03';$('phaseLabel').textContent=phase==='intro'?'대기 중':(phase==='tutorial'||phase==='practice')?'튜토리얼':phase==='battle'?(paused?'일시정지':'교전 중'):phase==='upgrade'?'강화 선택':'작전 종료';$('coreStat').textContent=Math.round(core)+' / 100';$('powerStat').textContent=Math.round(facilities[0])+' / '+(100);$('shopStat').textContent=Math.round(facilities[1])+' / '+(100);setBar('coreBar',core,100);setBar('powerBar',facilities[0],100);setBar('shopBar',facilities[1],100);setBar('hubBar',core,100);$('hubNum').textContent=Math.round(core);$('hubChip').style.visibility=(phase==='battle'||phase==='practice')?'visible':'hidden';updateControls();}
 function noWave(){return phase==='intro'||phase==='tutorial'||phase==='practice';}
@@ -614,7 +728,7 @@ function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i
  if(gold){rounded(-7,-12,14,22,3,'#ecd294');text('ϟ',0,-1,23,'#403f33','center',true);}
  else{line(-10,-9,10,9,'#b0e6dd',4);line(10,-9,-10,9,'#b0e6dd',4);circle(0,0,6,'#38605a','#c7e6db',1.5);}
  }
- ctx.restore();const max=100;rounded(x-37,572+DY,74,5,3,'#0d1c21');rect(x-37,572+DY,74*Math.max(0,hp/max),5,alive?(gold?'#f3c67d':'#8bd9cb'):'#a35751');text(alive?(gold?'발전소':'정비소'):'기능 정지',x,588+DY,11,alive?'#e7ece2':'#e7998e','center',true);
+ ctx.restore();const max=100;rounded(x-37,572+DY,74,5,3,'#0d1c21');rect(x-37,572+DY,74*Math.max(0,hp/max),5,alive?(gold?'#f3c67d':'#8bd9cb'):'#a35751');if(!alive)text('기능 정지',x,588+DY,11,'#e7998e','center',true);
  }
 }
 function drawTurrets(t){for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''):'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
@@ -659,7 +773,7 @@ function drawCompact(now){
    if(hp>0){if(gold){line(xEnd-4,y-6,xEnd+2,y-1,base,2.5);line(xEnd+2,y-1,xEnd-3,y+7,base,2.5);}else{line(xEnd-6,y-5,xEnd+6,y+5,base,2.5);line(xEnd-6,y+5,xEnd+6,y-5,base,2.5);}}
    else{line(xEnd-6,y-6,xEnd+6,y+6,'#dd8270',3);line(xEnd-6,y+6,xEnd+6,y-6,'#dd8270',3);}
    rounded(xEnd-23,y+18*scale,46,4,2,'#101b20');rect(xEnd-22,y+19*scale,44*progress,2,base);
-   text(label,xEnd,y-rowGap*.30,Math.max(10,12*scale),hp>0?'#e8ece5':'#e58a79','center',true);
+   if(hp<=0)text('기능 정지',xEnd,y-rowGap*.30,Math.max(10,12*scale),'#e58a79','center',true);   // names are explained in the drill, not printed
  }
  // The communication hub visually connects both protected facilities.
  const hubX=w-11,hubY=(ys[0]+ys[1])/2;
@@ -667,8 +781,7 @@ function drawCompact(now){
  line(xEnd+15,ys[1],hubX-7,hubY,'#578b84',1.2);
  circle(hubX-4,hubY,7,core>0?'#477e72':'#7e4641','#a0cdb6',1.2);
  // Header is compact and stays out of the incoming enemies.
- text('작전 '+String(op).padStart(2,'0')+' / 05',8,13,Math.max(10,11*scale),'#e8ddd0','left',true);
- text('공격 '+(noWave()?'—':wave)+' / 03',w-8,13,Math.max(10,11*scale),'#e8ddd0','right',true);
+ text(drill?'훈련':'작전 '+String(op).padStart(2,'0')+' / 05 · 공격 '+(noWave()?'—':wave)+' / 03',8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
  // Preview the next five seconds of arrivals in each lane without using tiny top-of-canvas icons.
  if(phase==='battle'){
   const warn=surges.some(s=>s.t-stageTime>=-.3&&s.t-stageTime<=3.5);
@@ -748,9 +861,9 @@ function drawCompact(now){
  }
 }
 function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact(now);return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop(now);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)drawEnemy(e,now);drawDrone(now);drawPracticeHint(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
-function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(phase==='battle'&&!paused)update(dt*speed);else if(phase==='practice')updatePractice(dt);draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
+function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(drill)drillTick(dt);else{lessonTick();update(dt*speed);}}else if(phase==='practice')updatePractice(dt);draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
 $('pulseBtn').addEventListener('click',pulse);
-function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(phase!=='battle'&&phase!=='practice')return;const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
+function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(holdState&&holdState.need==='tap'){if(performance.now()-holdState.t0>450)releaseHold();return;}if(phase!=='battle'&&phase!=='practice')return;const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
 canvas.addEventListener('pointerdown',fieldTap);
 /* Settings: opened with the gear, the P or Esc key, or the browser's back button. The game holds while it is open. */
 function applyPrefs(){speed=prefs.speed;const f=prefs.bright===100?'':'brightness('+(prefs.bright/100)+')';for(const id of ['game','game3d'])if($(id))$(id).style.filter=f;
@@ -763,17 +876,17 @@ function closeSettings(){if(!settingsOpen)return;settingsOpen=false;$('settings'
 $('gearBtn').addEventListener('click',()=>settingsOpen?closeSettings():openSettings());$('setClose').addEventListener('click',closeSettings);
 $('setSpeed').addEventListener('click',ev=>{const v=+ev.target.dataset.v;if(v){prefs.speed=v;savePrefs();applyPrefs();}});
 $('setView').addEventListener('click',ev=>{const v=ev.target.dataset.v;if(v&&!ev.target.disabled)setView(v);});
-$('setVol').addEventListener('input',ev=>{prefs.vol=+ev.target.value;savePrefs();});$('setVol').addEventListener('change',()=>sound(660,.09,'triangle',.05));
+$('setVol').addEventListener('input',ev=>{prefs.vol=+ev.target.value;savePrefs();if(bgmSrc)bgmGain.gain.value=bgmVolume();if(prefs.vol<=0)bgmStop();else bgmPlay();});$('setVol').addEventListener('change',()=>sound(660,.09,'triangle',.05));
 $('setBright').addEventListener('input',ev=>{prefs.bright=+ev.target.value;savePrefs();applyPrefs();});
 // Back button: one history entry is added on the first touch (browsers ignore entries added without one); going back opens or closes the settings instead of leaving.
 let backArmed=false;window.addEventListener('pointerdown',()=>{if(backArmed)return;backArmed=true;try{history.pushState({relay:1},'');}catch(e){}},{capture:true});
 window.addEventListener('popstate',()=>{if(settingsOpen)closeSettings();else openSettings();try{history.pushState({relay:1},'');}catch(e){}});
-window.addEventListener('keydown',ev=>{const k0=ev.key.toLowerCase();if(k0==='escape'||k0==='p'){ev.preventDefault();settingsOpen?closeSettings():openSettings();return;}if(settingsOpen||(phase!=='battle'&&phase!=='practice'))return;const k=ev.key.toLowerCase();if(['arrowleft','arrowright',' ','a','d','p','f'].includes(k))ev.preventDefault();if(k==='a'||k==='arrowleft')switchLane(0);if(k==='d'||k==='arrowright')switchLane(1);if(k===' '||k==='f')pulse();});
+window.addEventListener('keydown',ev=>{const k0=ev.key.toLowerCase();if(k0==='escape'||k0==='p'){ev.preventDefault();settingsOpen?closeSettings():openSettings();return;}if(settingsOpen)return;if(holdState&&holdState.need==='tap'){if((k0===' '||k0==='enter')&&performance.now()-holdState.t0>450){ev.preventDefault();releaseHold();}return;}if(phase!=='battle'&&phase!=='practice')return;const k=ev.key.toLowerCase();if(['arrowleft','arrowright',' ','a','d','p','f'].includes(k))ev.preventDefault();if(k==='a'||k==='arrowleft')switchLane(0);if(k==='d'||k==='arrowright')switchLane(1);if(k===' '||k==='f')pulse();});
 window.addEventListener('blur',()=>{if(phase==='battle'&&!paused){paused=true;updateControls();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='battle'&&!paused){paused=true;updateControls();}});
 // 2.5D view (r3d/): loaded only when WebGL exists. If a script or the renderer fails, the 2D canvas keeps working. ?2d=1 forces 2D.
 Object.assign(G3,{W,H,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,LANE_LEN,BAL,TYPES,COLORS,focusBonus,pierceOn,echoOn,noWave,compact:wantsCompactCanvas});
-Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},practice:{get:()=>practice},ranks:{get:()=>upgradeRanks}});
+Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},practice:{get:()=>practice},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
 window.__relay=G3;
 (function load3d(){if(/[?&]2d\b/.test(location.search)||!window.WebGLRenderingContext)return;
  const files=['three.min.js','core.js','env.js','base.js','units.js','fx.js','hud.js'];let i=0;

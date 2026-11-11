@@ -178,7 +178,7 @@ function opText(G,side){
  const op=G.op|0,wv=G.noWave()?-1:(G.wave|0),key=op*64+wv+1;
  if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';opD=opA+' · '+opB;if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
  const y=M+2+FS*.5,col=waveFx>0?WAVE_HI:CREAM;opBottom=M+FS+5;
- text(opD,M+5,y,fNum,col,'left');   // one line on the left: the gear button owns the top-right corner
+ text(G.drill?'훈련':opD,M+5,y,fNum,col,'left');   // one line on the left: the gear button owns the top-right corner
 }
 
 /* ---------- 5. facility labels ---------- */
@@ -243,14 +243,26 @@ function pauseVeil(){
  c.fillStyle='rgba(8,18,22,.64)';c.fillRect(0,0,L.w+1,L.h+1);
  text('일시정지',L.w*.5,L.h*.5,fPause,HOT,'center');
 }
+/* move cooldown: a ring around the drone that empties until it can move again */
+function moveRing(G){
+ const d=G.drone,cd=d?+d.moveCooldown:0;if(!(cd>.02))return;
+ const ef=G.effects,f=G.facilities,max=(ef&&ef.moveBase>0?ef.moveBase:2.2)*(f&&f[0]<=0?G.BAL.powerDownMove:1);
+ ctx.dronePos(v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
+ const r=16*ui,k=clamp(cd/max,0,1);
+ c.lineCap='butt';c.globalAlpha=1;c.lineWidth=4.5*ui;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(p.x,p.y,r,0,6.2832);c.stroke();
+ c.lineWidth=2.4*ui;c.strokeStyle='#f0c47b';c.beginPath();c.arc(p.x,p.y,r,-1.5708,-1.5708+6.2832*k);c.stroke();
+}
 function practiceHint(G,t){
- const pr=G.practice;if(!pr||pr.done||!pr.task)return;
+ // shown for the old practice mode and for holds that wait for a move or for the overload
+ const pr=G.practice,hd=G.hold||'';let task=null,to=1;
+ if(hd==='pulse')task='pulse';else if(hd==='move0'||hd==='move1'){task='move';to=+hd.slice(4);}else if(pr&&!pr.done&&pr.task)task=pr.task;
+ if(!task)return;
  ctx.dronePos(v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
  const ph=t-Math.floor(t);
  c.lineCap='round';
- if(pr.task==='move'){
+ if(task==='move'){
   // chevrons flowing from the drone toward lane 1 (정비소), the lane the player has to move to
-  v.set(A.droneX,A.droneH,L.laneZ[1]);ctx.project(v,p2);
+  v.set(A.droneX,A.droneH,L.laneZ[to]);ctx.project(v,p2);
   let dx=p2.x-p.x,dy=p2.y-p.y;const dist=Math.sqrt(dx*dx+dy*dy);if(!(dist>24))return;
   dx/=dist;dy/=dist;
   const r0=17*ui,gap=clamp((dist-r0-6*ui)/3,9,26*ui),hw=7*ui;
@@ -262,7 +274,7 @@ function practiceHint(G,t){
     c.beginPath();c.moveTo(cx-dx*hw*.5-dy*hw,cy-dy*hw*.5+dx*hw);c.lineTo(cx+dx*hw*.5,cy+dy*hw*.5);c.lineTo(cx-dx*hw*.5+dy*hw,cy-dy*hw*.5-dx*hw);c.stroke();
    }
   }
- }else if(pr.task==='pulse'){
+ }else if(task==='pulse'){
   const nr=Q>0?2:1;
   for(let i=0;i<nr;i++){
    const k=(ph+i*.5)%1,rx=(13+k*30)*ui,ry=rx*.8;
@@ -286,7 +298,8 @@ function frame(dt,t,G){
  enemyBars(G,side);
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
  opText(G,side);
- if(practice)practiceHint(G,t);
+ if(practice||G.hold)practiceHint(G,t);
+ if(battle)moveRing(G);
  if(battle&&G.paused)pauseVeil();
 }
 
