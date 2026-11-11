@@ -1,5 +1,6 @@
-The drone gun sounds in lab/sfx.js (SAMPLES: pistol, shotgun, dshot, barrel) are made from sound effects of the
-Freedoom project (dspistol, dsshotgn, dsdshtgn, dsbarexp), resampled, trimmed and processed.
+The drone gun sound "I" in lab/sfx.js (SAMPLES: dshot) is made from a sound effect of the Freedoom project
+(dsdshtgn), resampled, trimmed and processed. The table K_B in the same file holds levels measured from that sound;
+the drone gun sound "K" is noise shaped to that table and contains none of the recorded material.
 https://github.com/freedoom/freedoom
 
 Copyright (c) 2001-2024
