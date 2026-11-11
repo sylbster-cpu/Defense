@@ -455,11 +455,30 @@ function bracket(x,dir,zc,k){
  decal(x+dir*1.2,DY,zc,1.2,hz,0,3,r*.1,g*.1,b*.1,0,dir>0?1:0,dir>0?0:1);          // faint band fading into the covered stretch
  for(let s=-1;s<=1;s+=2){decal(x+dir*.75,DY,zc+s*hz,.75,.09,0,3,r,g,b,0,1,1);decal(x,DY,zc+s*(hz-.55),.09,.62,0,3,r,g,b,0,1,1);}   // corners
 }
-// marching dashes along an axis-aligned segment that starts at (x0,z0) and runs len units in direction (dx,dz)
-function dashes(x0,z0,dx,dz,len,off,r,g,b){
- const per=1.7,dash=1;
- for(let s=off-per;s<len;s+=per){const a=Math.max(0,s),e=Math.min(len,s+dash);if(e-a<.08)continue;const m=(a+e)/2,h=(e-a)/2;
-  decal(x0+dx*m,DY+.01,z0+dz*m,dx?h:.075,dz?h:.075,0,3,r,g,b,0,1,1);}
+// overload frame: the outline of everything the overload would hit, as marching dashes on the ground.
+// It follows a bent lane, and in the stretches where the map lets the overload reach across (G.mapNear) it widens over the other lane.
+const fp=new Float32Array(1200),fa=new Uint8Array(512);let fN=0;    // outline points x,z; fa: the overload reaches across at this sample
+function fpAdd(x,z){
+ if(fN>1){const o=fN*2,ax=fp[o-4],az=fp[o-3],bx=fp[o-2],bz=fp[o-1];if(Math.abs((bx-ax)*(z-bz)-(bz-az)*(x-bx))<1e-4&&(bx-ax)*(x-bx)+(bz-az)*(z-bz)>=0){fp[o-2]=x;fp[o-1]=z;return;}}   // straight on: extend the last segment
+ if(fN<600){fp[fN*2]=x;fp[fN*2+1]=z;fN++;}
+}
+function pulseFrame(G,x,z,lane,px,hz,off,r,g,b){
+ const sg=Math.sign(ctx.L.laneZ[lane])||1,z0=z-ctx.off(lane,x),near=G.mapNear,other=ctx.L.laneZ[1-lane],n=Math.min(500,Math.max(4,Math.ceil(px*2/.2))),step=px*2/n;
+ const zIn=(xi,across)=>across?other+ctx.off(1-lane,xi)-sg*hz:z0+ctx.off(lane,xi)-sg*hz;
+ fN=0;
+ for(let i=0;i<=n;i++){const xi=x-px+i*step;fpAdd(xi,z0+ctx.off(lane,xi)+sg*hz);}                  // the outer side of the drone's lane
+ for(let i=0;i<=n;i++)fa[i]=near&&near(G.LEAK_Y-(x-px+i*step)/A.U)?1:0;
+ for(let i=0,j;i<=n;i=j){for(j=i;j<=n&&fa[j]===fa[i];j++);if(fa[i]&&(j-i)*step<1)fa.fill(0,i,j);}   // a sliver of a near stretch at the end of the range is not worth a spike across the other lane
+ for(let i=n;i>=0;i--){const xi=x-px+i*step;                                                       // back along the median side, or along the far side of the other lane
+  if(i<n&&fa[i]!==fa[i+1])fpAdd(xi,zIn(xi,fa[i+1]));
+  fpAdd(xi,zIn(xi,fa[i]));}
+ fpAdd(fp[0],fp[1]);
+ const per=1.7,dash=1,base=off-per;let acc=0;
+ for(let i=0;i<fN-1;i++){const ax=fp[i*2],az=fp[i*2+1],dx=fp[i*2+2]-ax,dz=fp[i*2+3]-az,len=Math.hypot(dx,dz);if(len<1e-4)continue;
+  const ux=dx/len,uz=dz/len,rot=Math.atan2(-uz,ux);
+  for(let s=base+Math.ceil((acc-dash-base)/per)*per;s<acc+len;s+=per){const a=Math.max(acc,s),e=Math.min(acc+len,s+dash);if(e-a<.08)continue;
+   const m=(a+e)/2-acc;decal(ax+ux*m,DY+.01,az+uz*m,(e-a)/2,.075,rot,3,r,g,b,0,1,1);}
+  acc+=len;}
 }
 
 function updateDrone(dt,t,G){
@@ -499,11 +518,11 @@ function updateDrone(dt,t,G){
  markA=damp(markA,moving?.3:1,moving?18:6,dt);
  const dx=ef.droneRange*A.U,k=markA*(.5+.12*odS);
  {const z0=z-ctx.off(dr.lane,x);bracket(x+dx,-1,z0+ctx.off(dr.lane,x+dx),k);bracket(x-dx,1,z0+ctx.off(dr.lane,x-dx),k);}   // each mark sits on the lane where it is, also on a bent lane
- // overload ready: dashed amber frame over the stretch it would hit, and a blinking lamp under the nose
+ // overload ready: dashed amber frame around everything it would hit, and a blinking lamp under the nose
  pulseA=damp(pulseA,live&&dr.pulseCooldown<=.01&&!G.pulseLock?1:0,8,dt);   // hidden until the overload has been introduced
  if(pulseA>.02){
   const px=ef.pulseRange*A.U,hz=A.laneW/2-.75,k2=pulseA*markA*(.62+.2*Math.sin(t*4)),r=cAmber.r*k2,g=cAmber.g*k2,b=cAmber.b*k2,off=(t*1.1)%1.7;
-  dashes(x-px,z-hz,1,0,px*2,off,r,g,b);dashes(x+px,z-hz,0,1,hz*2,off,r,g,b);dashes(x+px,z+hz,-1,0,px*2,off,r,g,b);dashes(x-px,z+hz,0,-1,hz*2,off,r,g,b);
+  pulseFrame(G,x,z,dr.lane,px,hz,off,r,g,b);
   const bl=(.5+.5*Math.sin(t*6))*pulseA*.8;_v.set(.55,-.6,0).applyMatrix4(drone.matrixWorld);sprite(_v.x,_v.y,_v.z,1,0,0,cAmber.r*bl,cAmber.g*bl,cAmber.b*bl,0);
  }
 

@@ -427,7 +427,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.11-5';
+const BUILD='2026.11.11-6';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -457,7 +457,7 @@ const MAPS=[
 const MAP_OF=[0,0,1,2,3,1];let map=MAPS[0];
 // Items: one slot, used with the button at the bottom left. They are single rescues, not standing upgrades.
 const ITEMS={wall:{name:'차단벽',icon:'▦',desc:'기체가 없는 전선의 적을 4초 동안 멈춥니다'},repair:{name:'긴급 수리',icon:'✚',desc:'더 많이 부서진 시설의 내구도를 30 회복합니다'},charge:{name:'과충전',icon:'⚡',desc:'이동 대기와 과부하 재충전을 즉시 끝냅니다'},turret:{name:'임시 포탑',icon:'⌖',desc:'기체가 없는 전선에 8초 동안 포탑을 세웁니다'},jam:{name:'전파 교란',icon:'≋',desc:'모든 적을 5초 동안 느리게 합니다'},clone:{name:'분신 기체',icon:'❖',desc:'6초 동안 반대 전선에도 기체가 사격합니다'}};
-let item=null,liveRun=false,waveHurt=false;const aid={wall:0,wallLane:0,turret:0,turretLane:0,turretCool:0,jam:0,clone:0,cloneCool:0};
+let item=null,liveRun=false,waveHurt=[],waveDone=[];const aid={wall:0,wallLane:0,turret:0,turretLane:0,turretCool:0,jam:0,clone:0,cloneCool:0};
 function applyItem(id){const other=1-drone.lane;
  if(id==='wall'){aid.wall=4;aid.wallLane=other;}
  else if(id==='repair'){const l=facilities[0]<=facilities[1]?0:1;facilities[l]=Math.min(100,facilities[l]+30);}
@@ -466,8 +466,10 @@ function applyItem(id){const other=1-drone.lane;
  else if(id==='jam')aid.jam=5;
  else if(id==='clone'){aid.clone=6;aid.cloneCool=0;}
  ev3({t:'item',id,lane:other});sound(520,.18,'triangle',.06);}
-function useItem(){if(!item||phase!=='battle'||paused||holdState||drill)return;const id=item;item=null;applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
-// Earned by destroying a rare machine or a mid boss, or by getting through a wave without a breach. A rare machine destroyed with the slot full fires its item at once.
+function itemLocked(){return liveRun&&!learned.item;}   // in a real run the slot cannot be used before the item lesson has been given
+function useItem(){if(!item||phase!=='battle'||paused||holdState||drill||itemLocked())return;const id=item;item=null;applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
+// Earned by destroying a rare machine or a mid boss, or by stopping every machine of one attack (WAVE x-y). A rare machine destroyed with the slot full fires its item at once.
+// Every machine carries the number of its attack (e.w). waveHurt[w]: one of them got through. waveDone[w]: all of them have come and none is left, the attack is settled.
 function grantItem(now){if(drill)return;const ids=Object.keys(ITEMS),id=ids[Math.random()*ids.length|0];
  if(item){if(now){applyItem(id);showToast('레어 격파 · '+ITEMS[id].name+' 즉시 발동',2000);}return;}
  item=id;showToast('아이템 획득 · '+ITEMS[id].name,2000);sound(880,.14,'sine',.05);updateControls();}
@@ -528,12 +530,12 @@ const HP_SCALE=.85,RARE_P=.05;
 const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44]};
 const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
-function reset(){item=null;liveRun=false;waveHurt=false;aid.wall=aid.turret=aid.jam=aid.clone=0;op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
-function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];waveHurt=false;aid.wall=aid.turret=aid.jam=aid.clone=0;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
+function reset(){item=null;liveRun=false;waveHurt=[];waveDone=[];aid.wall=aid.turret=aid.jam=aid.clone=0;op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
+function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];waveHurt=[];waveDone=[];aid.wall=aid.turret=aid.jam=aid.clone=0;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
-function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
+function spawn(lane,type,w=wave){const m=TYPES[type];if(waveHurt[w]===undefined)waveHurt[w]=false;let hp=Math.round(m.hp*[0,1,1,1.18,1.32,1.45][op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
  if(!drill){if(type==='boss'){if(op===TOTAL_OPS){final=true;hp=Math.round(hp*1.5);}}else if(Math.random()<RARE_P){rare=true;hp=Math.round(hp*1.6);}}   // rare machines drop an item; the last boss changes lanes twice
- const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
+ const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0,w};if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
 function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;
  if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);shotSound('boom');ev3({t:'spawn',e});}
  ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');shotSound(e.type==='boss'?'boom':'kill');if(e.rare)grantItem(true);else if(e.type==='boss'&&!e.final)grantItem(false);}}
@@ -553,10 +555,10 @@ function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(co
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sound(510,.13,'sine',.035);addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
 function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y)));if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sound(165,.28,'sawtooth',.09);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;waveHurt=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
-function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);if(!waveHurt)grantItem(false);waveHurt=false;addLog('제'+wave+'파 공격 감지.');}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;waveHurt[e.w]=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');sound(150,.25,'sawtooth',.09);if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
+function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sound(240,.18,'square',.05);}}
-  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
+  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2],waveIndex(ev[0]));if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sound(210,.22,'sawtooth',.07);}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
   for(const e of enemies){if(e.hp<=0)continue;e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?.6:1);e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y){e.hp=-999;enemyLeak(e);}}
   for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}shotSound('turret');}}}
@@ -566,7 +568,9 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
   if(core<=0){if(drill){drillCoreDown();return;}finish(false);return;}
-  if(nextSpawn>=pattern.length&&enemies.length===0){if(!waveHurt&&!drill)grantItem(false);if(op<TOTAL_OPS)upgradeScreen();else finish(true);}
+  // An attack pays its item when all of its machines have been stopped: none of them got through and none is left. The clock alone no longer pays.
+  if(!drill)for(let w=1;w<=3;w++)if(waveHurt[w]!==undefined&&!waveDone[w]&&(nextSpawn>=pattern.length||waveIndex(pattern[nextSpawn][0])>w)&&!enemies.some(e=>e.w===w)){waveDone[w]=true;if(!waveHurt[w])grantItem(false);}
+  if(nextSpawn>=pattern.length&&enemies.length===0){if(op<TOTAL_OPS)upgradeScreen();else finish(true);}
 }
 // Two offers follow facility state and one rotates per operation. Repeating a card raises its rank
 // without resetting other skills; the run has exactly four choices. Stats per rank live in BAL.card.
@@ -656,7 +660,7 @@ const sideWord=l=>wantsCompactCanvas()?(l?'아래쪽':'위쪽'):(l?'오른쪽':'
 function hold(need,title,main,hint,then){holdState={need,then,t0:performance.now()};$('toast').classList.remove('show');setCoach(title,main,hint||(need==='tap'?'화면을 터치하면 계속':''));$('coach').classList.add('hold');updateControls();}
 function releaseHold(){const h=holdState;if(!h)return;holdState=null;hideCoach();$('coach').classList.remove('hold');lastTime=performance.now();if(h.then)h.then();updateControls();}
 function holdTick(dt){drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);fxStep(dt);}
-function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);liveRun=true;lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
+function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);liveRun=true;lessonQuiet=99;lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
 
 /* ---------- drill: the tutorial is a scripted fight on the real rules ----------
    Part 1 shows a loss: the drone is held on the workshop lane while the power-plant lane is overrun, the plant falls, then the hub falls.
@@ -690,23 +694,29 @@ function drillCoreDown(){const d=drill;ev3({t:'finish',victory:false});sound(125
 
 /* ---------- overload lesson, given once during real play ----------
    No enemies are added. The overload stays locked until three machines of one lane are inside the overload range at once
-   (in operation 1 that is the pack on the workshop lane at about 23 s; from operation 2 on, two are enough). Then the game holds and asks for the overload. */
-const LESSON_AFTER=8;
-function lessonTick(){if(liveRun&&map.rule&&!learned.maps[map.id]&&phase==='battle'&&stageTime>.6){hold('tap','새 지형 · '+map.name,map.rule+'.',null,()=>{learned.maps[map.id]=true;saveLearned();});return;}
- if(liveRun&&item&&!learned.item&&phase==='battle'&&stageTime>1.5){hold('tap','아이템 획득 · '+ITEMS[item].name,ITEMS[item].desc+'. 왼쪽 아래 버튼을 누르면 사용합니다. 아이템은 한 번에 하나만 들 수 있고, 레어 적이나 중간 보스를 잡거나 피해 없이 공격을 넘기면 얻습니다.',null,()=>{learned.item=true;saveLearned();});return;}
- if(!lesson||phase!=='battle'||stageTime<LESSON_AFTER)return;
- const need=op===1?3:2;let lane=-1;
- for(const l of [drone.lane,1-drone.lane]){let n=0;for(const e of enemies)if(e.hp>0&&e.lane===l&&Math.abs(e.y-DRONE_Y)<effects.pulseRange-12)n++;if(n>=need){lane=l;break;}}
- if(lane<0)return;
- const ask=()=>{pulseLock=false;drone.pulseCooldown=0;hold('pulse','과부하 방출','적이 한꺼번에 몰려왔습니다. 사격만으로는 막기 어렵습니다. 오른쪽 아래 ✳ 버튼을 눌러 점선 범위 안의 적을 한꺼번에 공격하세요.','✳ 버튼',()=>{learned.pulse=true;saveLearned();lesson=null;setTimeout(()=>showToast('과부하는 쓰고 나면 재충전 시간이 필요합니다',3000),700);});};
- if(drone.lane!==lane)hold('move'+lane,'적 밀집',sideWord(lane)+' 전선에 적이 한꺼번에 몰렸습니다. 전장의 '+sideWord(lane)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(lane)+' 터치',ask);else ask();
+   (in operation 1 that is usually the pack on the power-plant lane at about 14 s, otherwise the group on the workshop lane at about 23 s;
+   from operation 2 on, two are enough). Then the game holds and asks for the overload.
+   The map lesson and the item lesson are given the same way, one at a time. */
+const LESSON_AFTER=8,LESSON_GAP=4;let lessonQuiet=99;   // lessonQuiet = seconds of play since the last lesson ended. Lessons keep LESSON_GAP apart, so two never come back to back.
+function lessonTick(dt){lessonQuiet+=dt;if(phase!=='battle'||lessonQuiet<LESSON_GAP)return;
+ // one lesson at a time, in this order: the new map (start of a chapter), the overload (it needs the machines that are in range now), the item (it can wait: the slot stays locked until it is explained)
+ if(liveRun&&map.rule&&!learned.maps[map.id]&&stageTime>.6){hold('tap','새 지형 · '+map.name,map.rule+'.',null,()=>{lessonQuiet=0;learned.maps[map.id]=true;saveLearned();});return;}
+ if(lesson&&stageTime>=LESSON_AFTER){
+  const need=op===1?3:2;let lane=-1;
+  for(const l of [drone.lane,1-drone.lane]){let n=0;for(const e of enemies)if(e.hp>0&&e.lane===l&&Math.abs(e.y-DRONE_Y)<effects.pulseRange-12)n++;if(n>=need){lane=l;break;}}
+  if(lane>=0){
+   const ask=()=>{pulseLock=false;drone.pulseCooldown=0;hold('pulse','과부하 방출','적이 한꺼번에 몰려왔습니다. 사격만으로는 막기 어렵습니다. 오른쪽 아래 ✳ 버튼을 눌러 점선 범위 안의 적을 한꺼번에 공격하세요.','✳ 버튼',()=>{lessonQuiet=0;learned.pulse=true;saveLearned();lesson=null;setTimeout(()=>showToast('과부하는 쓰고 나면 재충전 시간이 필요합니다',3000),700);});};
+   if(drone.lane!==lane)hold('move'+lane,'적 밀집',sideWord(lane)+' 전선에 적이 한꺼번에 몰렸습니다. 전장의 '+sideWord(lane)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(lane)+' 터치',ask);else ask();
+   return;}
+ }
+ if(itemLocked()&&item&&stageTime>1.5)hold('tap','아이템 획득 · '+ITEMS[item].name,ITEMS[item].desc+'. 왼쪽 아래 버튼을 누르면 사용합니다. 아이템은 한 번에 하나만 들 수 있고, 레어 적이나 중간 보스를 잡거나, 한 번의 공격을 돌파 없이 모두 막으면 얻습니다.',null,()=>{lessonQuiet=0;learned.item=true;saveLearned();});
 }
 window.addEventListener('resize',fitDialog);
 window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog));
 let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
 function updateControls(){const playing=phase==='battle';const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
  pb.disabled=settingsOpen||(holdState?!want:(!playing||paused||cd>.01||locked));pb.classList.toggle('coach-target',want);pb.classList.toggle('locked',locked);$('drillSkip').hidden=!drill;
- const ib=$('itemBtn');ib.disabled=settingsOpen||!(item&&playing&&!paused&&!holdState&&!drill);ib.textContent=item?ITEMS[item].icon:'▢';ib.classList.toggle('has',!!item);ib.setAttribute('aria-label',item?'아이템 사용: '+ITEMS[item].name:'아이템 없음');
+ const ib=$('itemBtn');ib.disabled=settingsOpen||!(item&&playing&&!paused&&!holdState&&!drill&&!itemLocked());ib.textContent=item?ITEMS[item].icon:'▢';ib.classList.toggle('has',!!item);ib.setAttribute('aria-label',item?'아이템 사용: '+ITEMS[item].name:'아이템 없음');
  if(cd>.01){if(cd>pcMax)pcMax=cd;}else pcMax=0;pb.classList.toggle('cooling',cd>.01);pb.style.setProperty('--cd',cd>.01?(cd/pcMax).toFixed(3):'0');$('pulseDetail').textContent=cd>.01?Math.ceil(cd):'';}
 function updateUI(){setBar('hubBar',core,100);$('hubNum').textContent=Math.round(core);$('hubChip').style.visibility=phase==='battle'?'visible':'hidden';updateControls();}
 function noWave(){return phase==='intro';}
@@ -858,7 +868,7 @@ function drawCompact(now){
  }
 }
 function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact(now);return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop(now);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)drawEnemy(e,now);drawDrone(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
-function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(drill)drillTick(dt);else{lessonTick();update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
+function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(drill)drillTick(dt);else{lessonTick(dt);update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
 $('pulseBtn').addEventListener('click',pulse);$('itemBtn').addEventListener('click',useItem);
 function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(holdState&&holdState.need==='tap'){if(performance.now()-holdState.t0>450)releaseHold();return;}if(phase!=='battle')return;if(G3.active&&G3.renderer.laneAt){switchLane(G3.renderer.laneAt(ev.clientX,ev.clientY));return;}const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
 canvas.addEventListener('pointerdown',fieldTap);

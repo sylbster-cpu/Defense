@@ -9,9 +9,10 @@ const { chromium } = require('playwright');const out=process.argv[2];
   await p.reload();await p.waitForTimeout(1500);await p.click('#skipFilm');await p.waitForTimeout(400);const s2=await st();ck('SKIP goes to the menu',!s2.film&&s2.menu,s2);
   await p.click('#skipBtn');await p.waitForTimeout(600);ck('start works',await p.evaluate(()=>document.getElementById('title').hidden&&window.__relay.phase==='battle'));
   ck('no errors',!errs.length,errs.slice(0,2));await c.close();}
- // 자동 재생이 막힌 경우: play()가 거부되면 재생 단추가 나와야 한다
+ // 자동 재생이 막힌 경우: play()가 거부되면 재생 단추가 나와야 한다.
+ // 막힌 브라우저에서는 autoplay 속성으로도 시작되지 않으므로 속성도 함께 지운다(지우지 않으면 시험용 브라우저가 속성만으로 재생을 시작해 단추가 다시 숨는다).
  const c=await b.newContext({viewport:{width:390,height:844},hasTouch:true});const p=await c.newPage();
- await p.addInitScript(()=>{const real=HTMLMediaElement.prototype.play;let n=0;HTMLMediaElement.prototype.play=function(){if(!window.__gesture)return Promise.reject(new DOMException('blocked','NotAllowedError'));return real.call(this);};window.addEventListener('pointerdown',()=>{window.__gesture=true;},true);});
+ await p.addInitScript(()=>{const real=HTMLMediaElement.prototype.play;let n=0;HTMLMediaElement.prototype.play=function(){if(!window.__gesture)return Promise.reject(new DOMException('blocked','NotAllowedError'));return real.call(this);};window.addEventListener('pointerdown',()=>{window.__gesture=true;},true);new MutationObserver(()=>{const v=document.getElementById('titleVid');if(v&&v.hasAttribute('autoplay'))v.removeAttribute('autoplay');}).observe(document,{childList:true,subtree:true});});
  await p.goto('http://127.0.0.1:8765/index.html?q=0');await p.waitForTimeout(1500);
  ck('blocked autoplay shows the play button and SKIP',await p.isVisible('#filmPlay')&&await p.isVisible('#skipFilm'));await p.screenshot({path:out+'/blocked.png'});
  await p.click('#filmPlay');await p.waitForTimeout(1500);ck('touch starts the film',await p.evaluate(()=>{const v=document.getElementById('titleVid');return !v.paused&&v.currentTime>.5&&document.getElementById('filmPlay').hidden;}));

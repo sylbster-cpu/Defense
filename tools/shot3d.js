@@ -14,7 +14,7 @@ const put=`const put=(lane,type,y,o)=>{const m=TYPES[type];const e=Object.assign
 const freeze=`speed=0;`;
 const SC={
  intro:[``,400],
- idle:[`mute=true;reset();newStage(1);enemies=[];nextSpawn=pattern.length;${freeze}`,500],
+ idle:[`mute=true;reset();newStage(1);enemies=[];pattern=[[1e9,0,'runner']];nextSpawn=0;${freeze}`,500],   // 올 적을 하나 남겨 둔다. 일정이 비면 곧바로 강화 선택으로 넘어간다
  battle:[`mute=true;reset();newStage(3);for(let i=0;i<60*9;i++)update(1/60);${freeze}`,500],
  boss:[`mute=true;reset();upgradeRanks.stable=2;Object.assign(effects,BAL.card.stable(2));newStage(5);for(let i=0;i<60*49;i++){update(1/60);core=100;facilities=[100,100];}${freeze}`,500],
  lineup:[`mute=true;reset();newStage(2);enemies=[];nextSpawn=pattern.length;${put}
