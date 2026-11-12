@@ -52,6 +52,9 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   // upgrades
   await T("reset();newStage(2);upgradeRanks.stable=4;upgradeScreen();0");
   ck('upgrade: a card at the top rank is not offered, three cards still are',await T("offeredUpgrades.length===3&&!offeredUpgrades.includes('stable')&&offeredUpgrades.includes('precision')"),await T("offeredUpgrades.join()"));
+  ck('upgrade: the cap is 4 until every card reaches it',await T("reset();rankCap()===4&&(upgradeRanks.stable=upgradeRanks.emergency=upgradeRanks.precision=4,rankCap()===4)"));
+  ck('upgrade: when every card is at 4, the cap is set again at 8 and cards are offered again',await T("reset();newStage(2);for(const k in upgradeRanks)upgradeRanks[k]=4;upgradeScreen();rankCap()===8&&offeredUpgrades.length===3"),await T("offeredUpgrades.join()"));
+  ck('upgrade: above 4 the cap holds at 8 until all reach 8',await T("reset();newStage(2);upgradeRanks.stable=8;upgradeRanks.emergency=upgradeRanks.precision=upgradeRanks.rubble=5;upgradeScreen();rankCap()===8&&!offeredUpgrades.includes('stable')&&offeredUpgrades.length===3"),await T("offeredUpgrades.join()"));
   ck('upgrade: choosing a full card does nothing',await T("const n=upgradeRanks.stable;phase='upgrade';offeredUpgrades.push('stable');choose('stable');upgradeRanks.stable===n"));
   ck('upgrade: the counter shows seven picks',await T("reset();newStage(1);upgradeScreen();$('overlay').textContent.includes('강화 1 / 07')"),await T("($('overlay').textContent.match(/강화 \\d+ \\/ \\d+/)||[''])[0]"));
   for(const k of [1,2,3,4]){const want=await T(`reset();newStage(${k});const fo=['stable','precision'],alt=['stable','emergency','precision','rubble'].filter(id=>!fo.includes(id));[...fo,alt[(op-1)%alt.length]].join()`);   // the rule before the cap

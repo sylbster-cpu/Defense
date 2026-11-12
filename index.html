@@ -376,7 +376,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow" id="vibRow"><span>진동</span><div class="seg" id="setVib"><button type="button" data-v="1">켜기</button><button type="button" data-v="0">끄기</button></div></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=2026.11.12-2"></script>
+<script src="sfx.js?v=2026.11.12-3"></script>
 <script>
 'use strict';
 (() => {
@@ -433,7 +433,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-2';
+const BUILD='2026.11.12-3';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -686,7 +686,9 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
 }
 // Two offers follow facility state and one rotates per operation. Repeating a card raises its rank
 // without resetting other skills; the run has one choice after every chapter but the last (seven). Stats per rank live in BAL.card.
-const CARD_NAMES={stable:'순환 전원',emergency:'비상 축전',precision:'협동 조준',rubble:'잔해 차폐'},MAX_RANK=4;
+const CARD_NAMES={stable:'순환 전원',emergency:'비상 축전',precision:'협동 조준',rubble:'잔해 차폐'},RANK_STEP=4;
+// The rank cap: RANK_STEP (the highest rank a five-chapter run could reach). When every card has reached it, the cap is set again one step higher.
+function rankCap(){return RANK_STEP*(Math.floor(Math.min(...Object.values(upgradeRanks))/RANK_STEP)+1);}
 function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?BAL.card[id](n-1):null,f1=v=>v.toFixed(1),f2=v=>v.toFixed(2),pc=v=>Math.round(v*100)+'%';
  switch(id){
  case 'stable':return (!b?`이동 대기 ${BAL.moveBase}초 → ${f1(a.moveBase)}초 · 이동 후 ${f1(a.burstTime)}초간 기체 공격 속도 ×${a.burstRate} · 사거리 +${a.droneRange-BAL.droneRange}`:`이동 대기 ${f2(b.moveBase)} → ${f2(a.moveBase)}초 · 이동 후 강화 ${f1(b.burstTime)} → ${f1(a.burstTime)}초 · 사거리 +${a.droneRange-b.droneRange}`)+(n<3?' · 3단계부터 강화 중 떠난 전선도 사격':n===3?' · 새 효과: 강화 중 늘어난 사격이 떠난 전선의 적을 공격':' · 떠난 전선 사격 시간도 함께 늘어남');
@@ -698,8 +700,8 @@ function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?
 function upgradeScreen(){phase='upgrade';sfxAmb(false);stageReports.push({op,facilities:[...facilities],core});
  const names=['발전소','정비소'],statuses=facilities.map((h,i)=>names[i]+' '+(h>0?'유지':'붕괴')+' ('+Math.round(h)+' / 100)');
  // Keep the two facility-dependent offers. Rotate one alternative so all four existing upgrades are reachable without destroying a facility.
- // A card stops at MAX_RANK (the highest rank a five-chapter run could reach); a full card's place goes to the next open one.
- const pref=[facilities[0]>0?'stable':'emergency',facilities[1]>0?'precision':'rubble'],open=id=>upgradeRanks[id]<MAX_RANK;
+ // A card stops at the cap (rankCap); a full card's place goes to the next open one.
+ const cap=rankCap(),pref=[facilities[0]>0?'stable':'emergency',facilities[1]>0?'precision':'rubble'],open=id=>upgradeRanks[id]<cap;
  const facilityOffers=pref.filter(open),alternatives=['stable','emergency','precision','rubble'].filter(id=>!pref.includes(id)&&open(id)),k=alternatives.length?(op-1)%alternatives.length:0;
  offeredUpgrades=[...facilityOffers,...alternatives.slice(k),...alternatives.slice(0,k)].slice(0,3);
  const tags={stable:'발전소 생존',emergency:'발전소 붕괴',precision:'정비소 생존',rubble:'정비소 붕괴'};
@@ -707,7 +709,7 @@ function upgradeScreen(){phase='upgrade';sfxAmb(false);stageReports.push({op,fac
  const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / ${String(TOTAL_OPS-1).padStart(2,'0')}</div><h2>강화 선택</h2><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}${stageGift?'<br>돌파 없이 방어 · '+(stageGift==='full'?'보관 칸이 가득 차 보상을 받지 못했습니다':'아이템 획득: '+ITEMS[stageGift].name):''}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
  renderOverlay(html,'upgrade');for(const btn of document.querySelectorAll('[data-choice]'))btn.addEventListener('click',()=>choose(btn.dataset.choice));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id]||upgradeRanks[id]>=MAX_RANK)return;const n=++upgradeRanks[id];
+function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id]||upgradeRanks[id]>=rankCap())return;const n=++upgradeRanks[id];
  Object.assign(effects,BAL.card[id](n));if(id==='rubble')effects.rubble=1;
  upgradeHistory.push({op,id,rank:n});offeredUpgrades=[];sfx('upgrade');addLog('강화 기술 적용: '+CARD_NAMES[id]+' Lv.'+n);newStage(op+1);}
 function finish(victory){phase='finish';ev3({t:'finish',victory});const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sfxAmb(false);sfx(victory?'win':'lose');
