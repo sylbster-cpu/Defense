@@ -371,7 +371,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 
 /* Look (2026-11-12, the owner's choice from four proposals): D "signal" for the battle, upgrade, result, settings and radio lines:
    type over the picture, a large serif (Nanum Myeongjo), hairlines, one red signal line, film-subtitle captions. The title screen follows below. */
-@font-face{font-family:'BHS';src:url('media/myeong.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'BHS';src:url('media/myeong.woff2?v=2') format('woff2');font-display:swap}
 :root{--w:#f1ebe0;--w2:#b9b2a6;--sig:#e2462f;--f:'BHS','Nanum Myeongjo',serif;--wave:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='24' viewBox='0 0 240 24'%3E%3Cpath d='M0 12h60l6-9 8 18 7-14 5 8 4-3h150' fill='none' stroke='%23e2462f' stroke-width='2'/%3E%3C/svg%3E")}
 .overlay{background:linear-gradient(90deg,rgba(6,6,7,.94) 0,rgba(6,6,7,.86) 55%,rgba(6,6,7,.7) 100%)!important;backdrop-filter:none!important}
 .overlay-card{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--w)}
@@ -415,8 +415,8 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(226,70,47,.6)}100%{box-shadow:0 0 0 12px rgba(226,70,47,0)}}
 /* Title screen: C (dusk heavy machinery: black bars, engraved steel letters with an orange rim light, metal buttons with lamps)
    with A mixed in (the relay console: amber monospace boot lines, a scanline veil, a blinking caret). The rest of the game uses D. */
-@font-face{font-family:'TDISP';src:url('media/doh.woff2') format('woff2');font-display:swap}
-@font-face{font-family:'TMONO';src:url('media/term.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'TDISP';src:url('media/doh.woff2?v=2') format('woff2');font-display:swap}
+@font-face{font-family:'TMONO';src:url('media/term.woff2?v=2') format('woff2');font-display:swap}
 .title{--lamp:#ff8c2a;--amb:#ffb12a;--amb2:#c98a1c;--brush:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);--td:'TDISP',sans-serif;--tm:'TMONO','Nanum Gothic Coding',monospace}
 .title::before,.title::after{content:'';position:absolute;left:0;right:0;height:7vh;background:#000;z-index:2;pointer-events:none}.title::before{top:0}.title::after{bottom:0}
 .title-shade{background:linear-gradient(90deg,rgba(10,8,6,.93) 0,rgba(10,8,6,.6) 42%,rgba(10,8,6,.05) 78%)!important}
@@ -545,7 +545,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-6';
+const BUILD='2026.11.12-7';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -556,11 +556,13 @@ const prefs={speed:1,vol:100,bright:100,bgm:true,vib:true};try{Object.assign(pre
 prefs.vib=prefs.vib!==false;prefs.speed=prefs.speed===2?2:1;prefs.vol=Math.max(0,Math.min(100,+prefs.vol||0));prefs.bright=Math.max(70,Math.min(150,+prefs.bright||100));
 function savePrefs(){try{localStorage.setItem('relayPrefs',JSON.stringify(prefs));}catch(e){}}
 let settingsOpen=false,pcMax=0;
-// What the player has already been taught (kept in this browser): the drill, and the overload lesson given during a real operation.
-const learned={drill:false,pulse:false,item:false,maps:{}};try{Object.assign(learned,JSON.parse(localStorage.getItem('relayLearn')||'{}'));}catch(e){}
+// What the player has already been taught (kept in this browser): the drill, and the lessons given during a real operation
+// (overload, the bag, each map, each item, the combo).
+const learned={drill:false,pulse:false,item:false,maps:{},items:{},combo:false};try{Object.assign(learned,JSON.parse(localStorage.getItem('relayLearn')||'{}'));}catch(e){}
+if(!learned.items||typeof learned.items!=='object')learned.items={};if(!learned.maps||typeof learned.maps!=='object')learned.maps={};
 function saveLearned(){try{localStorage.setItem('relayLearn',JSON.stringify(learned));}catch(e){}}
 // drill = the scripted tutorial running on the real rules. lesson = the overload lesson waiting inside operation 1. holdState = the game is held until the player does one thing.
-let drill=null,lesson=null,holdState=null,pulseLock=false;
+let drill=null,lesson=null,holdState=null,pulseLock=false,comboLesson=false;   // comboLesson: the first combo refund happened, its lesson is waiting
 // Maps: both lanes keep their length (lane distance y runs from LANE_TOP 99 to LEAK_Y 608, 509 long). Each map has one rule and one stretch
 // where it acts (zone). All maps are tuned to a similar size of stretch, share of machines acted on and effect on breaches (tools/map_bal.js).
 //  near(y): the overload and the drone's own shots also reach machines of the other lane there.   slow(lane,y): a detour, machines are slower.
@@ -605,7 +607,7 @@ const MULTI_NAME=n=>n>=8?'울트라 격파':n>=5?'메가 격파':n===4?'쿼드�
 function onKill(e){combo++;comboT=COMBO.t;if(combo>bestCombo)bestCombo=combo;const mult=1+Math.min(2,combo/20);score+=Math.round((SCORE[e.type]||10)*(e.rare?3:1)*mult);
  multiN++;multiT=MULTI.t;
  if(combo%5===0){ev3({t:'combo',n:combo});sfx('item_get',0,Math.min(1.8,1+combo*.012),.45);}
- if(combo%COMBO.every===0){drone.pulseCooldown=Math.max(0,drone.pulseCooldown-COMBO.refund);showToast(combo+' 콤보 · 과부하 '+COMBO.refund+'초 충전',1300);sfx('upgrade',0,1.2,.6);}}
+ if(combo%COMBO.every===0){drone.pulseCooldown=Math.max(0,drone.pulseCooldown-COMBO.refund);showToast(combo+' 콤보 · 과부하 '+COMBO.refund+'초 충전',1300);sfx('upgrade',0,1.2,.6);if(liveRun&&!learned.combo)comboLesson=true;}}
 function feelStep(dt){if(comboT>0){comboT-=dt;if(comboT<=0){if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;}}
  if(multiT>0){multiT-=dt;if(multiT<=0)settleMulti();}}
 function settleMulti(end){if(multiN>=3){ev3({t:'multi',n:multiN,name:MULTI_NAME(multiN)});score+=multiN*multiN*10;if(!end)hitStop(.05);buzz(40);sfx('upgrade',0,1.5,.7);}multiN=0;multiT=0;}   // also called when a chapter ends inside the window
@@ -663,8 +665,8 @@ function chainBolt(){let cur=null;for(const e of enemies)if(e.hp>0&&!map.cover(e
  for(let k=0;k<CHAIN.jumps&&cur;k++){hit.push(cur);const cx=cur.x,cy=cur.y,cl=cur.lane;damageEnemy(cur,CHAIN.dmg,px,py,'chain');px=cx;py=cy;let nx=null,bd=CHAIN.reach;
   for(const q of enemies){if(q.hp<=0||hit.includes(q)||map.cover(q.lane,q.y))continue;const d=Math.abs(q.y-cy)+(q.lane!==cl?CHAIN.across:0);if(d<=bd){bd=d;nx=q;}}cur=nx;}
  if(hit.length>1)showToast('연쇄 번개 · '+hit.length+'기',1300);}
-function itemLocked(){return liveRun&&!learned.item;}   // in a real run the bag cannot be used before the item lesson has been given
-function useItem(i){if(i>=bag.length||phase!=='battle'||paused||holdState||drill||itemLocked())return;const id=bag[i];
+function itemLocked(id){return liveRun&&(!learned.item||(!!id&&!learned.items[id]));}   // in a real run the bag cannot be used before the item lesson, and an item not before its own lesson
+function useItem(i){if(i>=bag.length||phase!=='battle'||paused||holdState||drill||itemLocked(bag[i]))return;const id=bag[i];
  if(AIMED.includes(id)){aim=aim===i?-1:i;if(aim>=0)showToast(id==='magnet'?'끌어모을 곳을 터치하세요':'포격할 곳을 터치하세요',2600);updateControls();return;}   // aimed items wait for a place; pressing again puts them back
  aim=-1;bag.splice(i,1);applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
 function useAim(lane,y){if(aim<0)return;if(bag[aim]==='orbital')useOrbital(lane,y);else useMagnet(lane,y);}
@@ -980,7 +982,7 @@ const sideWord=l=>wantsCompactCanvas()?(l?'아래쪽':'위쪽'):(l?'오른쪽':'
 function hold(need,title,main,hint,then){holdState={need,then,t0:performance.now()};$('toast').classList.remove('show');setCoach(title,main,hint||(need==='tap'?'화면을 터치하면 계속':''));$('coach').classList.add('hold');updateControls();}
 function releaseHold(){const h=holdState;if(!h)return;holdState=null;hideCoach();$('coach').classList.remove('hold');lastTime=performance.now();if(h.then)h.then();updateControls();}
 function holdTick(dt){drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);fxStep(dt);}
-function beginRun(){drill=null;holdState=null;hideCoach();reset();newStage(1);liveRun=true;lessonQuiet=99;lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
+function beginRun(){drill=null;holdState=null;comboLesson=false;hideCoach();reset();newStage(1);liveRun=true;lessonQuiet=99;lesson=learned.pulse?null:{};pulseLock=!learned.pulse;updateControls();}
 
 /* ---------- drill: the tutorial is a scripted fight on the real rules ----------
    Part 1 shows a loss: the drone is held on the workshop lane while the power-plant lane is overrun, the plant falls, then the hub falls.
@@ -1019,7 +1021,8 @@ function drillCoreDown(){const d=drill;ev3({t:'finish',victory:false});sfx('lose
    The map lesson and the item lesson are given the same way, one at a time. */
 const LESSON_AFTER=8,LESSON_GAP=4;let lessonQuiet=99;   // lessonQuiet = seconds of play since the last lesson ended. Lessons keep LESSON_GAP apart, so two never come back to back.
 function lessonTick(dt){lessonQuiet+=dt;if(phase!=='battle'||lessonQuiet<LESSON_GAP)return;
- // one lesson at a time, in this order: the new map (start of a chapter), the overload (it needs the machines that are in range now), the item (it can wait: the bag stays locked until it is explained)
+ // one lesson at a time, in this order: the new map (start of a chapter), the overload (it needs the machines that are in range now), the bag and its first item,
+ // then each new item and the combo. Items can wait: an item stays locked until it is explained. Lessons that come due together follow one another LESSON_GAP apart.
  if(liveRun&&map.rule&&!learned.maps[map.id]&&stageTime>.6){hold('tap','새 지형 · '+map.name,map.rule+'.',null,()=>{lessonQuiet=0;learned.maps[map.id]=true;saveLearned();});return;}
  if(lesson&&stageTime>=LESSON_AFTER){
   const need=op===1?3:2;let lane=-1;
@@ -1029,9 +1032,13 @@ function lessonTick(dt){lessonQuiet+=dt;if(phase!=='battle'||lessonQuiet<LESSON_
    if(drone.lane!==lane)hold('move'+lane,'적 밀집',sideWord(lane)+' 전선에 적이 한꺼번에 몰렸습니다. 전장의 '+sideWord(lane)+'을 터치해 기체를 옮기세요.','전장 '+sideWord(lane)+' 터치',ask);else ask();
    return;}
  }
- if(itemLocked()&&stageTime>1.5){const done=()=>{lessonQuiet=0;learned.item=true;saveLearned();},how='주운 아이템은 왼쪽 아래 칸에 두 개까지 보관하고, 칸을 누르면 사용합니다.';
-  if(drops.length&&bag.length<BAG_MAX)hold('pick','아이템이 떨어졌습니다','부서진 적이 아이템을 남겼습니다. 5초가 지나면 사라집니다. 전장의 아이템을 터치해 주우세요.','아이템 터치',()=>{const id=bag[bag.length-1];hold('tap','아이템 획득 · '+ITEMS[id].name,ITEMS[id].desc+'. '+how,null,done);});
-  else if(bag.length)hold('tap','아이템 획득 · '+ITEMS[bag[0]].name,ITEMS[bag[0]].desc+'. '+how+' 레어 적이나 중간 보스를 부수면 전장에 떨어지고, 5초 안에 터치해야 주울 수 있습니다.',null,done);}
+ if(itemLocked()&&stageTime>1.5){const done=id=>()=>{lessonQuiet=0;learned.item=true;learned.items[id]=true;saveLearned();},how='주운 아이템은 왼쪽 아래 칸에 두 개까지 보관하고, 칸을 누르면 사용합니다.';
+  if(drops.length&&bag.length<BAG_MAX){hold('pick','아이템이 떨어졌습니다','부서진 적이 아이템을 남겼습니다. 5초가 지나면 사라집니다. 전장의 아이템을 터치해 주우세요.','아이템 터치',()=>{const id=bag[bag.length-1];hold('tap','아이템 획득 · '+ITEMS[id].name,ITEMS[id].desc+'. '+how,null,done(id));});return;}
+  else if(bag.length){hold('tap','아이템 획득 · '+ITEMS[bag[0]].name,ITEMS[bag[0]].desc+'. '+how+' 레어 적이나 중간 보스를 부수면 전장에 떨어지고, 5초 안에 터치해야 주울 수 있습니다.',null,done(bag[0]));return;}}
+ // an item held for the first time (picked up or paid at a chapter end) is explained before it can be used
+ if(liveRun&&learned.item){const id=bag.find(x=>!learned.items[x]);if(id){hold('tap','새 아이템 · '+ITEMS[id].name,ITEMS[id].desc+'.',null,()=>{lessonQuiet=0;learned.items[id]=true;saveLearned();});return;}}
+ // the combo, at its first refund of the overload
+ if(comboLesson){hold('tap','콤보','적을 '+COMBO.t+'초 안에 잇달아 부수면 콤보가 이어집니다. 콤보가 높을수록 격파 점수가 커지고(최대 3배), '+COMBO.every+'콤보마다 과부하 재충전이 '+COMBO.refund+'초 줄어듭니다. '+COMBO.t+'초 동안 부수지 못하거나 적이 방어선을 넘으면 끊깁니다.',null,()=>{lessonQuiet=0;comboLesson=false;learned.combo=true;saveLearned();});return;}
 }
 window.addEventListener('resize',fitDialog);
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',fitDialog);   // a web font that arrives after the overlay opened changes its height: fit it again
@@ -1039,7 +1046,7 @@ window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog)
 let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
 function updateControls(){const playing=phase==='battle';const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
  pb.disabled=settingsOpen||(holdState?!want:(!playing||paused||cd>.01||locked));pb.classList.toggle('coach-target',want);pb.classList.toggle('locked',locked);$('drillSkip').hidden=!drill;
- for(let i=0;i<BAG_MAX;i++){const ib=$(i?'itemBtn2':'itemBtn'),id=bag[i]||'';ib.disabled=settingsOpen||!(id&&playing&&!paused&&!holdState&&!drill&&!itemLocked());
+ for(let i=0;i<BAG_MAX;i++){const ib=$(i?'itemBtn2':'itemBtn'),id=bag[i]||'';ib.disabled=settingsOpen||!(id&&playing&&!paused&&!holdState&&!drill&&!itemLocked(id));
   if(ib.dataset.it!==id){ib.dataset.it=id;ib.innerHTML=id?iconSVG(id):'';ib.style.color=id?ITEMS[id].col:'';}ib.classList.toggle('has',!!id);ib.classList.toggle('aiming',aim===i);ib.setAttribute('aria-label',id?'아이템 사용: '+ITEMS[id].name:'빈 아이템 칸');}
  if(cd>.01){if(cd>pcMax)pcMax=cd;}else pcMax=0;pb.classList.toggle('cooling',cd>.01);pb.style.setProperty('--cd',cd>.01?(cd/pcMax).toFixed(3):'0');$('pulseDetail').textContent=cd>.01?Math.ceil(cd):'';}
 function updateUI(){setBar('hubBar',core,100);$('hubNum').textContent=Math.round(core);$('hubChip').style.visibility=phase==='battle'?'visible':'hidden';updateControls();}

@@ -9,7 +9,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   const T=x=>p.evaluate(x=>window.__t(x),x),tag=w+'x'+h+(mode?' 2D':'');
   await p.goto('file://'+f+(mode?'?2d=1':'?q=0'));if(!mode)await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});else await p.waitForTimeout(600);
   // helpers inside the game: a fixed drop, where a drop is on the screen, a held clock
-  await T(`$('title').hidden=true;$('titleVid').pause();mute=true;learned.item=learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=1;beginRun();map=MAPS[0];pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];paused=true;
+  await T(`$('title').hidden=true;$('titleVid').pause();mute=true;learned.item=learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=1;for(const k in ITEMS)learned.items[k]=1;beginRun();map=MAPS[0];pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];paused=true;
    window.__drop=(item,lane,y)=>{const d={id:Math.random(),item,lane,y,life:DROP_LIFE};drops.push(d);return d;};
    window.__at=(d,h=2.4)=>{const r=canvas.getBoundingClientRect();if(G3.active)return G3.renderer.screenOf(d.lane,d.y,h);if(compactCanvas)return{x:r.left+cmp.x0+(d.y-LANE_TOP)/LANE_LEN*cmp.run,y:r.top+cmp.ys[d.lane]};return{x:r.left+LANES[d.lane]/W*r.width,y:r.top+d.y/H*r.height};};
    window.__run=(sec)=>{for(let i=0;i<Math.round(sec*60);i++)update(1/60);};0`);
