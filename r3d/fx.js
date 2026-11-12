@@ -330,17 +330,18 @@ function pop(x,y,z,s,red){
  light(x,y+1,z,f0,22*s*s,.12);
 }
 function impact(x,y,z,dx,dy,dz,c,s){
- emit(P.flash,x,y,z,0,0,0,1.25*s,C.hot,c);
- const n=cnt(3);for(let i=0;i<n;i++){const sp=4+rnd()*8;emit(P.spark,x,y,z,-dx*sp+(rnd()-.5)*7,-dy*sp+2+rnd()*5,-dz*sp+(rnd()-.5)*7,.75,C.hot,c);}
+ emit(P.flash,x,y,z,0,0,0,1.75*s,C.hot,c);
+ const n=cnt(5);for(let i=0;i<n;i++){const sp=4+rnd()*8;emit(P.spark,x,y,z,-dx*sp+(rnd()-.5)*7,-dy*sp+2+rnd()*5,-dz*sp+(rnd()-.5)*7,.75,C.hot,c);}
 }
 const KILL_S={runner:.62,grunt:.9,brute:1.28,boss:1.45},MUZZLE=3.19;   // MUZZLE: distance from ctx.turretPos to the muzzle of the turret model (base.js)
 function kill(e){
  ctx.enemyPos(e,vE);const d=ENEMY[e.type]||ENEMY.grunt,x=vE.x,y=vE.y,z=vE.z,s=KILL_S[e.type]||.9,col=ENEMY_COL[e.type]||ENEMY_COL.grunt;
  blast(x,y,z,s,false,true);
  chunks(cnt(2+s*4.5),x,y,z,d.r,6+s*3,.3+.16*s,col,C.dark,s>1.2);
+ if(e.type==='brute')ctx.shake(.33);else if(e.type==='grunt')ctx.shake(.2);   // large machines are felt when they go
  if(e.type==='boss'){
   // stage 1 now, a string of pops across the hull, then the big one
-  ctx.shake(.28);
+  ctx.shake(.5);
   for(let i=0;i<5;i++)after(.07+i*.085,K_POP,x+(rnd()-.5)*d.r*1.7,y+(rnd()-.35)*d.h*.6,z+(rnd()-.5)*d.r*1.7,.75+rnd()*.4);
   after(.5,K_BOSS,x,y,z,2.4);
  }
@@ -352,7 +353,7 @@ function bossFinal(x,y,z,s){
  n=cnt(12);for(let i=0;i<n;i++){const a=rnd()*6.283,r=rnd()*1.6;emit(P.fire,x+Math.cos(a)*r,y+rnd()*1.5,z+Math.sin(a)*r,Math.cos(a)*2,7+rnd()*9,Math.sin(a)*2,1.7);}   // rising fire column
  n=cnt(14);for(let i=0;i<n;i++){const a=rnd()*6.283,sp=2+rnd()*5;emit(P.ember,x,y+1,z,Math.cos(a)*sp,2+rnd()*6,Math.sin(a)*sp,1.3);}
  chunks(cnt(16),x,y+.5,z,3,13,.62,ENEMY_COL.boss,C.dark,true);
- light(x,y+2.5,z,C.fire0,420,.3);ctx.shake(.8);
+ light(x,y+2.5,z,C.fire0,420,.3);ctx.shake(1);ctx.fxScreen.white=1;
 }
 function facilityBlast(lane,x,z){
  towardCam(x,z,3.6,vT);const fx=vT.x,fz=vT.z,acc=LANE_COL[lane]||C.amber;
@@ -363,7 +364,7 @@ function facilityBlast(lane,x,z){
  chunks(cnt(8),fx,4.5,fz,3,12,.6,C.cream,C.steel,true);chunks(cnt(6),x,6.2,z,3,11,.55,acc,C.stoneDark,true);
  for(let i=0;i<4;i++){towardCam(x+(rnd()-.5)*5,z+(rnd()-.5)*5,3.2,vT);after(.14+i*.13,K_POP,vT.x,2+rnd()*4,vT.z,1+rnd()*.5);}
  emitter(E_SMOKE,x,6,z,1.25,Q?5.5:3.5);
- light(fx,6.5,fz,C.red0,460,.34);ctx.shake(.9);
+ light(fx,6.5,fz,C.red0,460,.34);ctx.shake(1);ctx.fxScreen.white=.7;
 }
 function hubBlast(){
  const x=A.hubX;towardCam(x,0,3,vT);
@@ -373,7 +374,7 @@ function hubBlast(){
  for(let i=0;i<5;i++){towardCam(x+(rnd()-.5)*2,(rnd()-.5)*2,2.6,vT);after(.12+i*.12,K_POP,vT.x,2.5+i*1.9,vT.z,1.1+rnd()*.4);}
  after(.75,K_HUBTOP,x,10.5,0,2);
  emitter(E_SMOKE,x,9,0,1.3,6);
- light(vT.x,7,vT.z,C.red0,460,.4);ctx.shake(.8);
+ light(vT.x,7,vT.z,C.red0,460,.4);ctx.shake(1);ctx.fxScreen.white=1;
 }
 
 /* ---------- event handlers ---------- */
@@ -386,9 +387,9 @@ function onHit(ev){
   // the surge reaches each enemy when the shockwave front does
   if(!ev.kill){const R=Math.min(60,Math.max(1,ctx.G.effects.pulseRange*U||0)),f=Math.min(1,Math.abs(vE.x-A.droneX)/R);after((1-Math.pow(1-f,1/2.2))*waveTime(R),K_ZAP,0,0,0,1,e);}
  }else{
-  let c=C.amber,style=S_BOLT,w=1.25,life=.15,hot=1,alpha=1;
+  let c=C.amber,style=S_BOLT,w=1.7,life=.16,hot=1,alpha=1;
   if(src==='turret')ctx.turretPos(e.lane,vS);
-  else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.05;life=.13;}
+  else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.3;life=.14;}
   else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
   else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,ctx.laneZAt(e.lane,ctx.wx(ev.sy)));c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
   else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
@@ -417,7 +418,7 @@ function onPulse(ev){
  decal(D_RING,x,z,2,A.laneW*1.25,2,A.laneW*1.25,0,.36,C.amberHot,.9,0,0,.2);
  decal(D_DISC,x,z,9,13,9,13,0,.42,C.amber,.85,0,0,.15);              // hot ground under the drone
  const n=cnt(18);for(let i=0;i<n;i++){const sg=i&1?1:-1,sp=10+rnd()*26;emit(P.zip,x,y-.4,z+(rnd()-.5)*2,sg*sp,-4+rnd()*8,(rnd()-.5)*7,1,C.hot,C.amber);}
- light(x,2.6,z,C.amber,330,.2);ctx.shake(.42);
+ light(x,2.6,z,C.amber,330,.2);ctx.shake(.7);ctx.fxScreen.white=.8;
 }
 function onLeak(ev){
  if(!isLane(ev.lane))return;
@@ -427,7 +428,7 @@ function onLeak(ev){
  let n=cnt(8+6*s);for(let i=0;i<n;i++)emit(P.spark,x,y,z+(rnd()-.5)*5,-(5+rnd()*15),2+rnd()*9,(rnd()-.5)*8,1,C.hot,C.red0);   // momentum carries on into the base
  n=cnt(4);for(let i=0;i<n;i++)emit(P.fire,x-.5,y,z+(rnd()-.5)*4,-(3+rnd()*6),1+rnd()*3,(rnd()-.5)*2,1.1*s,C.red0,C.red1);
  chunks(cnt(3+2*s),x,y,z,2,7,.34,ENEMY_COL[ev.type]||ENEMY_COL.grunt,C.dark,false);
- light(x,2.5,z,C.red0,90*s,.22);ctx.shake(.4);
+ light(x,2.5,z,C.red0,90*s,.22);ctx.shake(.6);ctx.fxScreen.red=1;
  if(ev.down)after(.18,K_FAC,A.facX,0,z,ev.lane);
 }
 function onMove(ev){

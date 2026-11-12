@@ -85,7 +85,9 @@ R3D.boot=function(G,field){
   project(v,out){v3.copy(v).project(camera);out.x=(v3.x*.5+.5)*L.w;out.y=(-v3.y*.5+.5)*L.h;out.z=v3.z;return out;},
   // approximate CSS pixels covered by one world unit at a world position (for sizing hud marks)
   pxPerUnit(v){const d=v3.copy(v).sub(camera.position).length();return L.h/(2*Math.tan(camera.fov*Math.PI/360)*d);},
-  shake(amount){shakeAmt=Math.min(1.2,shakeAmt+amount);},
+  // shake: every event adds trauma (0..1). The picture moves by trauma squared times SHAKE_PX screen pixels, so small events stay small and the big ones read on a phone.
+  shake(amount){trauma=Math.min(1,trauma+amount);},
+  fxScreen:{white:0,red:0},   // full-screen flashes drawn by hud.js: set to 1 by an event, hud.js lets them fade
   hud:{canvas:hudc,ctx:hudc.getContext('2d')}
  };
  // shared soft round sprite texture for glows and particles
@@ -140,7 +142,8 @@ R3D.boot=function(G,field){
  window.addEventListener('orientationchange',()=>{needLayout=true;});
 
  /* ---------- frame ---------- */
- let last=0,shakeAmt=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='',mapSeen='';
+ const SHAKE_PX=(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?5:14;
+ let last=0,trauma=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='',mapSeen='';
  const shakeOff=new THREE.Vector3();
  function frame(now){
   const raw=Math.min(1,Math.max(0,(now-last)/1000||0)),dt=Math.min(.1,raw);last=now;frameNo++;
@@ -155,7 +158,8 @@ R3D.boot=function(G,field){
   if(covered&&frameNo%3){return;}
   const step=covered?dt*3:dt;
   for(const p of inst)if(p.update)p.update(step,ctx.time,G);
-  if(shakeAmt>.001){shakeAmt*=Math.exp(-9*dt);const a=shakeAmt*.55;shakeOff.set((Math.random()-.5)*a,(Math.random()-.5)*a,(Math.random()-.5)*a);camera.position.copy(L.camPos).add(shakeOff);}
+  if(trauma>.002){trauma=Math.max(0,trauma-dt*1.6);const k=trauma*trauma*SHAKE_PX/Math.max(1,ctx.pxPerUnit(L.camTarget)),tt=ctx.time,nx=Math.sin(tt*53.1+1.7)*.6+Math.sin(tt*31.3+4.1)*.4,ny=Math.sin(tt*47.7+.3)*.6+Math.sin(tt*27.1+2.9)*.4,m=camera.matrixWorld.elements;
+   camera.position.copy(L.camPos);camera.position.x+=(m[0]*nx+m[4]*ny)*k;camera.position.y+=(m[1]*nx+m[5]*ny)*k;camera.position.z+=(m[2]*nx+m[6]*ny)*k;}
   else camera.position.copy(L.camPos);
   renderer.render(scene,camera);
   // adaptive quality: measured in 1.5 s windows while actually playing. It only ever steps down (30 fps capped devices stay put),

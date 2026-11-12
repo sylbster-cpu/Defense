@@ -315,10 +315,10 @@ for(const name in TYPE){const T=TYPE[name];T.n=0;
 // per-enemy render state, keyed by the game's enemy object and recycled through `spare`
 const states=new Map(),act=[],spare=[];let tick=0;
 function addState(e,popIn){
- const S=spare.pop()||{e:null,T:null,d:null,seen:0,age:0,dist:0,px:0,pz:0,killed:false,dying:0,smoke:0,puff:0,dustD:0,step:0,slowK:0,stunK:0,jx:0,jz:0,jr:0};
+ const S=spare.pop()||{e:null,T:null,d:null,seen:0,age:0,dist:0,px:0,pz:0,killed:false,dying:0,smoke:0,puff:0,dustD:0,step:0,slowK:0,stunK:0,jx:0,jz:0,jr:0,knock:0};
  ctx.enemyPos(e,_v);
  S.e=e;S.T=TYPE[e.type]||TYPE.grunt;S.d=ENEMY[e.type]||ENEMY.grunt;S.seen=0;S.age=popIn?0:POP;S.dist=Math.random()*3;S.px=_v.x;S.pz=_v.z;
- S.killed=false;S.dying=0;S.smoke=Math.random()*.5;S.puff=Math.random()*.4;S.dustD=0;S.step=1e9;S.slowK=0;S.stunK=0;
+ S.killed=false;S.dying=0;S.smoke=Math.random()*.5;S.puff=Math.random()*.4;S.dustD=0;S.step=1e9;S.slowK=0;S.stunK=0;S.knock=0;
  states.set(e,S);act.push(S);return S;
 }
 function freeState(i){const S=act[i];states.delete(S.e);S.e=null;spare.push(S);act[i]=act[act.length-1];act.pop();}
@@ -364,6 +364,7 @@ function drawEnemy(S,dt,t){
   if(run)for(let n=Q>0?3:1;n>0;n--)if(Math.random()<.7){const a=Math.random()*TAU,rr=d.r*(.4+Math.random()*.5),b=(.5+Math.random()*.8)*sk;
    sprite(x+Math.cos(a)*rr,GY+d.h*(.25+Math.random()*.7),z+Math.sin(a)*rr,d.r*(.55+Math.random()*.6),3,a*5,.35*b,.9*b,b,0);}
  }
+ if(S.knock>.01){const kn=S.knock;x+=kn*.34;sxz*=1+.1*kn;sy*=1-.13*kn;pitch+=.12*kn;flash=Math.max(flash,Math.min(1,kn));S.knock=damp(S.knock,0,13,dt);}   // a hit shoves the machine back and squashes it for a moment (drawing only)
  if(dead){const k=S.dying/DIE;sy*=1-.72*k*k;sxz*=1+.22*k;pitch-=.3*k;y-=.25*k;flash=Math.max(0,1-k*1.4);dull=k;}   // collapse
 
  // on the road: contact shadow, the dusty dashed ring of a machine slowed by rubble, hot light spilled ahead of it
@@ -558,6 +559,7 @@ return{
    // remember kills: the enemy is already gone from G.enemies when this arrives, so it may never have been drawn
    if(ev.kill&&ev.e)(states.get(ev.e)||addState(ev.e,false)).killed=true;
    if(ev.src==='drone')recoil=1;else if(ev.src==='echo')ghostKick=1;
+   if(!ev.kill&&ev.e&&ev.src!=='pulse'){const S=states.get(ev.e);if(S){const w=ev.e.type==='boss'?.35:ev.e.type==='brute'?.65:1;S.knock=Math.min(1.6,S.knock+(ev.src==='turret'||ev.src==='pierce'?1.3:.8)*w);}}
   }else if(ev.t==='pulse')kick=1;
   else if(ev.t==='move')flare=1;
   else if(ev.t==='stage')clearStates();

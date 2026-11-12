@@ -421,14 +421,14 @@ function updTurrets(dt,t,G){
   // the bridge also exposes flash (>0 right after a shot): use it as a backup for the hit event
   const gf=gt?gt.flash:0;if(gf>T.lastFlash+.05)fire(T);T.lastFlash=gf;
   T.kick=Math.max(0,T.kick-dt*6.5);T.flash=Math.max(0,T.flash-dt*10);T.zap=Math.max(0,T.zap-dt*8);
-  T.g.rotation.y=T.yaw;T.gun.rotation.z=T.pit;T.gun.position.x=-.34*T.kick*T.kick;
+  T.g.rotation.y=T.yaw;T.gun.rotation.z=T.pit;T.gun.position.x=-.7*T.kick*T.kick;
   const dim=shopDown?(Math.sin(t*23+i*3)*Math.sin(t*7.1)>0?.55:.14):1;
   setG(T.mat,0,cW,1.0*dim);
   setG(T.mat,1,cHot,3.5*T.flash+(pierce?1.3+.3*Math.sin(t*11+i):0));
   if(pierce){setG(T.mat,2,cHot,1.7);T.lvl.z=1.1;}else{setG(T.mat,2,cA,1.2*dim);T.lvl.z=frac;}
-  const cy=Math.cos(T.yaw),sy=Math.sin(T.yaw),cp=Math.cos(T.pit),sp=Math.sin(T.pit),m=MUZZLE-.4*T.kick*T.kick;
+  const cy=Math.cos(T.yaw),sy=Math.sin(T.yaw),cp=Math.cos(T.pit),sp=Math.sin(T.pit),m=MUZZLE-.7*T.kick*T.kick;
   const mx=T.x+cy*cp*m,my=T.y+sp*m,mz=T.z-sy*cp*m;
-  if(T.flash>0){spr(poolB,mx,.3,mz,5.5,cWarm,.42*T.flash);spr(glowB,mx,my,mz,1.4+2.2*T.flash,cHot,T.flash);spr(glowB,mx+cy*.5,my,mz-sy*.5,.9+1.2*T.flash,cW,T.flash);}
+  if(T.flash>0){spr(poolB,mx,.3,mz,7.2,cWarm,.5*T.flash);spr(glowB,mx,my,mz,1.9+3*T.flash,cHot,T.flash);spr(glowB,mx+cy*.6,my,mz-sy*.6,1.2+1.7*T.flash,cW,T.flash);}
   if(pierce)spr(glowB,mx,my,mz,1.5+.3*Math.sin(t*11+i),cHot,.75);
   if(frac>0)spr(glowB,T.x,1.7,T.z,2.3+2.1*frac+(pierce?.4:0),pierce?cHot:cA,.2+.45*frac);          // the charge has to read at phone size, where the ring is a few pixels
   if(shopDown){T.tk-=dt;if(T.tk<=0){T.tk=.5+Math.random()*1.1;T.zap=1;if(Q>0||i)sparks(T.x-.5,T.y-.3,T.z,2,cZap,2.8);}

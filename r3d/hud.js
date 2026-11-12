@@ -329,7 +329,16 @@ function frame(dt,t,G){
  opText(G,side);
  if(practice||G.hold)practiceHint(G,t);
  if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);}
+ screenFx(dt);
  if(battle&&G.paused)pauseVeil();
+}
+// full-screen flashes: white for the overload and the largest blasts, red at the edges when the line is broken
+let edgeKey='',edgeG=null;
+function screenFx(dt){const F=ctx.fxScreen;if(!F)return;
+ if(F.white>0){c.globalAlpha=.24*Math.min(1,F.white);c.fillStyle=FLASH;c.fillRect(0,0,L.w,L.h);c.globalAlpha=1;F.white-=dt*8;}
+ if(F.red>0){const w=L.w,h=L.h,d=Math.min(w,h)*.18,key=w+'x'+h;
+  if(key!==edgeKey){edgeKey=key;const mk=(x0,y0,x1,y1)=>{const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(255,70,52,.6)');g.addColorStop(1,'rgba(255,70,52,0)');return g;};edgeG=[mk(0,0,d,0),mk(w,0,w-d,0),mk(0,0,0,d),mk(0,h,0,h-d)];}
+  c.globalAlpha=Math.min(1,F.red);c.fillStyle=edgeG[0];c.fillRect(0,0,d,h);c.fillStyle=edgeG[1];c.fillRect(w-d,0,d,h);c.fillStyle=edgeG[2];c.fillRect(0,0,w,d);c.fillStyle=edgeG[3];c.fillRect(0,h-d,w,d);c.globalAlpha=1;F.red-=dt*3.2;}
 }
 
 let bad=0,warned=false;
@@ -340,7 +349,7 @@ return{
   if(!ev)return;
   if(ev.t==='leak'){if(ev.lane===0||ev.lane===1)facFx[ev.lane]=1;}
   else if(ev.t==='wave')waveFx=1.6;
-  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;}
+  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
  },
  // One odd frame must not cost the player the whole 2.5D view: it is skipped. Only a hud that keeps failing
  // passes the error on, so that core falls back to the complete 2D drawing.
