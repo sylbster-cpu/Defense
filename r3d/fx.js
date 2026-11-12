@@ -391,6 +391,7 @@ function onHit(ev){
   if(src==='turret')ctx.turretPos(e.lane,vS);
   else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.3;life=.14;}
   else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
+  else if(src==='field'&&ev.sy===ev.sy){const fx=ctx.wx(ev.sy);vS.set(fx,1.75,ctx.laneZAt(e.lane,fx));w=1.35;life=.14;}   // a field turret (base.js); the tracer leaves from its muzzle below
   else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,ctx.laneZAt(e.lane,ctx.wx(ev.sy)));c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
   else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
@@ -399,6 +400,7 @@ function onHit(ev){
   vT.copy(L.camPos).sub(vE).normalize();hx+=vT.x*d.r*.45;hy+=vT.y*d.r*.45;hz+=vT.z*d.r*.45;
   // base.js draws the muzzle flash; the tracer only has to leave from the muzzle (never from behind the hull it hits)
   if(src==='turret'){const mz=Math.max(0,Math.min(MUZZLE,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
+  else if(src==='field'){const mz=Math.max(0,Math.min(2.56,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
   else if(src==='echo')emit(P.glow,vS.x,vS.y,vS.z,0,0,0,2.2,c);
   if(style===S_LANCE){
    // the lance carries on through the second target

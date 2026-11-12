@@ -306,6 +306,29 @@ hub.g.position.set(A.hubX,0,0);scene.add(hub.g);add(hub.g,gHub,hub.mat,1);hub.di
 const bunkMat=glowMat(),bunker=add(scene,gBunker,bunkMat,1);bunker.position.set(A.turretX,0,0);
 const tur=[0,1].map(i=>{const g=new THREE.Group(),m=glowMat();g.scale.setScalar(TS);scene.add(g);add(g,headGeo(i?C.teal:C.amber,i?C.lt:C.la),m,1);const gun=add(g,gGun,m,2);
  return{i,g,gun,mat:m,lvl:m.userData.lvl,x:A.turretX,y:A.turretH,z:0,home:0,yaw:0,pit:0,kick:0,flash:0,zap:0,tk:1,lastFlash:0};});
+// field turrets: a small copy of the turret head on a post, standing where a rare machine fell (G.fieldTurrets). A pool of three.
+const FS=.95,FPIV=1.75,FMUZ=2.7*FS;                                                          // scale, pivot height, pivot-to-muzzle distance
+const gPost=model(()=>{const g0=-FPIV/FS;cyl(.7,.82,.14,10, 0,g0,0, C.dark);cyl(.18,.24,-g0-.54,8, 0,g0+.1,0, C.steel);for(let k=0;k<3;k++)box(.1,.06,1.1, 0,g0+.12,0, C.metal,{r:[0,k*2.094,0]});});
+const fld=[0,1,2].map(()=>{const g=new THREE.Group(),m=glowMat();g.scale.setScalar(FS);g.visible=false;scene.add(g);add(g,gPost,m,2);add(g,headGeo(C.amber,C.la),m,2);const gun=add(g,gGun,m,2);
+ return{g,gun,mat:m,f:null,yaw:0,pit:.06,kick:0,flash:0,lastFlash:0,pop:0};});
+function updField(dt,t,G){const list=G.fieldTurrets||[],R=G.FIELD?G.FIELD.range:120,en=G.enemies;
+ for(const F of fld){if(F.f&&list.indexOf(F.f)<0)F.f=null;}
+ for(const f of list){if(!fld.some(F=>F.f===f)){const F=fld.find(F=>!F.f);if(F){F.f=f;F.pop=0;F.yaw=ctx.L.laneZ[f.lane]>0?-.46:.46;F.kick=F.flash=0;F.lastFlash=0;}}}
+ for(const F of fld){const f=F.f;if(!f){F.g.visible=false;continue;}
+  const x=ctx.wx(f.y),z=ctx.laneZAt(f.lane,x);F.pop=Math.min(1,F.pop+dt*4);const end=Math.min(1,f.life/.4),b=F.pop<1?1+.25*Math.sin(F.pop*Math.PI):1;
+  F.g.visible=true;F.g.position.set(x,FPIV,z);F.g.scale.setScalar(FS*Math.max(.05,Math.min(F.pop,end))*b);
+  let e=null,best=-1e9;for(let j=0;j<en.length;j++){const q=en[j];if(q.hp<=0||q.lane!==f.lane||Math.abs(q.y-f.y)>R)continue;const pr=q.y+(q.type==='boss'?6:0);if(pr>best){best=pr;e=q;}}
+  let yawT=(ctx.L.laneZ[f.lane]>0?-.46:.46)+Math.sin(t*.6+f.id*9)*.5,pitT=.06;
+  if(e){ctx.enemyPos(e,v);const dx=v.x-x,dy=v.y-FPIV,dz=v.z-z;yawT=Math.atan2(-dz,dx);pitT=clamp(Math.atan2(dy,Math.sqrt(dx*dx+dz*dz)),-.5,.4);}
+  F.yaw=damp(F.yaw,yawT,e?13:2.5,dt);F.pit=damp(F.pit,pitT,10,dt);
+  if(f.flash>F.lastFlash+.05){F.kick=1;F.flash=1;}F.lastFlash=f.flash;
+  F.kick=Math.max(0,F.kick-dt*6.5);F.flash=Math.max(0,F.flash-dt*10);
+  F.g.rotation.y=F.yaw;F.gun.rotation.z=F.pit;F.gun.position.x=-.7*F.kick*F.kick;
+  const blink=f.life<3?(Math.sin(t*18)>0?1:.2):1;                                         // the last three seconds it blinks
+  setG(F.mat,0,cW,blink);setG(F.mat,1,cHot,3.5*F.flash);setG(F.mat,2,cA,1.2*blink);
+  if(F.flash>0){const cy=Math.cos(F.yaw),sy=Math.sin(F.yaw),cp=Math.cos(F.pit),m=FMUZ;spr(glowB,x+cy*cp*m,FPIV+Math.sin(F.pit)*m,z-sy*cp*m,1.2+2*F.flash,cHot,F.flash);}
+  if(F.pop<1)spr(glowB,x,.6,z,6*(1-F.pop),cA,.8*(1-F.pop));}
+}
 function applyShadows(){for(let i=0;i<casters.length;i+=2)casters[i].castShadow=Q>=casters[i+1];}
 
 /* ================= 6. per-frame state ================= */
@@ -458,7 +481,7 @@ return{
   updFac(fac[0],dt,t,G);updFac(fac[1],dt,t,G);
   updGate(gate[0],0,dt,t,G);updGate(gate[1],1,dt,t,G);
   setG(runMat,0,cW,.9*fac[0].on);setG(runMat,1,cW,.9*fac[1].on);
-  updHub(dt,t,G);updTurrets(dt,t,G);
+  updHub(dt,t,G);updTurrets(dt,t,G);updField(dt,t,G);
   updParticles(dt);flush(glowB);flush(smokeB);flush(poolB);
  },
  event(ev,G){

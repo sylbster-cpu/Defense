@@ -269,6 +269,7 @@ function aidMarks(G,t,side){
    aidRing((p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'▦','#f0c47b');}
  }
  if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.turret/8,'⌖','#f0c47b');}
+ const fl=G.fieldTurrets;if(fl&&G.FIELD)for(let i=0;i<fl.length;i++){const f=fl[i],x=ctx.wx(f.y);v.set(x,4.4,ctx.laneZAt(f.lane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const r=6*ui,k=clamp(f.life/G.FIELD.life,0,1);c.globalAlpha=1;c.lineWidth=3.6*ui;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(p.x,p.y,r,0,6.2832);c.stroke();c.lineWidth=2*ui;c.strokeStyle='#f0c47b';c.beginPath();c.arc(p.x,p.y,r,-1.5708,-1.5708+6.2832*k);c.stroke();}}   // field turrets: a small ring above the model that empties as its time runs out
  if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.clone/6,'❖','#8dd7d0');}
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
 }
