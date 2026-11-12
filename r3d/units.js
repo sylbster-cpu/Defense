@@ -341,7 +341,7 @@ findSun();
 
 function drawEnemy(S,dt,t){
  const e=S.e,T=S.T,d=S.d,dead=S.dying>0,wig=e.wiggle||0,i=T.n;
- if(!dead&&curG&&curG.mapCover&&curG.mapCover(e.lane,e.y))return;   // inside a tunnel: not drawn at all
+ if(curG&&curG.mapCover&&curG.mapCover(e.lane,e.y))return;   // inside a tunnel: not drawn at all, nor its collapse when the overload kills it there (S.px/S.pz are stale from the mouth)
  if(i>=T.cap)return;T.n=i+1;   // more of one type than the pool holds: the extra ones are skipped whole
 
  // where it is and how far it has walked since the last frame

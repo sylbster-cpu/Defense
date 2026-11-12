@@ -15,7 +15,7 @@ const propMat=new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true
 function solid(P,seed,jit,foot){const g=merge(P),p=g.attributes.position.array,c=g.attributes.color.array;let r=seed*7919+17;const R=()=>(r=(r*16807)%2147483647)/2147483647;
  for(let i=0;i<p.length;i+=9){const k=1+(R()-.5)*(jit||.16);for(let j=0;j<9;j+=3){const f=foot===0?1:.62+.38*Math.min(1,Math.max(0,p[i+j+1]/(foot||1.1)));c[i+j]*=k*f;c[i+j+1]*=k*f;c[i+j+2]*=k*f;}}
  const m=new THREE.Mesh(g,propMat);m.castShadow=true;m.receiveShadow=true;return m;}
-function clear(g){for(let i=g.children.length-1;i>=0;i--){const o=g.children[i];g.remove(o);o.traverse(q=>{if(q.geometry&&!q.geometry.userData.keep)q.geometry.dispose();});}}
+function clear(g){for(let i=g.children.length-1;i>=0;i--){const o=g.children[i];g.remove(o);o.traverse(q=>{if(q.geometry&&!q.geometry.userData.keep)q.geometry.dispose();if(q.material&&q.material.userData.own)q.material.dispose();});}}   // own: a material made for this one build (lamps)
 const root={gate:new THREE.Group(),bridge:new THREE.Group(),tunnel:new THREE.Group(),cross:new THREE.Group(),pylon:new THREE.Group(),mine:new THREE.Group(),flood:new THREE.Group(),boost:new THREE.Group(),vent:new THREE.Group()},built={};
 // an additive strip lying on the road (glows, arrows), scrolled by its texture offset
 const stripMat=(tex,col,op)=>new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,color:col,opacity:op,fog:false});
@@ -37,7 +37,7 @@ function buildGate(L){
   const piv=new THREE.Group();piv.position.set(x,1.55,zp);
   const AP=[];for(let k=0;k<7;k++)B(AP,.36,.36,1.5,0,0,-sg*(.75+k*1.5),k%2?0x2b2b2b:0xf0b54e);B(AP,.46,.46,.5,0,0,0,0x33393b);
   piv.add(solid(AP,60+i,.06,0));g.add(piv);
-  const lm=new THREE.MeshBasicMaterial({color:RED,fog:false});
+  const lm=new THREE.MeshBasicMaterial({color:RED,fog:false});lm.userData.own=true;
   const bar=new THREE.Mesh(barGeo,lm);bar.position.set(x,4.08,z0);g.add(bar);                    // the signal bar: red shut, green open, seen from any camera
   for(const s of [-1,1]){const m=new THREE.Mesh(lampGeo,lm);m.position.set(x+s*.47,3.75,z0);g.add(m);}
   gates.push({piv,lm,sg,ang:0});
@@ -131,7 +131,7 @@ function buildMine(L){
  const g=root.mine;clear(g);mineObjs=[];const M=G.MINE;
  for(let l=0;l<2;l++)for(let i=0;i<M.n;i++){const y=M.a+(i+.5)*(M.b-M.a)/M.n,x=ctx.wx(y),z=ctx.laneZAt(l,x);
   const body=new THREE.Mesh(mineGeo,mineMat);body.position.set(x,.1,z);body.castShadow=true;g.add(body);
-  const lm=new THREE.MeshBasicMaterial({color:0xff3020,fog:false}),lamp=new THREE.Mesh(lampG,lm);lamp.position.set(x,.26,z);g.add(lamp);
+  const lm=new THREE.MeshBasicMaterial({color:0xff3020,fog:false}),lamp=new THREE.Mesh(lampG,lm);lm.userData.own=true;lamp.position.set(x,.26,z);g.add(lamp);
   const cr=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),craterMat);cr.rotation.x=-PI/2;cr.position.set(x,.06,z);cr.renderOrder=1;g.add(cr);
   mineObjs.push({l,y,body,lamp,lm,cr});}
  const P=[];for(const lz of [L.laneZ[0],L.laneZ[1]])for(const s of [-1,1])for(const x of [ctx.wx(M.a),ctx.wx(M.b)]){B(P,.14,.9,.14,x,.45,lz+s*4.9,0x6d8790);B(P,.5,.32,.06,x,.8,lz+s*4.9,0xf0b54e);}   // warning signs at both ends

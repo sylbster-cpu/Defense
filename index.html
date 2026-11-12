@@ -545,7 +545,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-5';
+const BUILD='2026.11.12-6';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -607,7 +607,8 @@ function onKill(e){combo++;comboT=COMBO.t;if(combo>bestCombo)bestCombo=combo;con
  if(combo%5===0){ev3({t:'combo',n:combo});sfx('item_get',0,Math.min(1.8,1+combo*.012),.45);}
  if(combo%COMBO.every===0){drone.pulseCooldown=Math.max(0,drone.pulseCooldown-COMBO.refund);showToast(combo+' 콤보 · 과부하 '+COMBO.refund+'초 충전',1300);sfx('upgrade',0,1.2,.6);}}
 function feelStep(dt){if(comboT>0){comboT-=dt;if(comboT<=0){if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;}}
- if(multiT>0){multiT-=dt;if(multiT<=0){if(multiN>=3){ev3({t:'multi',n:multiN,name:MULTI_NAME(multiN)});score+=multiN*multiN*10;hitStop(.05);buzz(40);sfx('upgrade',0,1.5,.7);}multiN=0;}}}
+ if(multiT>0){multiT-=dt;if(multiT<=0)settleMulti();}}
+function settleMulti(end){if(multiN>=3){ev3({t:'multi',n:multiN,name:MULTI_NAME(multiN)});score+=multiN*multiN*10;if(!end)hitStop(.05);buzz(40);sfx('upgrade',0,1.5,.7);}multiN=0;multiT=0;}   // also called when a chapter ends inside the window
 const MAP_OF=[0,12,1,2,3,4,5,6,7,8,9,10,11];let map=MAPS[0];   // chapter -> map: every chapter has its own (the drill keeps the plain straight road)
 // Items. Rare machines and mid bosses drop them on the field: a drop stays DROP_LIFE seconds and has to be touched to be taken.
 // Up to BAG_MAX are kept and used with the two buttons at the bottom left. They are single rescues, not standing upgrades.
@@ -670,7 +671,7 @@ function useAim(lane,y){if(aim<0)return;if(bag[aim]==='orbital')useOrbital(lane,
 // orbital strike: after ORB.delay a shell lands on that place; machines of that lane within ORB.r take ORB.dmg (bosses too)
 let strikes=[];
 function useOrbital(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='orbital'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+10,Math.min(LEAK_Y-20,y));strikes.push({lane,y,t:ORB.delay});ev3({t:'item',id:'orbital',lane,y});sfx('boss_warn',0,1.4,.5);showToast('궤도 포격 · 낙하 중',1200);updateControls();}
-function strikeStep(dt){for(const k of strikes){k.t-=dt;if(k.t<=0){let n=0;ev3({t:'orbital',lane:k.lane,y:k.y});for(const e of enemies)if(e.hp>0&&e.lane===k.lane&&Math.abs(e.y-k.y)<=ORB.r){n++;damageEnemy(e,ORB.dmg,LANES[k.lane],k.y,'orbital');}hitStop(.08);buzz([30,60,90]);sfx('kill_boss',0,1.15,.8);}}if(strikes.some(k=>k.t<=0))strikes=strikes.filter(k=>k.t>0);}
+function strikeStep(dt){for(const k of strikes){k.t-=dt;if(k.t<=0){let n=0;ev3({t:'orbital',lane:k.lane,y:k.y});for(const e of enemies)if(e.hp>0&&e.lane===k.lane&&Math.abs(e.y-k.y)<=ORB.r&&!map.cover(e.lane,e.y)){n++;damageEnemy(e,ORB.dmg,LANES[k.lane],k.y,'orbital');}hitStop(.08);buzz([30,60,90]);sfx('kill_boss',0,1.15,.8);}}if(strikes.some(k=>k.t<=0))strikes=strikes.filter(k=>k.t>0);}
 // the magnet: machines of that lane within MAG.range of the place are dragged to it (large machines are too heavy)
 function useMagnet(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='magnet'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+20,Math.min(LEAK_Y-60,y));let n=0;
  for(const e of enemies)if(e.hp>0&&e.lane===lane&&e.type!=='boss'&&Math.abs(e.y-y)<=MAG.range&&!map.cover(e.lane,e.y)){e.pull=y;e.pullT=MAG.time;n++;}
@@ -848,7 +849,7 @@ function pickDrone(){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(
 function pickTarget(lane,y,range,skip,nearOnly){let chosen=null,best=-Infinity,hid=null,hidP=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;if(nearOnly&&!map.near(e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(map.cover(e.lane,e.y)){if(priority>hidP){hid=e;hidP=priority;}continue;}if(priority>best){chosen=e;best=priority;}}if(hid&&hidP>best)ruleMark(hid);return chosen;}   // a hidden machine counts for the tunnel only when it would have been the target
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
-function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y))&&(map.coverPulse||!map.cover(e.lane,e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}ev3({t:'shock',n:wet.length});if(wet.length)showToast('감전 · '+wet.length+'기',1000);}   // the overload runs through the water
+function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y))&&(map.coverPulse||!map.cover(e.lane,e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
  burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
 function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;if(combo>=5)ev3({t:'comboEnd',n:combo,broken:true});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);addLog('제'+wave+'파 공격 감지.');}
@@ -857,7 +858,7 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
   for(const e of enemies){if(e.hp<=0)continue;const y0=e.py=e.y;if(e.crossT>0)e.crossT-=dt;if(e.pullT>0){e.pullT-=dt;e.y+=(e.pull-e.y)*Math.min(1,dt*9);if(e.pullT<=0)e.stun=Math.max(e.stun,.35);}   // dragged by the magnet
    else e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?slowed(e):1)*(map.boost(e.lane,e.y)?boosted(e):1);
-   if(map.cross&&e.type!=='boss'&&(map.crossHeavy||e.type!=='brute')&&!e.crossed&&inZ(e.y,map.cross)&&(map.crossToward?e.lane!==drone.lane:e.lane===drone.lane)&&(map.crossWay<0||e.lane===map.crossWay)){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: away from the drone
+   if(map.cross&&e.type!=='boss'&&(map.crossHeavy||e.type!=='brute')&&!e.crossed&&inZ(e.y,map.cross)&&(map.crossToward?e.lane!==drone.lane:e.lane===drone.lane)&&(map.crossWay<0||e.lane===map.crossWay)){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: toward the drone's lane (MAPK.cross.toward)
    if(map.mine)for(const m of mines)if(m.lane===e.lane&&m.arm<=0&&y0<m.y&&e.y>=m.y)mineBlast(m);   // stepped on a mine
    e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y&&e.hp>0){e.hp=-999;enemyLeak(e);}}
   if(map.mine)for(const m of mines)m.arm=Math.max(0,m.arm-dt);
@@ -873,12 +874,12 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
   fxStep(dt);
   if(core<=0){if(drill){drillCoreDown();return;}finish(false);return;}
   // The chapter is over when every machine has come and none is left. If none got through, it pays one item (not after the last chapter: the run ends there).
-  if(nextSpawn>=pattern.length&&enemies.length===0){if(op<TOTAL_OPS){stageGift=stageHurt?'':giftItem();upgradeScreen();}else finish(true);}
+  if(nextSpawn>=pattern.length&&enemies.length===0){settleMulti(true);if(op<TOTAL_OPS){stageGift=stageHurt?'':giftItem();upgradeScreen();}else finish(true);}
 }
 // Two offers follow facility state and one rotates per operation. Repeating a card raises its rank
-// without resetting other skills; the run has one choice after every chapter but the last (seven). Stats per rank live in BAL.card.
+// without resetting other skills; the run has one choice after every chapter but the last (TOTAL_OPS-1). Stats per rank live in BAL.card.
 const CARD_NAMES={stable:'순환 전원',emergency:'비상 축전',precision:'협동 조준',rubble:'잔해 차폐'},RANK_STEP=4;
-// The rank cap: RANK_STEP (the highest rank a five-chapter run could reach). When every card has reached it, the cap is set again one step higher.
+// The rank cap: RANK_STEP per card. When every card has reached it, the cap is set again one step higher.
 function rankCap(){return RANK_STEP*(Math.floor(Math.min(...Object.values(upgradeRanks))/RANK_STEP)+1);}
 function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?BAL.card[id](n-1):null,f1=v=>v.toFixed(1),f2=v=>v.toFixed(2),pc=v=>Math.round(v*100)+'%';
  switch(id){
@@ -930,6 +931,10 @@ function fitDialog(){
  const usable=Math.max(20,o.clientHeight - (parseFloat(getComputedStyle(o).paddingTop)+parseFloat(getComputedStyle(o).paddingBottom)) - py - 4);
  const raw=content.scrollHeight;
  if(raw>usable){const zoom=Math.max(.25,Math.min(1,usable/raw));content.style.zoom=String(zoom);}
+ // the settings gear stays on top of the overlay: a card tag under it moves left (seen on 568x320 landscape)
+ const g=$('gearBtn'),gr=g&&g.getBoundingClientRect(),z=parseFloat(content.style.zoom)||1;
+ for(const t of content.querySelectorAll('.choice .ctag')){t.style.marginRight='';if(!gr||!gr.width)continue;const r=t.getBoundingClientRect(),tf=getComputedStyle(t.closest('.choice')).transform,dy=tf&&tf!=='none'?new DOMMatrix(tf).m42*z:0,top=r.top-dy,bot=r.bottom-dy;   // the cards are still sliding in (cardIn): measure where they will stop
+  if(gr.bottom>top&&gr.top<bot&&gr.left<r.right&&gr.right>r.left)t.style.marginRight=Math.ceil((r.right-gr.left+6)/z)+'px';}
 }
 function renderOverlay(content,screen='intro'){
  const o=$('overlay');
@@ -1029,6 +1034,7 @@ function lessonTick(dt){lessonQuiet+=dt;if(phase!=='battle'||lessonQuiet<LESSON_
   else if(bag.length)hold('tap','아이템 획득 · '+ITEMS[bag[0]].name,ITEMS[bag[0]].desc+'. '+how+' 레어 적이나 중간 보스를 부수면 전장에 떨어지고, 5초 안에 터치해야 주울 수 있습니다.',null,done);}
 }
 window.addEventListener('resize',fitDialog);
+if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',fitDialog);   // a web font that arrives after the overlay opened changes its height: fit it again
 window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog));
 let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
 function updateControls(){const playing=phase==='battle';const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
@@ -1046,7 +1052,8 @@ function text(t,x,y,size=12,color='#fff',align='left',bold=false){ctx.fillStyle=
 function circle(x,y,r,fill,stroke,width=1){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke();}}
 function drawBackdrop(now){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#16282e');g.addColorStop(.5,'#182b31');g.addColorStop(1,'#0f2128');rect(0,0,W,H,g);
  for(let x=20;x<W;x+=24)line(x,65,x,H-10,'rgba(118,155,148,.065)');for(let y=70;y<H;y+=24)line(0,y,W,y,'rgba(118,155,148,.06)');
- rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text('OP '+String(op).padStart(2,'0')+' / '+String(TOTAL_OPS).padStart(2,'0'),465,22,11,'#e3ece4','right',true);text('WAVE '+(noWave()?'—':wave)+' / 03',465,41,10,'#a2c9c3','right',true);text(score.toLocaleString()+(combo>=3?'  ×'+combo:''),15,30,13,'#ffe1ae','left',true);
+ rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave),465,30,13,'#e3ece4','right',true);   // WAVE x-y, as in the 2.5D view and the compact 2D view
+ text(score.toLocaleString()+(combo>=3?'  ×'+combo:''),15,30,13,'#ffe1ae','left',true);
  for(let i=0;i<2;i++){const x=LANES[i];rounded(x-53,81,106,443+DY,11,'#273b41','#4e696e',1.3);rounded(x-44,90,88,423+DY,8,'#20343a','#304a4e',1);ctx.save();ctx.setLineDash([7,18]);line(x,121,x,484+DY,'rgba(174,195,184,.15)',2);ctx.restore();
  for(let n=0;n<5;n++){const cy=149+n*(282+DY)/4;rounded(x-63,cy,11,24,2,'#30464b','#3e595a');rounded(x+52,cy,11,24,2,'#30464b','#3e595a');}
  text(i===0?'A / POWER':'B / WORKSHOP',x,99,10,i===0?'#e8ca9b':'#a5d6ce','center',true);
@@ -1086,7 +1093,10 @@ function drawIncoming(){if(phase!=='battle')return;const soon=[[],[]];for(let i=
 // pos(y) = canvas position along a lane, at(lane) = the lane's line across, hw = half the lane's width, span = the play area across.
 function mapMarks2D(pos,at,hw,span,vertical,over){
  const band=(a,b,c0,c1,i)=>{const p0=pos(a),p1=pos(b),q=at(i);if(vertical)rounded(q-hw-6,Math.min(p0,p1),2*hw+12,Math.abs(p1-p0),5,c0,c1,1.4);else rounded(Math.min(p0,p1),q-hw-6,Math.abs(p1-p0),2*hw+12,5,c0,c1,1.4);};
- if(over){if(map.id==='tunnel')for(let i=0;i<2;i++)band(TUNNEL[0],TUNNEL[1],'#2c2a27','#6a6257',i);return;}
+ if(over){if(map.id==='tunnel')for(let i=0;i<2;i++)band(TUNNEL[0],TUNNEL[1],'#2c2a27','#6a6257',i);
+  for(const k of strikes){const p=pos(k.y),q=at(k.lane),r=Math.abs(pos(k.y+ORB.r)-p)*(.25+.75*Math.max(0,k.t/ORB.delay));if(vertical)circle(q,p,r,'rgba(255,120,80,.16)','#ff7850',2);else circle(p,q,r,'rgba(255,120,80,.16)','#ff7850',2);}   // where the orbital shell will land
+  if(aim>=0&&ITEMS[bag[aim]]){const col=ITEMS[bag[aim]].col,p0=pos(LANE_TOP),p1=pos(LEAK_Y);ctx.globalAlpha=.45+.3*Math.sin(performance.now()*.008);for(let i=0;i<2;i++){const q=at(i);if(vertical)rounded(q-hw-6,Math.min(p0,p1),2*hw+12,Math.abs(p1-p0),5,null,col,2);else rounded(Math.min(p0,p1),q-hw-6,Math.abs(p1-p0),2*hw+12,5,null,col,2);}ctx.globalAlpha=1;}   // an aimed item waits for a place: both lanes are outlined in its colour
+  return;}
  const zoneBand=(i,z,c)=>{const p0=pos(z[0]),p1=pos(z[1]),q=at(i);if(vertical)rect(q-hw,Math.min(p0,p1),2*hw,Math.abs(p1-p0),c);else rect(Math.min(p0,p1),q-hw,Math.abs(p1-p0),2*hw,c);};
  if(map.id==='pylon')for(let i=0;i<2;i++)zoneBand(i,PYLON,'rgba(127,216,255,.16)');
  if(map.flood)for(let i=0;i<2;i++)zoneBand(i,FLOOD,'rgba(60,150,200,.32)');

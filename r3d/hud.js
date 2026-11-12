@@ -291,9 +291,9 @@ function aidMarks(G,t,side){
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
  // stimpack, pierce, splash: rings above the drone that empty as the effect runs out
  if(G.drone&&G.ITEMS){let n=0,m=0;for(const id of BUFFS)if(a[id]>0)m++;if(m){ctx.dronePos(v);v.y+=3.4;ctx.project(v,p);if(p.z>-1&&p.z<1)for(const id of BUFFS)if(a[id]>0){aidRing(G,p.x+(n-(m-1)/2)*29*ui,p.y-6*ui,a[id]/8,id,G.ITEMS[id].col);n++;}}}
- // the magnet: rings closing on the place while the machines are dragged; and while it waits for its place, a violet frame
+ // the magnet: rings closing on the place while the machines are dragged; and while an aimed item (magnet, orbital) waits for its place, a frame in its colour
  if(a.mag>0&&G.MAG){const x=ctx.wx(a.magY);v.set(x,.6,ctx.laneZAt(a.magLane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const k=clamp(a.mag/(G.MAG.time+.5),0,1);c.strokeStyle='#c9a5f0';for(let i=0;i<2;i++){const q=(k+i*.5)%1;c.globalAlpha=.75*(1-q*.6);c.lineWidth=2.4*ui;c.beginPath();c.arc(p.x,p.y,(8+46*q)*ui,0,6.2832);c.stroke();}c.globalAlpha=1;drawIcon(G,'magnet',p.x,p.y,15*ui,'#c9a5f0');c.lineCap='butt';}}
- if(G.aim>=0){c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle='#c9a5f0';c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
+ if(G.aim>=0){const it=G.ITEMS&&G.bag&&G.ITEMS[G.bag[G.aim]];c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle=it&&it.col||'#c9a5f0';c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
 }
 /* move cooldown: a ring around the drone that empties until it can move again */
 function moveRing(G){
@@ -338,14 +338,16 @@ function practiceHint(G,t){
 }
 
 /* ---------- 9. feel: score, combo, multi-kill banner, damage numbers, orbital strike reticles ---------- */
-let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0;const NUMS=[],NUM_MAX=28;
+let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0,cbKey='',cbW=0,cbW2=0,hubKey='',hubB=0;
+// bottom of the DOM hub chip in HUD coordinates (it sits lower on narrow screens): the combo goes under it. Measured once per layout, while the chip is shown.
+function hubBottom(){const k=L.w+'x'+L.h;if(k!==hubKey){const hb=document.querySelector('.hubchip');if(hb&&hb.offsetParent){const r=hb.getBoundingClientRect(),cr=c.canvas.getBoundingClientRect();hubB=cr.width>0?(r.bottom-cr.top)*L.w/cr.width:0;hubKey=k;}}return hubB;}const NUMS=[],NUM_MAX=28;
 const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52',fall:'#ffe1ae'};
 function addNum(e,txt,col,big){if(!e)return;ctx.enemyPos(e,v);let n=NUMS.length<NUM_MAX?{}:NUMS.shift();n.x=v.x;n.y=v.y+(ENEMY[e.type]||ENEMY.grunt).h;n.z=v.z;n.t=0;n.txt=txt;n.col=col;n.big=big;n.dx=(Math.random()-.5)*14;NUMS.push(n);}
 function feel(dt,t,G){
  const sc=G.score|0;text(sc.toLocaleString(),M+5,opBottom+FSS*.75,fSmall,HOT,'left');
  const cb=G.combo|0;comboFx=Math.max(0,comboFx-dt*4);
- const cx=L.w/2,cy=M+40*ui;   // under the hub chip, clear of the incoming trays in the corners
- if(cb>=3){const k=1+.3*comboFx;c.font=fCombo;curFont=fCombo;const w=c.measureText('×'+cb).width;c.font=fComboS;const w2=c.measureText(' 콤보').width;curFont='';const x0=cx-(w*k+w2)/2;
+ const cx=L.w/2,cy=Math.max(M+40*ui,hubBottom()+16*ui);   // under the hub chip, clear of the incoming trays in the corners
+ if(cb>=3&&!G.hold){const k=1+.3*comboFx,key=cb+'|'+fCombo+'|'+fComboS;if(key!==cbKey){cbKey=key;c.font=fCombo;cbW=c.measureText('×'+cb).width;c.font=fComboS;cbW2=c.measureText(' 콤보').width;curFont='';}const w=cbW,w2=cbW2,x0=cx-(w*k+w2)/2;
   c.save();c.translate(x0,cy);c.scale(k,k);const col=cb>=30?'#ff7a5a':cb>=15?'#ffd866':HOT;text('×'+cb,0,0,fCombo,col,'left');c.restore();curFont='';
   text(' 콤보',x0+w*k,cy+2*ui,fComboS,CREAM,'left');
   const ct=Math.max(0,Math.min(1,(G.comboT||0)/((G.COMBO&&G.COMBO.t)||2))),bw=(w*k+w2);c.fillStyle='rgba(0,0,0,.5)';c.fillRect(x0,cy+13*ui,bw,3*ui);c.fillStyle='rgba(255,216,102,.95)';c.fillRect(x0,cy+13*ui,bw*ct,3*ui);}   // time left to keep it going
