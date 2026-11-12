@@ -332,6 +332,117 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .title-actions{grid-template-columns:1.25fr 1fr}.tbtn{min-height:44px;font-size:14px}
 }
 @media(orientation:landscape) and (max-height:330px){.title-kicker{font-size:9px}.title-tag{font-size:12px}.tbtn{min-height:38px}}
+/* layout of the redesigned screens (upgrade cards with icons and rank pips, result banner and stars) */
+.title-kicker{display:none!important}
+.overlay .choices{display:grid;gap:8px}
+.overlay .choice{position:relative;display:grid!important;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;animation:cardIn .42s cubic-bezier(.2,1.3,.4,1) both;animation-delay:calc(var(--i,0)*95ms)}
+.overlay .choice .cicon{grid-row:1/3;width:44px;height:44px;display:grid;place-items:center}
+.overlay .choice .cicon svg{width:26px;height:26px}
+.overlay .choice .chead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.overlay .choice h3{margin:0}
+.overlay .choice .pips{display:inline-flex;gap:3px}.overlay .choice .pips i{width:8px;height:8px}
+.overlay .choice .ctag{margin-left:auto;white-space:nowrap}
+.overlay .choice p{grid-column:2;margin:3px 0 0}
+.bigstars{display:flex;gap:6px;margin:0 0 4px}.bigstars i{font-style:normal;line-height:1;animation:starPop .45s cubic-bezier(.2,1.8,.4,1) both}
+.bigstars i:nth-child(1){animation-delay:.35s}.bigstars i:nth-child(2){animation-delay:.6s}.bigstars i:nth-child(3){animation-delay:.85s}
+.banner{display:inline-block}
+.overlay .result-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.coach{padding-left:clamp(44px,8vmin,56px)!important;text-align:left!important}
+.coach::before{content:'';position:absolute;left:8px;top:50%;transform:translateY(-50%);width:clamp(28px,6vmin,38px);height:clamp(28px,6vmin,38px)}
+.tbtn small{display:block;font-size:11px;margin-top:1px}
+.tbtn.primary{flex-direction:column!important;gap:0!important}
+.title-foot button{font-size:0!important;width:40px;height:40px;padding:0!important}.title-foot button::before{content:'♪';font-size:19px}
+@keyframes cardIn{from{transform:translateY(22px);opacity:0}to{transform:none;opacity:1}}
+@keyframes starPop{from{transform:scale(0);opacity:0}to{transform:none;opacity:1}}
+@media (orientation:landscape) and (max-height:390px){
+ #overlayContent[data-screen="finish"]{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)!important}
+ #overlayContent[data-screen="finish"]>.banner{grid-column:1;grid-row:1;justify-self:start}
+ #overlayContent[data-screen="finish"]>.bigstars{grid-column:1;grid-row:2}
+ #overlayContent[data-screen="finish"]>h2{grid-column:1;grid-row:3}
+ #overlayContent[data-screen="finish"]>.scorebig{grid-column:2;grid-row:1}
+ #overlayContent[data-screen="finish"]>.result-stats{grid-column:2;grid-row:2/4!important;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #overlayContent[data-screen="finish"]>.report{grid-column:1;grid-row:4}
+ #overlayContent[data-screen="finish"]>.primary{grid-column:2;grid-row:4}
+ #overlayContent[data-screen="upgrade"]>.tiny{justify-self:start}
+ #overlayContent[data-screen="upgrade"]>.scoreline{grid-column:1;grid-row:3}
+ #overlayContent[data-screen="upgrade"]>.report{grid-column:1;grid-row:4!important}
+ #overlayContent[data-screen="upgrade"]>.choices{grid-row:1/6!important}
+}
+
+/* Look (2026-11-12, the owner's choice from four proposals): D "signal" for the battle, upgrade, result, settings and radio lines:
+   type over the picture, a large serif (Nanum Myeongjo), hairlines, one red signal line, film-subtitle captions. The title screen follows below. */
+@font-face{font-family:'BHS';src:url('media/myeong.woff2') format('woff2');font-display:swap}
+:root{--w:#f1ebe0;--w2:#b9b2a6;--sig:#e2462f;--f:'BHS','Nanum Myeongjo',serif;--wave:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='24' viewBox='0 0 240 24'%3E%3Cpath d='M0 12h60l6-9 8 18 7-14 5 8 4-3h150' fill='none' stroke='%23e2462f' stroke-width='2'/%3E%3C/svg%3E")}
+.overlay{background:linear-gradient(90deg,rgba(6,6,7,.94) 0,rgba(6,6,7,.86) 55%,rgba(6,6,7,.7) 100%)!important;backdrop-filter:none!important}
+.overlay-card{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--w)}
+.overlay .tiny{font-family:var(--f);color:var(--sig);letter-spacing:0!important;font-size:12px!important}
+.overlay h2{font-family:var(--f);font-weight:800;color:var(--w);font-size:clamp(22px,6vmin,34px)!important;padding-bottom:12px;background:var(--wave) left bottom/180px 18px no-repeat}
+.overlay .report,.overlay p,.scoreline{background:none!important;border:0!important;border-radius:0!important;color:var(--w2)!important;padding:0!important}
+.overlay .report strong{color:var(--w)}
+.scoreline{font-family:var(--f);color:var(--w)!important}
+.stars{color:var(--sig)}.stars i{color:#3d3a36}
+.overlay .choices{gap:0!important}
+.overlay .choice{background:transparent!important;border:0!important;border-top:1px solid rgba(241,235,224,.18)!important;border-radius:0!important;box-shadow:none!important;padding:10px 4px!important;color:var(--w)}
+.overlay .choice:last-child{border-bottom:1px solid rgba(241,235,224,.18)!important}
+.overlay .choice:active,.overlay .choice:hover{background:linear-gradient(90deg,rgba(226,70,47,.16),transparent 70%)!important}
+.overlay .choice .cicon{color:var(--w)}
+.overlay .choice h3{font-family:var(--f);font-weight:800;font-size:clamp(15px,3.2vmin,19px)!important;color:var(--w)}
+.overlay .choice .pips i{width:12px!important;height:2px!important;background:rgba(241,235,224,.25)}.overlay .choice .pips i.on{background:var(--w)}.overlay .choice .pips i.new{background:var(--sig)}
+.overlay .choice .ctag{font-size:10px;color:var(--sig);background:none}
+.overlay .choice p{font-size:clamp(10px,2.1vmin,12px)!important;color:var(--w2)}
+.overlay .primary,.tbtn.primary,.sclose{font-family:var(--f)!important;font-weight:800!important;background:var(--sig)!important;color:#fff!important;border:0!important;border-radius:0!important;box-shadow:none!important;letter-spacing:.02em}
+.tbtn:not(.primary){font-family:var(--f)!important;font-weight:800!important;background:transparent!important;color:var(--w)!important;border:0!important;border-bottom:1px solid var(--w)!important;border-radius:0!important;backdrop-filter:none!important}
+.banner{font-family:var(--f);font-weight:800;font-size:clamp(30px,8vmin,48px);color:var(--w);padding-bottom:10px;background:var(--wave) left bottom/220px 20px no-repeat}
+.banner.lose{color:var(--w2)}
+.bigstars i{font-size:clamp(14px,3.5vmin,20px);color:#3d3a36;letter-spacing:4px}.bigstars i.on{color:var(--sig)}
+.scorebig b{font-family:var(--f);font-weight:800;color:var(--w);font-size:clamp(34px,8vmin,50px)!important}.scorebig span,.scorebig small{color:var(--w2)}.scorebig em{background:none;color:var(--sig);font-style:normal;border:1px solid var(--sig)}
+.overlay .result-stat{background:transparent!important;border:0!important;border-left:1px solid rgba(241,235,224,.2)!important;border-radius:0!important;text-align:left!important}.overlay .result-stat .n{font-family:var(--f);font-weight:800;color:var(--w)}.overlay .result-stat .k{color:var(--w2)}
+.title-shade{background:linear-gradient(90deg,rgba(6,6,7,.9) 0,rgba(6,6,7,.6) 40%,rgba(6,6,7,0) 70%)!important}
+.title h1{font-family:var(--f);font-weight:800;color:var(--w);font-size:clamp(58px,18vh,104px);letter-spacing:.02em;text-shadow:0 2px 24px rgba(0,0,0,.6);padding-bottom:14px;background:var(--wave) left bottom/260px 22px no-repeat}
+.title h1 span{font-family:var(--f);color:var(--w2);letter-spacing:.5em;font-size:.2em;text-indent:0;margin-top:2px}
+.title-tag{color:var(--w2);font-weight:400}
+.title-foot button{background:transparent!important;color:var(--w)!important;border:1px solid rgba(241,235,224,.4)!important;border-radius:50%!important}#titleBuild{color:#77716a}
+.coach{background:transparent!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 3px #000,0 0 12px rgba(0,0,0,.9)}
+.coach::before{width:8px!important;height:8px!important;left:20px!important;border-radius:50%;background:var(--sig);box-shadow:0 0 0 4px rgba(226,70,47,.25);animation:ping 1.4s ease-out infinite}
+.coach strong{font-family:var(--f);color:var(--sig)!important;letter-spacing:0!important}.coach strong::after{content:' —'}.coach span{font-family:var(--f);font-weight:800;color:var(--w)!important}.coach small{color:var(--w2)!important}
+.toast{font-family:var(--f);font-weight:800;background:transparent!important;color:var(--w)!important;border:0!important;text-shadow:0 1px 3px #000,0 0 12px #000;box-shadow:none!important}
+.fbtn{background:rgba(10,10,11,.55)!important;border:1px solid rgba(241,235,224,.35)!important;border-radius:50%!important;color:var(--w)!important;box-shadow:none!important}
+.fbtn.item:not(.has){opacity:.45}
+#pulseBtn{background:conic-gradient(rgba(10,10,11,.7) calc(var(--cd)*360deg),rgba(226,70,47,.55) 0)!important;border-color:var(--sig)!important}
+.hubchip{background:transparent!important;border:0!important;color:var(--w)!important;text-shadow:0 1px 3px #000}
+.settings{background:rgba(8,8,9,.96)!important;border:0!important;border-left:2px solid var(--sig)!important;border-radius:0!important;color:var(--w)!important}.settings h3{font-family:var(--f);color:var(--w)!important}
+.seg button{border-radius:0!important;border:0!important;border-bottom:1px solid rgba(241,235,224,.3)!important;background:transparent!important;color:var(--w2)!important}.seg button.on{color:var(--w)!important;border-bottom:2px solid var(--sig)!important}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(226,70,47,.6)}100%{box-shadow:0 0 0 12px rgba(226,70,47,0)}}
+/* Title screen: C (dusk heavy machinery: black bars, engraved steel letters with an orange rim light, metal buttons with lamps)
+   with A mixed in (the relay console: amber monospace boot lines, a scanline veil, a blinking caret). The rest of the game uses D. */
+@font-face{font-family:'TDISP';src:url('media/doh.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'TMONO';src:url('media/term.woff2') format('woff2');font-display:swap}
+.title{--lamp:#ff8c2a;--amb:#ffb12a;--amb2:#c98a1c;--brush:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);--td:'TDISP',sans-serif;--tm:'TMONO','Nanum Gothic Coding',monospace}
+.title::before,.title::after{content:'';position:absolute;left:0;right:0;height:7vh;background:#000;z-index:2;pointer-events:none}.title::before{top:0}.title::after{bottom:0}
+.title-shade{background:linear-gradient(90deg,rgba(10,8,6,.93) 0,rgba(10,8,6,.6) 42%,rgba(10,8,6,.05) 78%)!important}
+.title-shade::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);pointer-events:none}
+.title-body{z-index:3}
+.title h1{font-family:var(--td)!important;font-weight:400!important;font-size:clamp(54px,17vh,98px)!important;color:#f4eee3!important;letter-spacing:.04em!important;padding-bottom:0!important;background:none!important;text-shadow:0 -1px 0 rgba(255,255,255,.35),0 3px 0 #000,0 0 26px rgba(255,140,42,.55),0 0 2px #000!important}
+.title h1 span{font-family:var(--tm)!important;color:#140d05!important;background:var(--amb)!important;letter-spacing:.06em!important;text-indent:0!important;display:inline-block!important;width:auto!important;padding:1px 9px!important;margin-top:8px!important;font-size:.24em!important;box-shadow:0 0 14px rgba(255,177,42,.35)}
+.title-tag{font-family:var(--tm)!important;color:#e6be72!important;font-weight:400!important;text-shadow:0 1px 0 #000!important}
+.title-tag::before{content:'> 송신소 연결 ........ 정상\A> ';white-space:pre;color:var(--amb2)}
+.title-tag::after{content:'▌';color:var(--amb);animation:tblink 1s steps(1) infinite;margin-left:3px}
+.title .tbtn{font-family:var(--td)!important;font-weight:400!important;border:1px solid #000!important;border-radius:4px!important;color:#f3ede2!important;background:var(--brush),linear-gradient(180deg,#4a5054,#2a2f31)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.4),0 3px 0 #0b0c0d!important;text-shadow:0 -1px 0 #000;backdrop-filter:none!important;position:relative}
+.title .tbtn.primary{padding-left:36px!important;font-size:clamp(20px,5.4vw,25px)!important}
+.title .tbtn.primary::before{content:'';position:absolute;left:15px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--lamp);box-shadow:0 0 12px var(--lamp),0 0 2px #fff inset;animation:tlamp 1.6s ease-in-out infinite}
+.title .tbtn small{font-family:var(--tm);color:var(--amb);font-weight:400;opacity:1}
+.title .tbtn:not(.primary){color:#c9c2b5!important;background:var(--brush),linear-gradient(180deg,#33383b,#1f2325)!important;border-bottom:1px solid #000!important}
+.title .tbtn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 0 #0b0c0d!important}
+.title-foot button{border:1px solid #000!important;background:linear-gradient(180deg,#4a5054,#2a2f31)!important;color:#f3ede2!important;border-radius:50%!important}
+.title-foot button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--lamp),0 0 12px rgba(255,140,42,.5)!important}
+#titleBuild{font-family:var(--tm);color:var(--amb2)!important}
+.title-skip{font-family:var(--td)!important;font-weight:400!important;border:1px solid #000!important;border-radius:4px!important;background:linear-gradient(180deg,#4a5054,#2a2f31)!important;color:#f3ede2!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 0 #0b0c0d!important;z-index:4}
+.title-cap{font-family:var(--td)!important;font-weight:400!important;color:#f4eee3!important;text-shadow:0 2px 0 #000,0 0 22px rgba(255,140,42,.5)!important;z-index:3}
+.title-play{font-family:var(--td)!important;font-weight:400!important;border:1px solid #000!important;border-radius:4px!important;background:var(--brush),linear-gradient(180deg,#4a5054,#2a2f31)!important;color:#f3ede2!important;box-shadow:0 0 0 2px var(--lamp),0 3px 0 #0b0c0d!important;z-index:4}
+@keyframes tblink{50%{opacity:0}}@keyframes tlamp{50%{opacity:.55}}
+@media (orientation:portrait){.overlay .result-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.overlay .result-stat .n{white-space:nowrap}}
+/* D readability: the subtitle-style radio line gets a soft dark band behind it */
+.coach{background:linear-gradient(90deg,rgba(6,6,7,0),rgba(6,6,7,.78) 12%,rgba(6,6,7,.78) 88%,rgba(6,6,7,0))!important;padding-right:clamp(18px,4vmin,30px)!important}
 </style>
 </head>
 <body>
@@ -362,11 +473,10 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <button type="button" class="title-play" id="filmPlay" hidden>▶ 터치해서 영상 재생</button>
   <button type="button" class="title-skip" id="skipFilm">SKIP »</button>
   <div class="title-body">
-    <div class="title-kicker">RIDGE RELAY · SECTOR 02</div>
     <h1>중계선<span>최후의 방어</span></h1>
     <p class="title-tag">두 개의 전선, 한 대의 지원 기체. <br>중앙 송신소가 끊기기 전에 막아라.</p>
-    <div class="title-actions"><button type="button" class="tbtn primary" id="tutorialBtn"><span>훈련 후 작전 시작</span><span>→</span></button><button type="button" class="tbtn" id="skipBtn">바로 작전 시작</button></div>
-    <div class="title-foot"><button type="button" id="bgmBtn" aria-pressed="false">♪ 음악 켜기</button><span id="titleBuild"></span></div>
+    <div class="title-actions"><button type="button" class="tbtn primary" id="tutorialBtn"><span>출격</span><small>훈련부터 시작</small></button><button type="button" class="tbtn" id="skipBtn">훈련 없이 출격</button></div>
+    <div class="title-foot"><button type="button" id="bgmBtn" aria-pressed="false" aria-label="음악 켜기">♪ 음악 켜기</button><span id="titleBuild"></span></div>
   </div>
 </div>
 <button type="button" class="fbtn" id="gearBtn" aria-label="설정 열기">⚙</button>
@@ -378,7 +488,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow" id="vibRow"><span>진동</span><div class="seg" id="setVib"><button type="button" data-v="1">켜기</button><button type="button" data-v="0">끄기</button></div></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=2026.11.12-4"></script>
+<script src="sfx.js?v=2026.11.12-5"></script>
 <script>
 'use strict';
 (() => {
@@ -435,7 +545,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-4';
+const BUILD='2026.11.12-5';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -779,6 +889,9 @@ function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?
  }
 }
 function chapterStars(){const n=!stageHurt?3:facilities[0]>0&&facilities[1]>0?2:1;stars.push(n);score+=n*250;return n;}
+const UPG_ICON={stable:'M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4M12.5 8l-2.5 4h4l-2.5 4',precision:'M12 2v5M12 17v5M2 12h5M17 12h5M7 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M12 12h.01',emergency:'M3 8h15v8H3zM18 10.5h2.5v3H18M11 9.5l-2.5 3h4l-2.5 3',rubble:'M3 19h18M5 19l2.5-7h4l2 7M13.5 19l2.5-9h3.5l1.5 9M9 12l1-4h2.5'};
+const upgIcon=id=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+UPG_ICON[id]+'"/></svg>';
+const pips=r=>{const cap=rankCap();let h='';for(let k=0;k<cap;k++)h+='<i class="'+(k<r?'on':k===r?'new':'')+'"></i>';return h;};   // owned ranks, the one this card adds, the rest up to the cap
 const starHTML=n=>'<span class="stars">'+'★★★'.slice(0,n)+'<i>'+'★★★'.slice(n)+'</i></span>';
 function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();stageReports.push({op,facilities:[...facilities],core,stars:st});
  const names=['발전소','정비소'],statuses=facilities.map((h,i)=>names[i]+' '+(h>0?'유지':'붕괴')+' ('+Math.round(h)+' / 100)');
@@ -789,7 +902,7 @@ function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();s
  offeredUpgrades=[...facilityOffers,...alternatives.slice(k),...alternatives.slice(0,k)].slice(0,3);
  const tags={stable:'발전소 생존',emergency:'발전소 붕괴',precision:'정비소 생존',rubble:'정비소 붕괴'};
  const choices=offeredUpgrades.map((id,i)=>({id,label:CARD_NAMES[id],rank:upgradeRanks[id],tag:i<facilityOffers.length?tags[id]:'추가 선택',desc:cardDescription(id)}));
- const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / ${String(TOTAL_OPS-1).padStart(2,'0')}</div><h2>${starHTML(st)} 강화 선택</h2><div class="scoreline">점수 ${score.toLocaleString()} · 최고 콤보 ${bestCombo}</div><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}${stageGift?'<br>돌파 없이 방어 · '+(stageGift==='full'?'보관 칸이 가득 차 보상을 받지 못했습니다':'아이템 획득: '+ITEMS[stageGift].name):''}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
+ const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / ${String(TOTAL_OPS-1).padStart(2,'0')}</div><h2>${starHTML(st)} 강화를 고르세요</h2><div class="scoreline">점수 ${score.toLocaleString()} · 최고 콤보 ${bestCombo}</div><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}${stageGift?'<br>돌파 없이 방어 · '+(stageGift==='full'?'보관 칸이 가득 차 보상을 받지 못했습니다':'아이템 획득: '+ITEMS[stageGift].name):''}</div><div class="choices">${choices.map((ch,i)=>`<button type="button" class="choice" data-choice="${ch.id}" style="--i:${i}"><i class="cicon">${upgIcon(ch.id)}</i><div class="chead"><h3>${ch.label}</h3><span class="pips">${pips(ch.rank)}</span><span class="ctag">${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
  renderOverlay(html,'upgrade');for(const btn of document.querySelectorAll('[data-choice]'))btn.addEventListener('click',()=>choose(btn.dataset.choice));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id]||upgradeRanks[id]>=rankCap())return;const n=++upgradeRanks[id];
@@ -799,7 +912,8 @@ function finish(victory){phase='finish';ev3({t:'finish',victory});const result=v
  if(victory){chapterStars();score+=Math.round(core)*20;}const record=!drill&&score>best;if(record){best=score;try{localStorage.setItem('relayBest',String(best));}catch(e){}}const starSum=stars.reduce((a,v)=>a+v,0);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
  const progress='WAVE '+op+'-'+wave+' · '+(victory?'전체 방어 성공':'도전 종료');
- renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="scorebig"><b id="scoreNum">0</b><span>점</span>${record?'<em>최고 기록</em>':'<small>최고 '+best.toLocaleString()+'</small>'}</div><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${bestCombo}</div><div class="k">최고 콤보</div></div><div class="result-stat"><div class="n">★ ${starSum} / ${stars.length*3||3}</div><div class="k">별</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());countUp($('scoreNum'),score);updateControls();updateUI();}
+ const rate=victory?(starSum>=stars.length*3*.85?3:starSum>=stars.length*3*.6?2:1):0;
+ renderOverlay(`<div class="banner ${victory?'win':'lose'}">${victory?'작전 성공':'작전 실패'}</div><div class="bigstars">${[0,1,2].map(k=>'<i class="'+(k<rate?'on':'')+'">★</i>').join('')}</div><h2>${victory?'중계선이 살아남았습니다':'송신소가 끊겼습니다'}</h2><div class="scorebig"><b id="scoreNum">0</b><span>점</span>${record?'<em>최고 기록</em>':'<small>최고 '+best.toLocaleString()+'</small>'}</div><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${bestCombo}</div><div class="k">최고 콤보</div></div><div class="result-stat"><div class="n">★ ${starSum} / ${stars.length*3||3}</div><div class="k">별</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}<br><small>판 ${BUILD}</small></div><button type="button" class="primary" id="retryBtn"><span>다시 출격</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());countUp($('scoreNum'),score);updateControls();updateUI();}
 // the final score runs up from zero (DOM only)
 function countUp(el,to){if(!el)return;const t0=performance.now(),dur=1300;const tick=()=>{const k=Math.min(1,(performance.now()-t0)/dur),v=Math.round(to*(1-Math.pow(1-k,3)));el.textContent=v.toLocaleString();if(k<1&&el.isConnected)setTimeout(tick,30);};tick();}
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
@@ -846,7 +960,7 @@ function bgmStop(){if(!bgmSrc)return;try{const a=audio,g=bgmGain,n=bgmSrc;bgmSrc
 function bgmButton(){const on=!!prefs.bgm;$('bgmBtn').textContent=on?'♪ 음악 끄기':'♪ 음악 켜기';$('bgmBtn').setAttribute('aria-pressed',String(on));}
 function intro(){phase='intro';sfxAmb(false);drill=null;lesson=null;holdState=null;pulseLock=false;hideCoach();showOverlay(false);$('title').hidden=false;$('title').classList.toggle('film',!filmDone);$('titleBuild').textContent='시제품 · 판 '+BUILD;titleMedia();bgmButton();bgmPlay();
  // first-time players are led to the drill; afterwards the direct start is the main button
- const t=$('tutorialBtn'),k=$('skipBtn');t.classList.toggle('primary',!learned.drill);k.classList.toggle('primary',learned.drill);t.firstElementChild.textContent=learned.drill?'훈련 다시 하기':'훈련 후 작전 시작';k.style.order=learned.drill?'-1':'';
+ const t=$('tutorialBtn'),k=$('skipBtn');t.classList.toggle('primary',!learned.drill);k.classList.toggle('primary',learned.drill);t.firstElementChild.textContent=learned.drill?'훈련 다시 하기':'출격';const sm=t.querySelector('small');if(sm)sm.hidden=learned.drill;k.textContent=learned.drill?'출격':'훈련 없이 출격';k.style.order=learned.drill?'-1':'';
  updateUI();}
 function leaveTitle(){$('title').hidden=true;$('titleVid').pause();bgmStop();}
 $('tutorialBtn').addEventListener('click',()=>{leaveTitle();startDrill();});
