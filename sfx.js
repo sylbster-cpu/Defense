@@ -1,4 +1,4 @@
-// Relay defence sound engine, set C. Every sound is built once from layers (transient, body, low end, mechanism, tail)
+// Relay defence sound engine. Every sound is built once from layers (transient, body, low end, mechanism, tail)
 // into a sample buffer, with several variants of the frequent ones; playback then only starts buffers.
 // Pure array code: runs in a browser and in Node, so the same sounds can be heard and measured.
 (function(g){
@@ -25,15 +25,6 @@ const smpCache={};
 function smpData(key){let d=smpCache[key];if(!d){const b=typeof atob==='function'?Uint8Array.from(atob(SAMPLES[key]),c=>c.charCodeAt(0)):new Uint8Array(Buffer.from(SAMPLES[key],'base64'));const v=new DataView(b.buffer,b.byteOffset,b.byteLength);d=new Float32Array(b.length>>1);for(let i=0;i<d.length;i++)d[i]=v.getInt16(i*2,true)/32768;smpCache[key]=d;}return d;}
 function samp(o,t0,key,rate,gain,from=0,len=9){const d=smpData(key),s=N(t0),step=rate*16000/SR,i0=from*16000,n=Math.min(o.length-s,Math.floor((Math.min(d.length,(from+len)*16000)-i0-1)/step));
  for(let i=0;i<n;i++){const x=i0+i*step,j=Math.floor(x),f=x-j;o[s+i]+=(d[j]*(1-f)+d[j+1]*f)*gain*(n-i<200?(n-i)/200:1);}}
-// noise shaped band by band. T: times in seconds. B: one row per third-octave band, [centre Hz, level in dB at each time]. White noise goes through a narrow band filter and takes the level written for its band.
-function shaped(o,t0,T,B,R,gain=1){const s=Math.ceil(t0*SR),n=Math.min(o.length-s,Math.ceil(T[T.length-1]*SR));
- for(const row of B){const fc=row[0];if(fc>SR*.42)continue;const k=1/6,gg=Math.tan(Math.PI*fc/SR),a1=1/(1+gg*(gg+k)),a2=gg*a1,a3=gg*a2;let p1=0,p2=0,q1=0,q2=0,seg=0,g0=Math.pow(10,row[1]/20),g1=Math.pow(10,row[2]/20);
-  for(let i=0;i<n;i++){const t=i/SR;while(seg<T.length-2&&t>=T[seg+1]){seg++;g0=Math.pow(10,row[1+seg]/20);g1=Math.pow(10,row[2+seg]/20);}
-   const u=(t-T[seg])/(T[seg+1]-T[seg]),lev=g0*Math.pow(g1/g0,u);
-   let x=R()*2-1,v3=x-p2,v1=a1*p1+a2*v3,v2=p2+a2*p1+a3*v3;p1=2*v1-p1;p2=2*v2-p2;x=k*v1;
-   v3=x-q2;v1=a1*q1+a2*v3;v2=q2+a2*q1+a3*v3;q1=2*v1-q1;q2=2*v2-q2;o[s+i]+=k*v1*lev*gain;}}}
-// K_T, K_B: the level of every third-octave band of candidate I over time, as measured. Shaping noise to this table gives a sound with the same build as I that contains none of the recorded material.
-const K_T=[0,0.004,0.012,0.03,0.06,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.62,0.7],K_B=[[50,0,0,0,-1,-5,-26,-12,-40,-29,-42,-76,-45,-34,-36,-43,-48,-65],[63,-10,-10,-10,-8,-12,-16,-33,-8,-28,-13,-2,-41,-28,-17,-55,-68,-70],[79,-10,-10,-10,-15,-51,-17,-14,-26,-11,-7,-66,-4,-26,-20,-77,-48,-55],[100,-21,-21,-21,-4,-15,-16,-30,-4,-11,-9,-22,-11,-29,-27,-45,-74,-97],[126,-23,-23,-18,-11,-24,-11,-16,-4,-7,-10,0,-35,-19,-17,-54,-49,-64],[159,-52,-52,-39,-2,-38,-13,-7,-12,-15,-11,-6,-20,-23,-30,-43,-58,-78],[200,-65,-65,-50,-45,-35,-23,-8,-16,-11,-10,-32,-12,-27,-82,-96,-68,-69],[252,-29,-29,-41,-12,-32,-17,-30,-23,-18,-93,-24,-35,-32,-46,-67,-73,-73],[317,-51,-50,-51,-23,-41,-23,-39,-21,-22,-32,-26,-59,-40,-69,-69,-71,-71],[400,-65,-61,-43,-29,-46,-23,-23,-27,-24,-26,-29,-42,-46,-38,-74,-76,-76],[504,-38,-41,-50,-28,-42,-24,-22,-33,-26,-34,-43,-30,-86,-42,-74,-74,-74],[635,-73,-49,-56,-25,-48,-24,-28,-31,-23,-41,-29,-41,-62,-31,-72,-72,-72],[800,-55,-85,-76,-25,-69,-29,-25,-31,-27,-94,-41,-40,-27,-41,-77,-77,-77],[1008,-53,-62,-31,-30,-65,-25,-36,-27,-32,-21,-33,-34,-38,-36,-75,-75,-75],[1270,-49,-52,-53,-37,-63,-20,-25,-37,-32,-30,-26,-26,-28,-31,-76,-76,-76],[1600,-52,-60,-58,-21,-68,-30,-37,-28,-24,-26,-36,-23,-35,-52,-69,-69,-69],[2016,-53,-60,-36,-38,-73,-29,-25,-39,-31,-32,-26,-25,-40,-38,-74,-74,-74],[2540,-53,-66,-45,-33,-82,-33,-30,-43,-30,-30,-33,-32,-38,-41,-73,-73,-73],[3200,-41,-68,-49,-36,-62,-34,-35,-35,-40,-29,-41,-37,-47,-46,-72,-72,-72],[4032,-44,-72,-45,-40,-65,-35,-44,-41,-43,-35,-39,-37,-49,-52,-72,-72,-72],[5080,-46,-79,-59,-52,-88,-45,-40,-45,-41,-43,-43,-51,-59,-62,-75,-75,-75],[6400,-49,-72,-57,-59,-82,-45,-40,-49,-51,-54,-51,-50,-76,-70,-74,-74,-74],[8063,-42,-76,-59,-63,-65,-50,-47,-51,-50,-54,-53,-54,-73,-73,-74,-74,-74],[10159,-32,-84,-63,-57,-73,-52,-50,-53,-50,-49,-52,-54,-63,-68,-73,-73,-73],[12800,-30,-76,-65,-60,-74,-54,-51,-61,-57,-53,-54,-54,-66,-68,-74,-74,-74]],K_SEED=[8073, 17843, 19797, 15889];let kTake=0;   // K_SEED: the four takes of noise, out of 28 tried, whose band energies come closest to I
 function sat(o,drive){const c=1/Math.tanh(drive);for(let i=0;i<o.length;i++)o[i]=Math.tanh(o[i]*drive)*c;return o;}
 function add(o,x,t0=0,gain=1){const s=N(t0);for(let i=0;i<x.length&&s+i<o.length;i++)o[s+i]+=x[i]*gain;return o;}
 function hp1(o,fc){const c=Math.exp(-TAU*fc/SR);let y=0,px=0;for(let i=0;i<o.length;i++){const x=o[i];y=c*(y+x-px);px=x;o[i]=y;}return o;}
@@ -59,11 +50,9 @@ const RECIPES={
  // heavy autocannon: crack, a saturated low body, the breech cycling a moment later, a short tail
  turret:[4,1.1,2.4,.8,.62,.5,(o,h,R)=>{noise(h,0,.009,'hp',1800,1800,.7,.7,R,.0004);sweep(o,0,.16,250,82,1,'sine',.002,.55);sweep(o,0,.07,520,170,.4,'square',.001);noise(h,.002,.1,'bp',900,380,.8,.5,R);noise(h,.004,.24,'lp',2600,260,.7,.3,R);noise(h,.006,.16,'hp',2000,3200,.7,.07,R,.003);
    modal(h,.045+R()*.01,[[780,.06,1],[1310,.05,.7],[2150,.035,.5],[3240,.025,.3]],.12,R);},4.2],
- // the support drone's gun: "a little more cannon than gun".
- // I (chosen by ear on 2026-11-11): a double-barrel shotgun blast from the Freedoom project, played a little lower and given a room.
+ // the support drone's gun, "a little more cannon than gun" (chosen by ear on 2026-11-11): a double-barrel shotgun blast from the Freedoom project, played a little lower and given a room.
+ // Purely synthesised versions were judged light and bouncy, and a likeness built from filtered noise too smeared.
  drone:[3,1.3,1.4,.7,.9,.5,(o,h,R)=>{samp(o,0,'dshot',.9*(1+(R()-.5)*.05),1,0,.45);hp1(o,70);noise(h,0,.006,'hp',2600,2600,.7,.15,R,.0003);},1],
- // K: the same build made from noise alone, shaped to the measured levels of I (no recorded material)
- drone_k:[4,1.3,0,.7,.9,.5,(o,h,R)=>{shaped(h,0,K_T,K_B,rng(K_SEED[kTake++%K_SEED.length]));},1],
  echo:[2,.6,1.6,.6,.45,.26,(o,h,R)=>{sweep(o,0,.07,520,210,1,'sine',.002,.6);sweep(h,0,.06,1560,640,.3,'tri',.001);sweep(h,.012,.06,1640,700,.2,'tri',.001);noise(h,0,.06,'bp',2200,900,1.1,.35,R);noise(h,.002,.1,'lp',2400,400,.7,.15,R);},2.2],
  // rounds landing on armour
  hit_light:[4,.3,0,.3,.25,.2,(o,h,R)=>{noise(h,0,.004,'hp',2500,2500,.7,.8,R,.0003);modal(h,0,[[1850,.035,1],[2900,.03,.7],[4300,.02,.4]],.5,R,.85+R()*.3);sweep(h,0,.04,300,140,.5,'sine',.001);noise(h,.001,.03,'bp',1200,700,1,.3,R);},1],
@@ -97,7 +86,7 @@ const RECIPES={
 };
 // [variants, seconds, drive, tail level, tail length, peak, layers]
 const META={   // bus: bed = frequent fire that dips under big sounds. duck = seconds the bed stays down. pitch = spread per play (the reference games use 0.9 - 1.1 for turrets)
- turret:{bus:'bed',pitch:.07},drone:{bus:'bed',pitch:.05},drone_k:{bus:'bed',pitch:.05},echo:{bus:'bed',pitch:.07},hit_light:{bus:'bed',pitch:.12},hit_heavy:{bus:'bed',pitch:.1},
+ turret:{bus:'bed',pitch:.07},drone:{bus:'bed',pitch:.05},echo:{bus:'bed',pitch:.07},hit_light:{bus:'bed',pitch:.12},hit_heavy:{bus:'bed',pitch:.1},
  kill_runner:{pitch:.08},kill_grunt:{pitch:.07},kill_brute:{pitch:.05},kill_boss:{duck:1.6},pulse:{pitch:.03,duck:.7},leak:{duck:.6},facdown:{duck:1.6},boss_warn:{duck:1},surge_warn:{},move:{pitch:.05},item_get:{},item_use:{},upgrade:{},win:{},lose:{},
 };
 function bake(only){const out={};for(const name in RECIPES){if(only&&!only.includes(name))continue;const [k,sec,drive,tail,t60,peak,fn,hg]=RECIPES[name];out[name]=[];for(let v=0;v<k;v++)out[name].push(build(sec,drive,tail,t60,peak,fn,rng(977*(v+1)+name.length*131+name.charCodeAt(0)*17),hg));}return out;}
@@ -106,10 +95,10 @@ function ambience(sec=6){const R=rng(4242),n=N(sec),x=new Float32Array(n+N(1));n
  for(let i=0;i<x.length;i++){const t=i/SR;x[i]=x[i]*(.55+.45*Math.sin(TAU*t/sec*1+1))*(.7+.3*Math.sin(TAU*t/sec*3+2))+y[i]*.9+Math.sin(TAU*55*t)*.05+Math.sin(TAU*110*t)*.03+Math.sin(TAU*165.3*t)*.012;}
  const o=new Float32Array(n),f=N(1);for(let i=0;i<n;i++)o[i]=x[i];for(let i=0;i<f;i++){const u=i/f;o[i]=o[i]*u+x[n+i]*(1-u);}let m=0;for(let i=0;i<n;i++)m=Math.max(m,Math.abs(o[i]));for(let i=0;i<n;i++)o[i]*=.5/m;return o;}
 // playback level of each sound: sets the order of loudness (collapse and overload on top, the frequent fire at the bottom)
-const VOL={"facdown":0.825,"kill_boss":1.0,"pulse":0.835,"leak":0.855,"boss_warn":0.632,"kill_brute":0.68,"kill_grunt":0.621,"surge_warn":0.67,"kill_runner":0.554,"item_get":0.265,"upgrade":0.39,"item_use":0.461,"win":0.533,"lose":0.883,"turret":0.666,"move":0.483,"drone":0.44,"echo":0.443,"hit_heavy":0.664,"hit_light":0.686,"drone_k":0.446};
+const VOL={"facdown":0.825,"kill_boss":1.0,"pulse":0.835,"leak":0.855,"boss_warn":0.632,"kill_brute":0.68,"kill_grunt":0.621,"surge_warn":0.67,"kill_runner":0.554,"item_get":0.265,"upgrade":0.39,"item_use":0.461,"win":0.533,"lose":0.883,"turret":0.666,"move":0.483,"drone":0.44,"echo":0.443,"hit_heavy":0.664,"hit_light":0.686};
 g.RELAY_SFX={SR,bake,ambience,META,VOL,names:Object.keys(RECIPES)};
 })(typeof window!=='undefined'?window:globalThis);
-/* The recorded material in SAMPLES comes from the Freedoom project (sound dsdshtgn), resampled and trimmed. The table K_B holds levels measured from that sound.
+/* The recorded material in SAMPLES comes from the Freedoom project (sound dsdshtgn), resampled and trimmed.
 Copyright (c) 2001-2024 Contributors to the Freedoom project. All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.

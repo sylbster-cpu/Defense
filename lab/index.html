@@ -372,7 +372,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow"><label for="setBright">화면 밝기</label><input type="range" id="setBright" min="70" max="150" step="5"></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=lab4"></script>
+<script src="../sfx.js?v=2026.11.11-8"></script>
 <script>
 'use strict';
 (() => {
@@ -428,7 +428,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.11-7-lab4';   // lab build: the game of build 2026.11.11-7 with set C sounds and the reworked impact feedback. The game in the folder above is untouched.
+const BUILD='2026.11.11-8-lab5';   // lab build: the game of build 2026.11.11-8 with the reworked impact feedback, which is still under review. The game in the folder above does not have it.
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -538,50 +538,42 @@ function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*[0,1,1,1.18
  if(!drill){if(type==='boss'){if(op===TOTAL_OPS){final=true;hp=Math.round(hp*1.5);}}else if(Math.random()<RARE_P){rare=true;hp=Math.round(hp*1.6);}}   // rare machines drop an item; the last boss changes lanes twice
  const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
 function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;
- if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);shotSound('boom');ev3({t:'spawn',e});}
+ if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);sfx('kill_brute',0,.78);ev3({t:'spawn',e});}
  ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sfxKill(e);if(e.type==='boss'){hitStop(.11,.5);buzz([40,420,160]);}if(e.rare)grantItem(true);else if(e.type==='boss'&&!e.final)grantItem(false);}else sfxHit(src);}
 function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
-// Shots and blasts: a falling tone plus a filtered noise crack. [from Hz, to Hz, seconds, wave, tone level, noise level, noise cutoff]
-const SHOT={turret:[210,62,.13,'square',.07,.085,1100],drone:[1050,380,.08,'sawtooth',.04,.03,3200],echo:[780,330,.07,'triangle',.028,.018,2400],kill:[300,55,.22,'sawtooth',.075,.1,800],boom:[150,34,.5,'sawtooth',.11,.14,480]};
-let noiseBuf=null;const shotAt={};
-/* ---------- lab sound: set C (sfx.js). The buffers are built in small steps while the title screen shows; playing only starts buffers. ---------- */
-const SFX={raw:{},amb:null,ready:false,last:{},bus:null,cache:new Map(),killAt:-9,chain:0,ambOn:false,leakAt:-9};
+/* ---------- sound (sfx.js): every sound is built once from layers while the title screen shows; playing only starts buffers ---------- */
+const SFX={raw:{},amb:null,ready:false,last:{},bus:null,cache:new Map(),killAt:-9,chain:0,ambOn:false};
 (function bake(i){const X=window.RELAY_SFX;if(!X)return;if(i<X.names.length){const nm=X.names[i];SFX.raw[nm]=X.bake([nm])[nm];setTimeout(()=>bake(i+1),0);}else{SFX.amb=X.ambience();SFX.ready=true;}})(0);
+// one compressor for everything; the frequent fire (bed) dips under the big sounds
 function sfxBus(){if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();
  if(!SFX.bus||SFX.bus.a!==audio){const a=audio,comp=a.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=8;comp.ratio.value=8;comp.attack.value=.003;comp.release.value=.16;const out=a.createGain();out.gain.value=.7*prefs.vol/100;comp.connect(out);out.connect(a.destination);
   const bed=a.createGain(),amb=a.createGain();amb.gain.value=0;bed.connect(comp);amb.connect(comp);SFX.bus={a,comp,out,bed,amb,ambSrc:null};SFX.cache=new Map();}
  return SFX.bus;}
 function sfxBuf(x){let b=SFX.cache.get(x);if(!b){b=audio.createBuffer(1,x.length,RELAY_SFX.SR);b.getChannelData(0).set(x);SFX.cache.set(x,b);}return b;}
-// name: a sound of set C. delay in seconds, p multiplies the pitch.
+// name: a sound of sfx.js. delay in seconds, p multiplies the pitch. Frequent sounds have variants and a pitch spread, so no two shots are the same.
 function sfx(name,delay=0,p=1){if(mute||prefs.vol<=0||!SFX.ready)return;try{const B=sfxBus(),X=RELAY_SFX,vs=SFX.raw[name];if(!vs)return;const m=X.META[name]||{},t=B.a.currentTime+delay;
  let v=Math.random()*vs.length|0;if(vs.length>1&&v===SFX.last[name])v=(v+1)%vs.length;SFX.last[name]=v;
  const s=B.a.createBufferSource(),g=B.a.createGain();s.buffer=sfxBuf(vs[v]);s.playbackRate.value=p*(1+(Math.random()*2-1)*(m.pitch||0));g.gain.value=X.VOL[name]*(.85+Math.random()*.15);s.connect(g);g.connect(m.bus==='bed'?B.bed:B.comp);s.start(t);
  if(m.duck){B.bed.gain.setTargetAtTime(.35,t,.01);B.bed.gain.setTargetAtTime(1,t+m.duck*.5,.12);}}catch(e){}}
 // kills at the same moment ring out one after another, each a little higher (an overload that takes four machines sounds like four)
 function sfxKill(e){const now=performance.now()/1000;if(e.type==='boss'){sfx('kill_boss');return;}if(now-SFX.killAt<.06)SFX.chain=Math.min(SFX.chain+1,5);else SFX.chain=0;SFX.killAt=now;sfx('kill_'+e.type,SFX.chain*.04,Math.pow(1.06,SFX.chain));}
+// rounds landing on armour
 function sfxHit(src){if(src==='turret'||src==='pierce')sfx('hit_heavy',.04);else if(src==='drone'||src==='echo')sfx('hit_light',.03);}
 // wind over the base and the hum of the relay while a battle runs
 function sfxAmb(on){if(SFX.ambOn===on)return;SFX.ambOn=on;if(mute||prefs.vol<=0||!SFX.ready)return;try{const B=sfxBus();if(on&&!B.ambSrc){const s=B.a.createBufferSource();s.buffer=sfxBuf(SFX.amb);s.loop=true;s.connect(B.amb);s.start();B.ambSrc=s;}B.amb.gain.setTargetAtTime(on?.1:0,B.a.currentTime,.5);}catch(e){}}
-// phone vibration (Android browsers only; iPhones do not support it)
+function shotSound(kind){sfx(kind);}   // turret, drone, echo
+// lab: phone vibration (Android browsers only; iPhones do not support it)
 function buzz(p){if(mute||prefs.vol<=0)return;try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
-// hit-stop: the battle holds for a moment on the heaviest impacts while the picture keeps moving. Rules are untouched: nothing advances while it holds.
-let stopT=0;const stopQ=[];
+// lab: hit-stop. The battle holds for a moment on the heaviest impacts while the picture keeps moving. Rules are untouched: nothing advances while it holds.
+let stopT=0,leakAt=-9;const stopQ=[];
 function hitStop(sec,delay=0){if(drill)return;if(delay>0)stopQ.push([performance.now()+delay*1000,sec]);else stopT=Math.max(stopT,sec);}
 function stopTick(dt){const now=performance.now();for(let i=stopQ.length-1;i>=0;i--)if(now>=stopQ[i][0]){stopT=Math.max(stopT,stopQ[i][1]);stopQ.splice(i,1);}if(stopT>0){stopT-=dt;return true;}return false;}
-const SHOT_C={turret:'turret',drone:new URLSearchParams(location.search).get('drone')==='k'?'drone_k':'drone',echo:'echo'};   // the drone gun: I (made from a recorded blast, chosen by ear) by default; ?drone=k plays K, its likeness made from noise alone
-function shotSound(kind){if(SHOT_C[kind]){sfx(SHOT_C[kind]);return;}if(kind==='boom'){sfx('kill_brute',0,.78);return;}if(mute||prefs.vol<=0)return;try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const a=audio,t=a.currentTime,P=SHOT[kind],v=prefs.vol/100;
- if(shotAt[kind]&&t-shotAt[kind]<.05)return;shotAt[kind]=t;
- const o=a.createOscillator(),g=a.createGain();o.type=P[3];o.frequency.setValueAtTime(P[0],t);o.frequency.exponentialRampToValueAtTime(P[1],t+P[2]);g.gain.setValueAtTime(P[4]*v,t);g.gain.exponentialRampToValueAtTime(.0001,t+P[2]);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+P[2]+.02);
- if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate*.6|0,a.sampleRate);const d=noiseBuf.getChannelData(0);let x=12345;for(let i=0;i<d.length;i++){x=(x*1103515245+12345)&0x7fffffff;d[i]=x/0x3fffffff-1;}}
- const n=a.createBufferSource(),f=a.createBiquadFilter(),ng=a.createGain();n.buffer=noiseBuf;f.type='lowpass';f.frequency.setValueAtTime(P[6],t);f.frequency.exponentialRampToValueAtTime(P[6]*.35,t+P[2]);ng.gain.setValueAtTime(P[5]*v,t);ng.gain.exponentialRampToValueAtTime(.0001,t+P[2]*.9);n.connect(f);f.connect(ng);ng.connect(a.destination);n.start(t,(t*7.3)%.08,P[2]);
- }catch(e){}}
-function sound(freq,duration=.08,type='sine',volume=.05){if(mute||prefs.vol<=0)return;volume*=prefs.vol/100;try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();}if(audio.state==='suspended')audio.resume();const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.72),t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration);}catch(e){mute=true;}}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
 function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
 function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y)));if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);for(const e of close){e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-SFX.leakAt>.6){hitStop(.04);buzz([20,40,30]);}SFX.leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sfx('surge_warn');}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sfx('boss_warn');}}
