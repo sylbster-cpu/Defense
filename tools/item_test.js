@@ -64,7 +64,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   const keys=Object.keys(dist);ck('eleven outcomes, each about one in eleven',keys.length===11&&keys.every(k=>Math.abs(dist[k]/2000-1)<.12),dist);
   ck('every item has an icon and a colour',await T("Object.keys(ITEMS).length===10&&Object.keys(ITEMS).every(k=>ICON[k]&&ITEMS[k].col&&ITEMS[k].desc)"));
   // a mid boss drops too; the last boss does not
-  await T("enemies=[];op=3;spawn(0,'boss');let e=enemies[0];e.y=300;const n0=drops.length+fieldTurrets.length;damageEnemy(e,1e6,0,0,'turret');window.__mb=drops.length+fieldTurrets.length-n0;drops=[];fieldTurrets=[];enemies=[];op=5;spawn(0,'boss');e=enemies[0];e.y=300;e.hops=0;damageEnemy(e,1e7,0,0,'turret');window.__fb=drops.length+fieldTurrets.length;0");
+  await T("enemies=[];op=3;spawn(0,'boss');let e=enemies[0];e.y=300;const n0=drops.length+fieldTurrets.length;damageEnemy(e,1e6,0,0,'turret');window.__mb=drops.length+fieldTurrets.length-n0;drops=[];fieldTurrets=[];enemies=[];op=TOTAL_OPS;spawn(0,'boss');e=enemies[0];e.y=300;e.hops=0;damageEnemy(e,1e7,0,0,'turret');window.__fb=drops.length+fieldTurrets.length;0");
   ck('a mid boss leaves something, the last boss nothing',(await T('window.__mb'))===1&&(await T('window.__fb'))===0);
   // a chapter without a breach pays into the bag
   await T("reset();newStage(1);paused=true;while(phase==='battle'){update(1/30);drops=[];fieldTurrets=[];for(const e of enemies)damageEnemy(e,1e6,0,0,'drone');}0");
@@ -79,7 +79,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   ck('lesson: taking it leads to the note on keeping and using',await T("bag.join()==='charge'&&$('coachTitle').textContent.startsWith('아이템 획득')&&$('coachMain').textContent.includes('두 개까지')"),await T("$('coachMain').textContent"));
   await T("releaseHold();0");ck('lesson done once',await T("learned.item===true&&!holdState"));
   // final boss still changes lanes
-  await T("paused=true;enemies=[];op=5;spawn(0,'boss');0");const fb=await T('JSON.stringify({final:enemies[0].final,hops:enemies[0].hops})');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.4,0,0,"drone");');const l1=await T('enemies[0].lane');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.3,0,0,"drone");');const l2=await T('enemies[0].lane');
+  await T("paused=true;enemies=[];op=TOTAL_OPS;spawn(0,'boss');0");const fb=await T('JSON.stringify({final:enemies[0].final,hops:enemies[0].hops})');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.4,0,0,"drone");');const l1=await T('enemies[0].lane');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.3,0,0,"drone");');const l2=await T('enemies[0].lane');
   ck('final boss changes lanes at 2/3 and 1/3 hull',l1===1&&l2===0,{fb,l1,l2});
   const sc=await p.evaluate(()=>document.documentElement.scrollWidth+'x'+document.documentElement.scrollHeight);ck('no scroll',sc===w+'x'+h,sc);ck('no errors',!errs.length,errs.slice(0,3));await c.close();}
  await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();

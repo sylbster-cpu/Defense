@@ -25,14 +25,14 @@ const BOT=(force,tick,react,pulseAt)=>`(function(){mute=true;const N=${N},tick=$
     if(lead){const y0=lead.y-MAG.range*.8;let n=0;for(const e of enemies)if(e.hp>0&&e.lane===lead.lane&&e.type!=='boss'&&Math.abs(e.y-y0)<=MAG.range)n++;if(n>=2){aim=i;useMagnet(lead.lane,y0);st.used++;return;}}}
    if(go){bag.splice(i,1);applyItem(id);st.used++;return;}}}
  for(let run=0;run<N;run++){reset();newStage(1);let fr=0,guard=0;
-  while(phase!=='finish'&&guard++<30*900){
+  while(phase!=='finish'&&guard++<30*1200){
    if(phase==='upgrade'){const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);continue;}
    for(const d of drops)if(d.life<=1/30)st.expired++;
    update(1/30);fr++;
    for(const d of drops.slice())if(DROP_LIFE-d.life>=react&&bag.length<BAG_MAX&&takeDrop(d))st.picked++;
-   if(fr%tick===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190).reduce((a,e)=>a+TYPES[e.type].value,0));
+   if(fr%tick===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190&&!map.cover(e.lane,e.y)).reduce((a,e)=>a+TYPES[e.type].value,0));
     if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);
-    const inR=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange).length;
+    const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&Math.abs(e.y-drone.y)<effects.pulseRange).length;
     useBag(c,inR);if(drone.pulseCooldown<=.01&&inR>=${pulseAt})pulse();}
   }
   st.leaks+=leaks;st.l2+=leaks*leaks;st.core+=core;st.held+=bag.length;if(core>0&&op===TOTAL_OPS)st.wins++;}

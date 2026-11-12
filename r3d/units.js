@@ -7,6 +7,7 @@ const GY=.05;        // enemy feet height: env.js lays the road at y = .025
 const DY=.3;         // height of the ground decals (range marks, slow rings, light pool): clear of the road's polygon offset at any screen size
 const POP=.25;       // spawn pop-in time (s)
 const DIE=.2;         // collapse time after a kill (s); fx.js covers it with the explosion
+const FALL=.7;        // a machine knocked off a bridge: time to slide over the edge and drop out of sight
 let Q=ctx.quality;
 
 /* ====================================================================== */
@@ -318,7 +319,7 @@ function addState(e,popIn){
  const S=spare.pop()||{e:null,T:null,d:null,seen:0,age:0,dist:0,px:0,pz:0,killed:false,dying:0,smoke:0,puff:0,dustD:0,step:0,slowK:0,stunK:0,jx:0,jz:0,jr:0,knock:0};
  ctx.enemyPos(e,_v);
  S.e=e;S.T=TYPE[e.type]||TYPE.grunt;S.d=ENEMY[e.type]||ENEMY.grunt;S.seen=0;S.age=popIn?0:POP;S.dist=Math.random()*3;S.px=_v.x;S.pz=_v.z;
- S.killed=false;S.dying=0;S.smoke=Math.random()*.5;S.puff=Math.random()*.4;S.dustD=0;S.step=1e9;S.slowK=0;S.stunK=0;S.knock=0;
+ S.killed=false;S.fall=false;S.dying=0;S.smoke=Math.random()*.5;S.puff=Math.random()*.4;S.dustD=0;S.step=1e9;S.slowK=0;S.stunK=0;S.knock=0;
  states.set(e,S);act.push(S);return S;
 }
 function freeState(i){const S=act[i];states.delete(S.e);S.e=null;spare.push(S);act[i]=act[act.length-1];act.pop();}
@@ -329,7 +330,7 @@ const _p=new THREE.Vector3(),_s=new THREE.Vector3(),_q=new THREE.Quaternion(),_e
 // The boss (4.6 tall) and the brute are taller than the drone's belly at A.droneH, and they walk right under it.
 // liftT = how far the drone has to climb per lane this frame, lift = the smoothed value actually used.
 const liftT=[0,0],lift=[0,0];
-let run=true,eT=0;   // run: false while the game is paused, so emitters, jitter and particles hold still. eT: the enemies' own clock
+let run=true,eT=0,curG=null;   // run: false while the game is paused, so emitters, jitter and particles hold still. eT: the enemies' own clock
 // ground direction of shadows (away from env.js's sun), for the blob shadows drawn when the shadow map is off
 let shX=-.92,shZ=.39,shA=0;
 function findSun(){
@@ -340,6 +341,7 @@ findSun();
 
 function drawEnemy(S,dt,t){
  const e=S.e,T=S.T,d=S.d,dead=S.dying>0,wig=e.wiggle||0,i=T.n;
+ if(!dead&&curG&&curG.mapCover&&curG.mapCover(e.lane,e.y))return;   // inside a tunnel: not drawn at all
  if(i>=T.cap)return;T.n=i+1;   // more of one type than the pool holds: the extra ones are skipped whole
 
  // where it is and how far it has walked since the last frame
@@ -365,10 +367,11 @@ function drawEnemy(S,dt,t){
    sprite(x+Math.cos(a)*rr,GY+d.h*(.25+Math.random()*.7),z+Math.sin(a)*rr,d.r*(.55+Math.random()*.6),3,a*5,.35*b,.9*b,b,0);}
  }
  if(S.knock>.01){const kn=S.knock;x+=kn*.34;sxz*=1+.1*kn;sy*=1-.13*kn;pitch+=.12*kn;flash=Math.max(flash,Math.min(1,kn));S.knock=damp(S.knock,0,13,dt);}   // a hit shoves the machine back and squashes it for a moment (drawing only)
- if(dead){const k=S.dying/DIE;sy*=1-.72*k*k;sxz*=1+.22*k;pitch-=.3*k;y-=.25*k;flash=Math.max(0,1-k*1.4);dull=k;}   // collapse
+ if(dead&&S.fall){const k=S.dying/FALL,o=Math.sign(ctx.L.laneZ[e.lane])||1;z+=o*Math.min(1,k*2.2)*(4.6+d.r);y-=k>.35?7*(k-.35)*(k-.35)*4:0;roll+=o*k*1.6;flash=Math.max(0,.6-k);dull=k*.6;}   // over the edge and down
+ else if(dead){const k=S.dying/DIE;sy*=1-.72*k*k;sxz*=1+.22*k;pitch-=.3*k;y-=.25*k;flash=Math.max(0,1-k*1.4);dull=k;}   // collapse
 
  // on the road: contact shadow, the dusty dashed ring of a machine slowed by rubble, hot light spilled ahead of it
- const vis=sc*(dead?1-S.dying/DIE:1),ek=(dead?flash:1)*(1-.5*dull)*(stun&&run?.4+Math.random()*.6:1)*sc;
+ const vis=sc*(dead?Math.max(0,1-S.dying/(S.fall?FALL*.4:DIE)):1),ek=(dead?flash:1)*(1-.5*dull)*(stun&&run?.4+Math.random()*.6:1)*sc;
  decal(x,DY-.04,z,d.r*1.3*sc,d.r*1.3*sc,0,4,0,0,0,.66*vis,1,1);
  if(Q<1){const hl=(d.r*.7+d.h*.55)*sc;decal(x+shX*hl,DY-.05,z+shZ*hl,hl,d.r*.85*sc,shA,4,0,0,0,.62*vis,1,1);}   // no shadow map at low quality: a blob stretched away from the sun
  if(S.slowK>.02){const k=S.slowK*(.75+.25*Math.sin(t*6+wig)),rr=d.r+.55;decal(x,DY,z,rr,rr,t*.7+wig,1,cDust.r*k*.95,cDust.g*k*.95,cDust.b*k*.95,.25*k,1,1);}
@@ -410,13 +413,13 @@ function drawEnemy(S,dt,t){
 }
 
 function updateEnemies(dt,G){
- tick++;liftT[0]=liftT[1]=0;if(run)eT+=dt;const t=eT;   // sway, eye pulse and crown spin stop with the game
+ curG=G;tick++;liftT[0]=liftT[1]=0;if(run)eT+=dt;const t=eT;   // sway, eye pulse and crown spin stop with the game
  for(let i=0;i<TLIST.length;i++)TLIST[i].n=0;
  const list=G.enemies;
  for(let i=0;i<list.length;i++){const e=list[i];if(e.hp<=0)continue;(states.get(e)||addState(e,true)).seen=tick;}
  // gone from G.enemies: killed ones collapse briefly, leaked ones just disappear
  for(let i=act.length-1;i>=0;i--){const S=act[i];
-  if(S.seen!==tick){if(!S.killed){freeState(i);continue;}S.dying+=Math.max(dt,.001);if(S.dying>=DIE){freeState(i);continue;}}
+  if(S.seen!==tick){if(!S.killed){freeState(i);continue;}S.dying+=Math.max(dt,.001);if(S.dying>=(S.fall?FALL:DIE)){freeState(i);continue;}}
   drawEnemy(S,dt,t);}
  for(let i=0;i<TLIST.length;i++){const T=TLIST[i],m=T.mesh;m.count=T.n;m.visible=T.n>0;if(T.n){m.instanceMatrix.needsUpdate=true;T.animAttr.needsUpdate=true;}}
  enemyMat.userData.uGlow.value=1+.12*Math.sin(t*7);   // eyes breathe
@@ -555,6 +558,7 @@ return{
  },
  quality:setQuality,
  event(ev){
+  if(ev.t==='fall'&&ev.e){(states.get(ev.e)||addState(ev.e,false)).fall=true;return;}   // knocked off a bridge: the 'hit' that kills it follows
   if(ev.t==='hit'){
    // remember kills: the enemy is already gone from G.enemies when this arrives, so it may never have been drawn
    if(ev.kill&&ev.e)(states.get(ev.e)||addState(ev.e,false)).killed=true;

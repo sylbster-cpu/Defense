@@ -3,12 +3,12 @@ const { chromium } = require('playwright');const path=require('path'),fs=require
 let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
 if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_bal_'+process.pid+'.html');fs.writeFileSync(f,s);
 const BOT=(tick,items,N)=>`(function(){mute=true;const res=[];for(let run=0;run<${N};run++){reset();newStage(1);let fr=0,guard=0;
- while(phase!=='finish'&&guard++<30*900){
+ while(phase!=='finish'&&guard++<30*1200){
   if(phase==='upgrade'){const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);continue;}
   update(1/30);fr++;
-  if(fr%${tick}===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190).reduce((a,e)=>a+TYPES[e.type].value,0));
+  if(fr%${tick}===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190&&!map.cover(e.lane,e.y)).reduce((a,e)=>a+TYPES[e.type].value,0));
    if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);
-   const inR=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>=2)pulse();
+   const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>=2)pulse();
    if(${items}){for(const d of drops.slice())if(DROP_LIFE-d.life>=.8)takeDrop(d);
     if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else{bag.shift();applyItem(id);}}}}
  }

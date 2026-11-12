@@ -25,7 +25,7 @@ const f=path.join(dir,'_rw_'+process.pid+'.html');fs.writeFileSync(f,s);
  ck('보관 칸이 가득 차 있으면 받지 못한다',await T('phase==="upgrade"&&bag.join()==="wall,jam"&&stageGift==="full"&&$("overlayContent").textContent.includes("보관 칸이 가득 차 보상을 받지 못했습니다")'),await T('JSON.stringify({bag,stageGift})'));
  // 4. 다음 장은 새로 판정한다. 보관한 아이템은 다음 장으로 넘어간다. 마지막 장 끝에는 지급하지 않는다.
  await T('choose(offeredUpgrades[0]);0');ck('다음 장은 새로 판정하고 보관한 아이템은 남는다',await T('op===2&&stageHurt===false&&bag.length===2'));
- await T('reset();newStage(5);window.__g.length=0;while(phase==="battle"){update(1/30);for(const e of enemies)damageEnemy(e,1e6,0,0,"drone");}0');
+ await T('reset();newStage(TOTAL_OPS);window.__g.length=0;while(phase==="battle"){update(1/30);for(const e of enemies)damageEnemy(e,1e6,0,0,"drone");}0');
  ck('마지막 장 끝에는 지급하지 않는다',await T('phase==="finish"&&window.__g.length===0&&bag.length===0'),await T('JSON.stringify({phase,grants:window.__g})'));
  ck('레어 비율',await T('RARE_P===.015'),await T('RARE_P'));
 

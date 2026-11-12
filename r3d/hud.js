@@ -64,8 +64,9 @@ function enemyBars(G,side){
  for(let i=0;i<n;i++){
   const e=list[i];if(!e||!(e.hp>0))continue;
   const ln=e.lane;if(ln!==0&&ln!==1)continue;
+  if(G.mapCover&&G.mapCover(ln,e.y))continue;                       // inside a tunnel: no bar
   const d=ENEMY[e.type]||ENEMY.grunt;
-  v.set(ctx.wx(e.y),d.h+.5,ctx.laneZAt(ln,ctx.wx(e.y)));ctx.project(v,p);
+  ctx.enemyPos(e,v);v.y=d.h+.5;ctx.project(v,p);
   if(!(p.z>-1&&p.z<1))continue;                                   // behind the camera or not a number
   const w=Math.round(Math.max(MINW[e.type]||15,1.85*d.r*ctx.pxPerUnit(v))),hw=w*.5;
   if(!(p.x+hw>0&&p.x-hw<L.w&&p.y>0&&p.y<L.h))continue;            // outside the box
@@ -246,7 +247,7 @@ function pauseVeil(){
 /* rare machines: a gold diamond over the machine (its body also glows in units.js) */
 function rareMarks(G,t){
  const list=G.enemies;if(!list)return;
- for(let i=0;i<list.length;i++){const e=list[i];if(!e||!e.rare||!(e.hp>0))continue;
+ for(let i=0;i<list.length;i++){const e=list[i];if(!e||!e.rare||!(e.hp>0)||(G.mapCover&&G.mapCover(e.lane,e.y)))continue;
   const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,v);v.y=d.h+1.5;ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const r=(4.5+1.2*Math.sin(t*6))*ui,x=p.x,y=p.y-3*ui;
   c.globalAlpha=1;c.fillStyle='rgba(5,13,16,.75)';c.beginPath();c.moveTo(x,y-r-1.5);c.lineTo(x+r+1.5,y);c.lineTo(x,y+r+1.5);c.lineTo(x-r-1.5,y);c.closePath();c.fill();

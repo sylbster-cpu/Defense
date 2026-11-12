@@ -221,20 +221,24 @@ function stepDebris(dt){
 }
 
 /* ---------- overload shockwave: two arches racing along the lane plus the hot lane surface between them (one mesh) ---------- */
-const WAVE_H=2.1,wave=(()=>{
+const WAVE_H=2.1,WN=49,wave=(()=>{
  const NS=16,NR=5,GR=8,vp=[],idx=[];
  const grid=(dir,kind,rows)=>{const base=vp.length/4;for(let r=0;r<=rows;r++)for(let s=0;s<=NS;s++)vp.push(dir,s/NS,r/rows,kind);
   for(let r=0;r<rows;r++)for(let s=0;s<NS;s++){const a=base+r*(NS+1)+s,b=a+1,c=a+NS+1,d=c+1;idx.push(a,c,b,b,c,d);}};
  for(const dir of [-1,1]){grid(dir,1,NR);grid(dir,0,GR);}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(vp.length/4*3),3));g.setAttribute('aP',new THREE.BufferAttribute(new Float32Array(vp),4));g.setIndex(idx);
  const m=new THREE.Mesh(g,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-  uniforms:{uO:{value:new THREE.Vector3()},uF:{value:0},uTrail:{value:3.2},uHW:{value:A.laneW/2-.08},uH:{value:WAVE_H},uA:{value:0},uG:{value:0},uT:{value:0},
+  uniforms:{uO:{value:new THREE.Vector3()},uF:{value:0},uTrail:{value:3.2},uH:{value:WAVE_H},uZc:{value:new Float32Array(WN)},uZh:{value:new Float32Array(WN)},uX0:{value:0},uDX:{value:1},uA:{value:0},uG:{value:0},uT:{value:0},
    uC0:{value:new THREE.Vector3(1,.86,.5)},uC1:{value:new THREE.Vector3(1,.5,.13)}},
   // aP = (direction along the lane, position across it 0..1, 0 front .. 1 tail, 1 arch / 0 ground strip)
-  vertexShader:`attribute vec4 aP;uniform vec3 uO;uniform float uF,uTrail,uHW,uH;varying vec3 vK;
+  // uZc/uZh: centre and half width of the struck band, sampled every uDX from uX0. The band follows a bent lane and,
+  // where the map lets the overload reach across, spans both lanes (the same outline as the range frame in units.js).
+  vertexShader:`attribute vec4 aP;uniform vec3 uO;uniform float uF,uTrail,uH,uZc[${WN}],uZh[${WN}],uX0,uDX;varying vec3 vK;
+vec2 band(float x){float t=clamp((x-uX0)/uDX,0.,${WN-1}.-.001),fi=floor(t),f=t-fi;int i=int(fi);vec2 a=vec2(0.),b=vec2(0.);
+ for(int k=0;k<${WN-1};k++){if(k==i){a=vec2(uZc[k],uZh[k]);b=vec2(uZc[k+1],uZh[k+1]);}}return mix(a,b,f);}
 void main(){float s=aP.y,v=aP.z;vec3 p;
- if(aP.w>.5){float a=s*3.14159265,sn=sin(a);p=vec3(uO.x+aP.x*max(uF-(v-.16)*uTrail*(.55+.75*sn),0.),uO.y+pow(sn,.6)*uH*(1.-.5*v),uO.z-cos(a)*uHW);}
- else p=vec3(uO.x+aP.x*uF*(1.-v),uO.y,uO.z+(s*2.-1.)*uHW);
+ if(aP.w>.5){float a=s*3.14159265,sn=sin(a),x=uO.x+aP.x*max(uF-(v-.16)*uTrail*(.55+.75*sn),0.);vec2 B=band(x);p=vec3(x,uO.y+pow(sn,.6)*uH*(1.-.5*v),B.x-cos(a)*B.y);}
+ else{float x=uO.x+aP.x*uF*(1.-v);vec2 B=band(x);p=vec3(x,uO.y,B.x+(s*2.-1.)*B.y);}
  vK=vec3(s,v,aP.w);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
   fragmentShader:`uniform vec3 uC0,uC1;uniform float uA,uG,uF,uT;varying vec3 vK;
 void main(){float s=vK.x,v=vK.y,a;vec3 c;
@@ -248,6 +252,18 @@ void main(){float s=vK.x,v=vK.y,a;vec3 c;
 })();
 const wU=wave.material.uniforms,waveTime=r=>.24+r*.006;   // seconds the front needs to cover the range
 let wOn=false,wT=0,wR=0,wDur=.3,wX=0,wZ=0,wAcc=0,wEnd=false;
+const wC=wU.uZc.value,wH=wU.uZh.value,wA=new Uint8Array(WN);
+// The struck band of an overload fired from `lane` with reach r (world units) around x: per sample the centre and half width.
+// Outer edge = the drone lane's outer side; inner edge = its median side, or the far side of the other lane where G.mapNear says the overload reaches across.
+function waveBand(lane,x,r){
+ const G=ctx.G,near=G.mapNear,hw=A.laneW/2-.08,sg=Math.sign(L.laneZ[lane])||1,dx=2*r/(WN-1);
+ wU.uX0.value=x-r;wU.uDX.value=dx;
+ for(let i=0;i<WN;i++)wA[i]=near&&near(G.LEAK_Y-(x-r+i*dx)/U)?1:0;
+ for(let i=0,j;i<WN;i=j){for(j=i;j<WN&&wA[j]===wA[i];j++);if(wA[i]&&(j-i)*dx<1)wA.fill(0,i,j);}   // a sliver at the end of the range, as in the frame
+ for(let i=0;i<WN;i++){const xi=x-r+i*dx,zo=ctx.laneZAt(lane,xi)+sg*hw,zi=wA[i]?ctx.laneZAt(1-lane,xi)-sg*hw:ctx.laneZAt(lane,xi)-sg*hw;wC[i]=(zo+zi)/2;wH[i]=Math.abs(zo-zi)/2;}
+}
+function bandAt(x,out){const t=Math.max(0,Math.min(WN-1.001,(x-wU.uX0.value)/wU.uDX.value)),i=t|0,f=t-i;out[0]=wC[i]+(wC[i+1]-wC[i])*f;out[1]=wH[i]+(wH[i+1]-wH[i])*f;return out;}
+const bAt=[0,0];
 
 /* ---------- two pooled point lights, reused for the brightest current effects ---------- */
 const lights=[0,1].map(()=>{const l=new THREE.PointLight(0xffffff,0,48,1.7);l.position.set(0,6,0);scene.add(l);return l;});
@@ -336,6 +352,10 @@ function impact(x,y,z,dx,dy,dz,c,s){
 const KILL_S={runner:.62,grunt:.9,brute:1.28,boss:1.45},MUZZLE=3.19;   // MUZZLE: distance from ctx.turretPos to the muzzle of the turret model (base.js)
 function kill(e){
  ctx.enemyPos(e,vE);const d=ENEMY[e.type]||ENEMY.grunt,x=vE.x,y=vE.y,z=vE.z,s=KILL_S[e.type]||.9,col=ENEMY_COL[e.type]||ENEMY_COL.grunt;
+ if(e.fell){   // knocked off a bridge: no blast, a scrape of sparks at the deck edge and dust rising out of the chasm (units.js drops the body)
+  const o=Math.sign(L.laneZ[e.lane])||1,ze=z+o*(A.laneW/2+.3);let n=cnt(10);for(let i=0;i<n;i++)emit(P.spark,x+(rnd()-.5)*d.r,GY+.3,ze,(rnd()-.5)*4,1+rnd()*4,o*(2+rnd()*5),1,C.hot,C.amber);
+  n=cnt(5);for(let i=0;i<n;i++)emit(P.dust,x+(rnd()-.5)*2,GY,ze+o*(1+rnd()*2),(rnd()-.5)*1.5,1.5+rnd()*2,o*rnd(),1.3,C.dust0,C.dust1);
+  return;}
  blast(x,y,z,s,false,true);
  chunks(cnt(2+s*4.5),x,y,z,d.r,6+s*3,.3+.16*s,col,C.dark,s>1.2);
  if(e.type==='brute')ctx.shake(.33);else if(e.type==='grunt')ctx.shake(.2);   // large machines are felt when they go
@@ -414,7 +434,7 @@ function onHit(ev){
 function onPulse(ev){
  if(!isLane(ev.lane))return;
  const z=ctx.laneZAt(ev.lane,A.droneX),x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
- wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);
+ wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);waveBand(ev.lane,x,wR);
  ribbon(S_COLUMN,x,y+8,z,x,GY,z,4.2,.26,C.amber,1.3,1.25);          // vertical flash through the drone
  emit(P.flash,x,y,z,0,0,0,5.2,C.white,C.amber);emit(P.glow,x,y,z,0,0,0,7,C.amber);
  decal(D_RING,x,z,2,A.laneW*1.25,2,A.laneW*1.25,0,.36,C.amberHot,.9,0,0,.2);
@@ -502,11 +522,11 @@ function stepWave(dt,t){
  if(k<1){
   // sparks kicked up where the two fronts are
   let n=wAcc+dt*(Q?70:35);const m=Math.min(8,n|0);wAcc=n-(n|0);
-  for(let j=0;j<m;j++){const sg=j&1?1:-1;emit(P.zip,wX+sg*front,GY+.2+rnd()*.8,wZ+(rnd()-.5)*A.laneW*.9,sg*(5+rnd()*9),3+rnd()*7,(rnd()-.5)*3,.9,C.hot,C.amber);}
+  for(let j=0;j<m;j++){const sg=j&1?1:-1,fx=wX+sg*front;bandAt(fx,bAt);emit(P.zip,fx,GY+.2+rnd()*.8,bAt[0]+(rnd()-.5)*bAt[1]*1.8,sg*(5+rnd()*9),3+rnd()*7,(rnd()-.5)*3,.9,C.hot,C.amber);}
  }else if(!wEnd){
   // the wave stops at the edge of its range: mark both limits with a line across the lane
   wEnd=true;
-  decal(D_BAND,wX+wR,wZ,1.4,2.6,A.laneW,A.laneW,0,.32,C.amberHot,.9,0,0,.1);decal(D_BAND,wX-wR,wZ,1.4,2.6,A.laneW,A.laneW,0,.32,C.amberHot,.9,0,0,.1);
+  for(const ex of [wX+wR,wX-wR]){bandAt(ex,bAt);const w=bAt[1]*2+.16;decal(D_BAND,ex,bAt[0],1.4,2.6,w,w,0,.32,C.amberHot,.9,0,0,.1);}
  }
  if(wT>.95){wOn=false;wave.visible=false;}
 }

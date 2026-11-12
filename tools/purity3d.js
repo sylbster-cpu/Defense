@@ -1,5 +1,5 @@
 // 2.5D 화면이 게임 규칙에 영향을 주지 않는지 확인. node purity3d.js <게임 폴더> [WxH]
-// 같은 난수·같은 조작으로 (가) 그리지 않고 (나) 2.5D로 매 프레임 그리며 5개 작전을 돌린 뒤 게임 상태를 비교한다.
+// 같은 난수·같은 조작으로 (가) 그리지 않고 (나) 2.5D로 매 프레임 그리며 여덟 장(모든 맵)을 돌린 뒤 게임 상태를 비교한다.
 const { chromium } = require('playwright');const path=require('path'),fs=require('fs');
 const [dir,vp]=process.argv.slice(2);const [w,h]=(vp||'700x318').split('x').map(Number);
 let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
@@ -8,11 +8,13 @@ const RUN=`window.__mk=function*(draw3d){
  const mk=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
  const real=Math.random,gr=mk(12345),fr=mk(999);Math.random=gr;mute=true;const out=[];let now=1000;
  reset();
- for(let o=1;o<=5;o++){
+ for(let o=1;o<=TOTAL_OPS;o++){   // every chapter, so every map is drawn
   if(o===2){upgradeRanks.stable=3;Object.assign(effects,BAL.card.stable(3));}
   if(o===3){upgradeRanks.precision=3;Object.assign(effects,BAL.card.precision(3));}
   if(o===4){upgradeRanks.emergency=2;Object.assign(effects,BAL.card.emergency(2));}
   if(o===5){upgradeRanks.rubble=2;Object.assign(effects,BAL.card.rubble(2));}
+  if(o===6){upgradeRanks.stable=4;Object.assign(effects,BAL.card.stable(4));}
+  if(o===7){upgradeRanks.emergency=3;Object.assign(effects,BAL.card.emergency(3));}
   newStage(o);core=100;facilities=[100,100];let n=0;
   while(phase==='battle'&&n<60*150){update(1/60);n++;
    if(n%170===0)switchLane(1-drone.lane);if(n%430===0)pulse();

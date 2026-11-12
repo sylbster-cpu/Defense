@@ -7,7 +7,7 @@
 const THREE=window.THREE;
 if(!THREE)return;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
-const R3D=window.R3D={ready:false,parts:{},order:['env','base','units','fx','hud'],register(name,create){this.parts[name]=create;}};
+const R3D=window.R3D={ready:false,parts:{},order:['env','maps','base','units','fx','hud'],register(name,create){this.parts[name]=create;}};
 
 /* ---------- shared constants: one world unit = 10 game units ---------- */
 const U=0.1;
@@ -79,7 +79,9 @@ R3D.boot=function(G,field){
   gz(x){return lerp(ctx.laneZAt(0,A.droneX),ctx.laneZAt(1,A.droneX),(x-G.LANES[0])/(G.LANES[1]-G.LANES[0]));},
   // world position of the support drone body / an enemy centre / a turret muzzle pivot
   dronePos(out){return out.set(A.droneX,A.droneH,ctx.gz(G.drone.x));},
-  enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;const x=ctx.wx(e.y);return out.set(x,d.cy,L.laneZ[e.lane]+ctx.off(e.lane,x));},
+  enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;const x=ctx.wx(e.y);let z=ctx.laneZAt(e.lane,x);
+   if(e.crossT>0&&(e.from===0||e.from===1)){const k=1-Math.min(1,e.crossT/(G.CROSS_T||.6)),s=k*k*(3-2*k);z=ctx.laneZAt(e.from,x)+(z-ctx.laneZAt(e.from,x))*s;}   // changing lanes: slide across
+   return out.set(x,d.cy,z);},
   turretPos(lane,out){return out.set(A.turretX,A.turretH,Math.sign(L.laneZ[lane])*A.turretZ);},
   // world -> CSS pixel inside the battlefield box (for hud.js). Returns out with .x,.y and .z (ndc depth, >1 is behind far plane)
   project(v,out){v3.copy(v).project(camera);out.x=(v3.x*.5+.5)*L.w;out.y=(-v3.y*.5+.5)*L.h;out.z=v3.z;return out;},
