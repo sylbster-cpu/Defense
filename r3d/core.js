@@ -178,7 +178,12 @@ R3D.boot=function(G,field){
  // which lane a touch belongs to: the boundary is the median strip as drawn, not the middle of the box
  const tapV=new THREE.Vector3(),tapP={x:0,y:0,z:0};
  function laneAt(cx,cy){const b=field.getBoundingClientRect();tapV.set(A.droneX,0,0);ctx.project(tapV,tapP);return L.mode==='side'?((cy-b.top)<tapP.y?0:1):((cx-b.left)<tapP.x?0:1);}
- R3D.api={frame,setQuality,laneAt,get quality(){return ctx.quality;},info:()=>({q:ctx.quality,mode:L.mode,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geoms:renderer.info.memory.geometries,tex:renderer.info.memory.textures,pr:renderer.getPixelRatio()}),hudCanvas:hudc};
+ // where a touch lands on the ground: the lane whose centre line is nearer there, and the distance along it
+ function fieldPos(cx,cy){const b=field.getBoundingClientRect(),nx=(cx-b.left)/b.width*2-1,ny=1-(cy-b.top)/b.height*2;tapV.set(nx,ny,-1).unproject(camera);const ax=tapV.x,ay=tapV.y,az=tapV.z;tapV.set(nx,ny,1).unproject(camera);
+  const k=ay/((ay-tapV.y)||1e-9),x=ax+(tapV.x-ax)*k,z=az+(tapV.z-az)*k;return{lane:Math.abs(z-ctx.laneZAt(0,x))<=Math.abs(z-ctx.laneZAt(1,x))?0:1,y:G.LEAK_Y-x/U};}
+ // where a point of a lane is drawn, in page pixels (lane, distance along it, height above the road)
+ function screenOf(lane,y,h){const x=ctx.wx(y);tapV.set(x,h||0,ctx.laneZAt(lane,x));ctx.project(tapV,tapP);const b=field.getBoundingClientRect();return{x:b.left+tapP.x,y:b.top+tapP.y};}
+ R3D.api={frame,setQuality,laneAt,fieldPos,screenOf,get quality(){return ctx.quality;},info:()=>({q:ctx.quality,mode:L.mode,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geoms:renderer.info.memory.geometries,tex:renderer.info.memory.textures,pr:renderer.getPixelRatio()}),hudCanvas:hudc};
  return R3D.api;
 };
 })();

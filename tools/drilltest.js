@@ -26,6 +26,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_drill_'+pr
    await p.waitForFunction(()=>window.__relay.phase==='battle'&&!window.__relay.drill,null,{timeout:20000});log.push('run '+await T('JSON.stringify({op,lesson:lesson&&lesson.st,pulseLock,learned})'));
    // 실전 안내: 과부하
    for(let i=0;i<700;i++){const hh=await p.evaluate(()=>window.__relay.hold);if(/^(move|pulse)/.test(hh))break;
+    if(hh==='pick'){await p.waitForTimeout(500);log.push('pick lesson: '+(await T("$('coachTitle').textContent")));await T('takeDrop(drops[0])&&releaseHold();0');}   // 떨어진 아이템을 줍는 안내
     if(hh==='tap'){await p.waitForTimeout(600);log.push('item lesson: '+(await T("$('coachTitle').textContent")));await shot('item');await tapLane(await T('drone.lane'));}   // 아이템 안내가 먼저 나오면 넘긴다
     await p.waitForTimeout(200);}
    await p.waitForTimeout(600);

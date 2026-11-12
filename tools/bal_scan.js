@@ -9,7 +9,8 @@ const BOT=(tick,items,N)=>`(function(){mute=true;const res=[];for(let run=0;run<
   if(fr%${tick}===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190).reduce((a,e)=>a+TYPES[e.type].value,0));
    if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);
    const inR=enemies.filter(e=>e.hp>0&&e.lane===drone.lane&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>=2)pulse();
-   if(${items}&&typeof item!=='undefined'&&item&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=item;item=null;applyItem(id);}}
+   if(${items}){for(const d of drops.slice())if(DROP_LIFE-d.life>=.8)takeDrop(d);
+    if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else{bag.shift();applyItem(id);}}}}
  }
  res.push([core>0&&op===TOTAL_OPS?1:0,op,Math.round(core),kills,leaks]);}
  return JSON.stringify(res);})()`;

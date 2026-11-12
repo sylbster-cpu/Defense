@@ -558,6 +558,7 @@ return{
    switch(ev.t){
     case 'hit':onHit(ev);break;
     case 'pulse':onPulse(ev);break;
+    case 'splash':if(isLane(ev.lane)&&ev.y===ev.y){const sx=ctx.wx(ev.y);pop(sx,1.1,ctx.laneZAt(ev.lane,sx),.6,false);}break;   // splash rounds burst around the machine they hit
     case 'leak':onLeak(ev);break;
     case 'move':onMove(ev);break;
     case 'spawn':onSpawn(ev);break;

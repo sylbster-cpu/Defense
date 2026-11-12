@@ -142,7 +142,7 @@ function tray(G,ln,side,warn,pu){
  v.set(A.spawnX+1,0,lz+sg*(A.laneW*.5+(side&&sg>0?1.9:1.1)));ctx.project(v,p);
  if(!(p.z>-1&&p.z<1))return;
  let x,y,mirror=false;
- if(side){x=sg>0?M+1:M+64;y=sg>0?p.y-2-h:p.y+2;}   // the near lane's tray clears the item button in the corner
+ if(side){x=sg>0?M+1:M+118;y=sg>0?p.y-2-h:p.y+2;}   // the near lane's tray clears the two item slots in the corner (they end 118 px from the left edge)
  else{mirror=sg<0;x=mirror?p.x-3-w:p.x+3;y=p.y-h+2;}
  x=Math.round(clamp(x,M,L.w-M-w));y=Math.round(clamp(y,side?M:M+FS+5,L.h-M-h));
  rr(x+.5,y+.5,w-1,h-1,4);
@@ -252,11 +252,26 @@ function rareMarks(G,t){
   c.globalAlpha=1;c.fillStyle='rgba(5,13,16,.75)';c.beginPath();c.moveTo(x,y-r-1.5);c.lineTo(x+r+1.5,y);c.lineTo(x,y+r+1.5);c.lineTo(x-r-1.5,y);c.closePath();c.fill();
   c.fillStyle='#ffd866';c.beginPath();c.moveTo(x,y-r);c.lineTo(x+r,y);c.lineTo(x,y+r);c.lineTo(x-r,y);c.closePath();c.fill();}
 }
+const BUFFS=['stim','pierce','splash'];
 /* item effects in play: the wall across a lane, the temporary turret, the second drone, the jammer */
-function aidRing(x,y,k,label,col){
+// an item's icon (the path data of the game, G.ICON) drawn `size` pixels wide around x,y
+const icoP={};
+function drawIcon(G,id,x,y,size,col){if(!G.ICON||!G.ICON[id])return;const P=icoP[id]||(icoP[id]=new Path2D(G.ICON[id])),k=size/24;c.save();c.translate(x-size/2,y-size/2);c.scale(k,k);c.strokeStyle=col;c.lineWidth=2;c.lineCap='round';c.lineJoin='round';c.stroke(P);c.restore();}
+/* items lying on the field: a token with the item's icon and a ring that empties in the seconds it stays; it bobs, and blinks at the end */
+function dropMarks(G,t){const list=G.drops;if(!list||!list.length||!G.ITEMS)return;const life=G.DROP_LIFE||5;
+ for(let i=0;i<list.length;i++){const d=list[i],x=ctx.wx(d.y);v.set(x,2.4,ctx.laneZAt(d.lane,x));ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+  const col=G.ITEMS[d.item].col,r=15*ui,y=p.y+Math.sin(t*4+d.id*9)*2*ui,bl=d.life<1.5?(Math.sin(t*20)>0?1:.35):1,h=(t*1.2+d.id)%1;
+  c.globalAlpha=.35*(1-h)*bl;c.lineWidth=1.5*ui;c.strokeStyle=col;c.beginPath();c.arc(p.x,y,r+10*ui*h,0,6.2832);c.stroke();          // a halo running outward draws the eye
+  c.globalAlpha=.92*bl;c.fillStyle='rgba(8,18,22,.9)';c.beginPath();c.arc(p.x,y,r,0,6.2832);c.fill();
+  c.globalAlpha=.3*bl;c.lineWidth=2.6*ui;c.beginPath();c.arc(p.x,y,r,0,6.2832);c.stroke();
+  c.globalAlpha=bl;c.beginPath();c.arc(p.x,y,r,-1.5708,-1.5708+6.2832*clamp(d.life/life,0,1));c.stroke();
+  drawIcon(G,d.item,p.x,y,19*ui,col);c.globalAlpha=1;}
+ c.lineCap='butt';
+}
+function aidRing(G,x,y,k,id,col){
  const r=13*ui;c.globalAlpha=1;c.fillStyle='rgba(8,18,22,.78)';c.beginPath();c.arc(x,y,r,0,6.2832);c.fill();
  c.lineWidth=2.6*ui;c.strokeStyle=col;c.beginPath();c.arc(x,y,r,-1.5708,-1.5708+6.2832*clamp(k,0,1));c.stroke();
- text(label,x,y+.5,fNum,col,'center');
+ drawIcon(G,id,x,y,16*ui,col);c.lineCap='butt';
 }
 function aidMarks(G,t,side){
  const a=G.aid;if(!a)return;
@@ -266,12 +281,17 @@ function aidMarks(G,t,side){
   v.set(x,.6,lzx-hw);ctx.project(v,p);v.set(x,.6,lzx+hw);ctx.project(v,p2);
   if(p.z>-1&&p.z<1){const pu=.7+.3*Math.sin(t*14);c.lineCap='round';c.globalAlpha=.35*pu;c.strokeStyle='#f0c47b';c.lineWidth=11*ui;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();
    c.globalAlpha=pu;c.lineWidth=3.5*ui;c.strokeStyle='#ffe9b8';c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();c.globalAlpha=1;c.lineCap='butt';
-   aidRing((p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'▦','#f0c47b');}
+   aidRing(G,(p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'wall','#f0c47b');}
  }
- if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.turret/8,'⌖','#f0c47b');}
+ if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.turret/8,'turret','#f0c47b');}
  const fl=G.fieldTurrets;if(fl&&G.FIELD)for(let i=0;i<fl.length;i++){const f=fl[i],x=ctx.wx(f.y);v.set(x,4.4,ctx.laneZAt(f.lane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const r=6*ui,k=clamp(f.life/G.FIELD.life,0,1);c.globalAlpha=1;c.lineWidth=3.6*ui;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(p.x,p.y,r,0,6.2832);c.stroke();c.lineWidth=2*ui;c.strokeStyle='#f0c47b';c.beginPath();c.arc(p.x,p.y,r,-1.5708,-1.5708+6.2832*k);c.stroke();}}   // field turrets: a small ring above the model that empties as its time runs out
- if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(p.x,p.y,a.clone/6,'❖','#8dd7d0');}
+ if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.clone/6,'clone','#8dd7d0');}
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
+ // stimpack, pierce, splash: rings above the drone that empty as the effect runs out
+ if(G.drone&&G.ITEMS){let n=0,m=0;for(const id of BUFFS)if(a[id]>0)m++;if(m){ctx.dronePos(v);v.y+=3.4;ctx.project(v,p);if(p.z>-1&&p.z<1)for(const id of BUFFS)if(a[id]>0){aidRing(G,p.x+(n-(m-1)/2)*29*ui,p.y-6*ui,a[id]/8,id,G.ITEMS[id].col);n++;}}}
+ // the magnet: rings closing on the place while the machines are dragged; and while it waits for its place, a violet frame
+ if(a.mag>0&&G.MAG){const x=ctx.wx(a.magY);v.set(x,.6,ctx.laneZAt(a.magLane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const k=clamp(a.mag/(G.MAG.time+.5),0,1);c.strokeStyle='#c9a5f0';for(let i=0;i<2;i++){const q=(k+i*.5)%1;c.globalAlpha=.75*(1-q*.6);c.lineWidth=2.4*ui;c.beginPath();c.arc(p.x,p.y,(8+46*q)*ui,0,6.2832);c.stroke();}c.globalAlpha=1;drawIcon(G,'magnet',p.x,p.y,15*ui,'#c9a5f0');c.lineCap='butt';}}
+ if(G.aim>=0){c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle='#c9a5f0';c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
 }
 /* move cooldown: a ring around the drone that empties until it can move again */
 function moveRing(G){
@@ -329,7 +349,7 @@ function frame(dt,t,G){
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
  opText(G,side);
  if(practice||G.hold)practiceHint(G,t);
- if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);}
+ if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);dropMarks(G,t);}
  screenFx(dt);
  if(battle&&G.paused)pauseVeil();
 }
