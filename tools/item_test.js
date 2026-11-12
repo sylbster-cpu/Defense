@@ -9,7 +9,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   const T=x=>p.evaluate(x=>window.__t(x),x),tag=w+'x'+h+(mode?' 2D':'');
   await p.goto('file://'+f+(mode?'?2d=1':'?q=0'));if(!mode)await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});else await p.waitForTimeout(600);
   // helpers inside the game: a fixed drop, where a drop is on the screen, a held clock
-  await T(`$('title').hidden=true;$('titleVid').pause();mute=true;learned.item=learned.pulse=true;learned.maps={pinch:1,detour:1,wave:1};beginRun();pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];paused=true;
+  await T(`$('title').hidden=true;$('titleVid').pause();mute=true;learned.item=learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=1;beginRun();map=MAPS[0];pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];paused=true;
    window.__drop=(item,lane,y)=>{const d={id:Math.random(),item,lane,y,life:DROP_LIFE};drops.push(d);return d;};
    window.__at=(d,h=2.4)=>{const r=canvas.getBoundingClientRect();if(G3.active)return G3.renderer.screenOf(d.lane,d.y,h);if(compactCanvas)return{x:r.left+cmp.x0+(d.y-LANE_TOP)/LANE_LEN*cmp.run,y:r.top+cmp.ys[d.lane]};return{x:r.left+LANES[d.lane]/W*r.width,y:r.top+d.y/H*r.height};};
    window.__run=(sec)=>{for(let i=0;i<Math.round(sec*60);i++)update(1/60);};0`);
@@ -60,9 +60,9 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   const mg=await T("JSON.stringify({ys:enemies.map(e=>Math.round(e.y)),bag,aim,lane:drone.lane,mag:[aid.magLane,Math.round(aid.magY)]})").then(JSON.parse);
   ck('magnet: machines of that lane within 150 are dragged to the place; the boss, the far one and the other lane stay',Math.abs(mg.mag[1]-250)<16&&mg.mag[0]===0&&[0,1,2].every(i=>Math.abs(mg.ys[i]-mg.mag[1])<3)&&mg.ys[3]===420&&mg.ys[4]===260&&mg.ys[5]===240&&mg.bag.length===0&&mg.aim===-1&&mg.lane===1,mg);
   // what falls: every item and the field turret alike
-  const dist=JSON.parse(await T("paused=true;const n={};for(let i=0;i<22000;i++){drops=[];fieldTurrets=[];dropItem({lane:0,y:300});const k=drops.length?drops[0].item:'field';n[k]=(n[k]||0)+1;}drops=[];fieldTurrets=[];JSON.stringify(n)"));
-  const keys=Object.keys(dist);ck('eleven outcomes, each about one in eleven',keys.length===11&&keys.every(k=>Math.abs(dist[k]/2000-1)<.12),dist);
-  ck('every item has an icon and a colour',await T("Object.keys(ITEMS).length===10&&Object.keys(ITEMS).every(k=>ICON[k]&&ITEMS[k].col&&ITEMS[k].desc)"));
+  const dist=JSON.parse(await T("paused=true;const n={};for(let i=0;i<26000;i++){drops=[];fieldTurrets=[];dropItem({lane:0,y:300});const k=drops.length?drops[0].item:'field';n[k]=(n[k]||0)+1;}drops=[];fieldTurrets=[];JSON.stringify(n)"));
+  const keys=Object.keys(dist);ck('thirteen outcomes (twelve items and the field turret), each about one in thirteen',keys.length===13&&keys.every(k=>Math.abs(dist[k]/2000-1)<.12),dist);
+  ck('every item has an icon and a colour',await T("Object.keys(ITEMS).length===12&&Object.keys(ITEMS).every(k=>ICON[k]&&ITEMS[k].col&&ITEMS[k].desc)"));
   // a mid boss drops too; the last boss does not
   await T("enemies=[];op=3;spawn(0,'boss');let e=enemies[0];e.y=300;const n0=drops.length+fieldTurrets.length;damageEnemy(e,1e6,0,0,'turret');window.__mb=drops.length+fieldTurrets.length-n0;drops=[];fieldTurrets=[];enemies=[];op=TOTAL_OPS;spawn(0,'boss');e=enemies[0];e.y=300;e.hops=0;damageEnemy(e,1e7,0,0,'turret');window.__fb=drops.length+fieldTurrets.length;0");
   ck('a mid boss leaves something, the last boss nothing',(await T('window.__mb'))===1&&(await T('window.__fb'))===0);

@@ -43,7 +43,7 @@ const f=path.join(dir,'_rw_'+process.pid+'.html');fs.writeFileSync(f,s);
  ck('안내 뒤에는 아이템을 쓸 수 있다',await T('learned.item===true&&$("itemBtn").disabled===false')&&await T('useItem(0);bag.length===0&&aid.wall>0'));
 
  // 6. 과부하 안내와 아이템 안내가 겹칠 때: 과부하가 먼저, 아이템은 간격 뒤.
- await T('learned.maps={};learned.item=false;learned.pulse=false;beginRun();pattern=[[1e9,0,"runner"]];nextSpawn=0;__play(8.2);bag=["jam"];for(let i=0;i<3;i++){spawn(0,"brute");enemies[i].y=DRONE_Y-60+i*30;enemies[i].hp=enemies[i].maxHp=1e6;}0');
+ await T('learned.maps={pylon:true};learned.item=false;learned.pulse=false;beginRun();pattern=[[1e9,0,"runner"]];nextSpawn=0;__play(8.2);bag=["jam"];for(let i=0;i<3;i++){spawn(0,"brute");enemies[i].y=DRONE_Y-60+i*30;enemies[i].hp=enemies[i].maxHp=1e6;}0');
  await T('__play(1)');
  ck('둘이 겹치면 과부하 안내가 먼저',await T('!!holdState&&holdState.need==="pulse"'),await T('holdState&&holdState.need'));
  await p.waitForTimeout(450);await T('pulse();0');const t4=await T('__play(3.8)');   // 안내가 뜬 직후 0.35초는 입력을 받지 않는다

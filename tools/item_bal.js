@@ -20,6 +20,8 @@ const BOT=(force,tick,react,pulseAt)=>`(function(){mute=true;const N=${N},tick=$
    else if(id==='wall'||id==='turret'||id==='clone')go=c[o]>=3;
    else if(id==='jam')go=c[0]+c[1]>=6;
    else if(id==='stim'||id==='pierce'||id==='splash')go=c[drone.lane]>=4;
+   else if(id==='chain')go=c[0]+c[1]>=5;
+   else if(id==='orbital'){const l=c[1]>c[0]?1:0;if(c[l]>=4){let lead=null;for(const e of enemies)if(e.hp>0&&e.lane===l&&(!lead||e.y>lead.y))lead=e;aim=i;useAim(l,lead?lead.y-20:DRONE_Y);st.used++;return;}}
    else if(id==='magnet'){   // drag the leading group back: the lane whose foremost machine has passed the drone, a place 0.8 of the magnet's reach behind it, at least two machines to move
     let lead=null;for(const e of enemies)if(e.hp>0&&e.type!=='boss'&&e.y>DRONE_Y+50&&(!lead||e.y>lead.y))lead=e;
     if(lead){const y0=lead.y-MAG.range*.8;let n=0;for(const e of enemies)if(e.hp>0&&e.lane===lead.lane&&e.type!=='boss'&&Math.abs(e.y-y0)<=MAG.range)n++;if(n>=2){aim=i;useMagnet(lead.lane,y0);st.used++;return;}}}
@@ -37,7 +39,7 @@ const BOT=(force,tick,react,pulseAt)=>`(function(){mute=true;const N=${N},tick=$
   }
   st.leaks+=leaks;st.l2+=leaks*leaks;st.core+=core;st.held+=bag.length;if(core>0&&op===TOTAL_OPS)st.wins++;}
  dropItem=d0;giftItem=g0;placeField=p0;st.se=Math.sqrt(Math.max(0,st.l2/N-(st.leaks/N)*(st.leaks/N))/N);for(const k in st)if(k!=='wins'&&k!=='se')st[k]=st[k]/N;return JSON.stringify(st);})()`;
-const ITEMS=['wall','repair','charge','turret','jam','clone','stim','pierce','splash','magnet'];
+const ITEMS=['wall','repair','charge','turret','jam','clone','stim','pierce','splash','magnet','chain','orbital'];
 const CONF=['none','all','field',...ITEMS].filter(c=>c==='none'||!ONLY||ONLY.includes(c));const JOBS=[];for(const [bot,tick,react,pulseAt] of [['casual',24,1,2],['weak',60,2,3]])for(const force of CONF)JOBS.push({bot,tick,react,pulseAt,force});
 (async()=>{const b=await chromium.launch();const res={};let next=0;
  const worker=async()=>{const p=await b.newPage();p.on('pageerror',e=>console.log('ERR',e.message));await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(500);await p.evaluate(()=>{window.requestAnimationFrame=()=>0;});

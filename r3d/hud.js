@@ -17,7 +17,7 @@ const FAM='system-ui,-apple-system,sans-serif';
 
 /* ---------- metrics: rebuilt on layout, never per frame ---------- */
 let s=1,ui=1,M=4,FS=11,FSS=10,OLW=3,BD=1,curFont='';
-let fNum='',fSmall='',fPause='';
+let fNum='',fSmall='',fPause='',fCombo='',fComboS='',fBanner='',fDmg='',fDmgB='';
 let wFac=[34,34],wOff=46;
 let CW=16,IH=13,TP=4,TBW=11,TBH=3,IR=4.5,GW=44,gradSide=null,gradTop=null;
 // cached strings and their measured widths (rebuilt only when the number they show changes)
@@ -29,6 +29,7 @@ function metrics(){
  // outline of the health bars: one device pixel on 1x/2x screens, two on 3x
  BD=Math.max(1,Math.round(s*.6))/s;
  fNum='800 '+FS+'px '+FAM;fSmall='800 '+FSS+'px '+FAM;fPause='800 '+Math.round(26*ui)+'px '+FAM;
+ fCombo='900 '+Math.round(24*ui)+'px '+FAM;fComboS='800 '+Math.round(10*ui)+'px '+FAM;fBanner='900 '+Math.round(28*ui)+'px '+FAM;fDmg='800 '+Math.round(12*ui)+'px '+FAM;fDmgB='900 '+Math.round(16*ui)+'px '+FAM;
  CW=Math.round(18*ui);IH=Math.round(14*ui);TP=Math.round(4*ui);TBW=Math.round(12*ui);TBH=ui>1.2?4:3;IR=Math.round(10*ui)/2;
  GW=Math.round(clamp(Math.min(L.w,L.h)*.2,48,110));
  curFont='';opKey=-1;fbKey=-1;   // widths depend on the font: measure again
@@ -336,6 +337,27 @@ function practiceHint(G,t){
  c.globalAlpha=1;
 }
 
+/* ---------- 9. feel: score, combo, multi-kill banner, damage numbers, orbital strike reticles ---------- */
+let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0;const NUMS=[],NUM_MAX=28;
+const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52',fall:'#ffe1ae'};
+function addNum(e,txt,col,big){if(!e)return;ctx.enemyPos(e,v);let n=NUMS.length<NUM_MAX?{}:NUMS.shift();n.x=v.x;n.y=v.y+(ENEMY[e.type]||ENEMY.grunt).h;n.z=v.z;n.t=0;n.txt=txt;n.col=col;n.big=big;n.dx=(Math.random()-.5)*14;NUMS.push(n);}
+function feel(dt,t,G){
+ const sc=G.score|0;text(sc.toLocaleString(),M+5,opBottom+FSS*.75,fSmall,HOT,'left');
+ const cb=G.combo|0;comboFx=Math.max(0,comboFx-dt*4);
+ if(cb>=3){const k=1+.3*comboFx,y=opBottom+FSS*1.5+12*ui;c.save();c.translate(M+5,y);c.scale(k,k);
+  const col=cb>=30?'#ff7a5a':cb>=15?'#ffd866':HOT;text('×'+cb,0,0,fCombo,col,'left');c.restore();
+  if(curFont!==fCombo){c.font=fCombo;curFont=fCombo;}const w=c.measureText('×'+cb).width*k;text('콤보',M+9+w,y+2*ui,fComboS,CREAM,'left');
+  const ct=Math.max(0,Math.min(1,(G.comboT||0)/((G.COMBO&&G.COMBO.t)||2)));c.fillStyle='rgba(255,216,102,.85)';c.fillRect(M+5,y+13*ui,40*ui*ct,2.5*ui);}   // time left to keep it going
+ if(brokeT>0){brokeT-=dt;c.globalAlpha=Math.min(1,brokeT*2);text('콤보 끊김',M+5,opBottom+FSS*1.5+12*ui,fComboS,RED,'left');c.globalAlpha=1;}
+ for(let i=NUMS.length-1;i>=0;i--){const n=NUMS[i];n.t+=dt;if(n.t>.9){NUMS.splice(i,1);continue;}v.set(n.x,n.y,n.z);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+  const k=n.t/.9,pop=n.t<.12?1+1.2*(1-n.t/.12):1;c.globalAlpha=k<.6?1:1-(k-.6)/.4;c.save();c.translate(p.x+n.dx*k,p.y-28*ui*k);c.scale(pop,pop);text(n.txt,0,0,n.big?fDmgB:fDmg,n.col,'center');c.restore();}
+ c.globalAlpha=1;
+ if(bannerT>0){bannerT-=dt;const a=Math.min(1,bannerT*2.5),k=bannerT>1.05?1+3*(bannerT-1.05):1,x=L.w/2,y=L.h*.3;c.globalAlpha=a;c.save();c.translate(x,y);c.scale(k,k);
+  text(banner,0,0,fBanner,bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT,'center');text(bannerN+'기 동시 격파',0,20*ui,fSmall,CREAM,'center');c.restore();c.globalAlpha=1;}
+ const S=G.strikes;if(S&&S.length&&G.ORB)for(const k of S){const x=ctx.wx(k.y);v.set(x,0,ctx.laneZAt(k.lane,x));ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+  const f=Math.max(0,k.t/G.ORB.delay),r=(10+40*f)*ui;c.strokeStyle='rgba(255,120,80,.95)';c.lineWidth=2.5;c.setLineDash([6,5]);c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();c.setLineDash([]);
+  c.beginPath();c.moveTo(p.x-r-6,p.y);c.lineTo(p.x-r+6,p.y);c.moveTo(p.x+r-6,p.y);c.lineTo(p.x+r+6,p.y);c.moveTo(p.x,p.y-r-6);c.lineTo(p.x,p.y-r+6);c.moveTo(p.x,p.y+r-6);c.lineTo(p.x,p.y+r+6);c.stroke();}
+}
 function frame(dt,t,G){
  if(L.hudScale>0&&L.hudScale!==s)metrics();
  c.setTransform(s,0,0,s,0,0);c.clearRect(0,0,L.w+1,L.h+1);
@@ -350,7 +372,7 @@ function frame(dt,t,G){
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
  opText(G,side);
  if(practice||G.hold)practiceHint(G,t);
- if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);dropMarks(G,t);}
+ if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);dropMarks(G,t);if(!G.drill)feel(dt,t,G);}
  screenFx(dt);
  if(battle&&G.paused)pauseVeil();
 }
@@ -371,7 +393,12 @@ return{
   if(!ev)return;
   if(ev.t==='leak'){if(ev.lane===0||ev.lane===1)facFx[ev.lane]=1;}
   else if(ev.t==='wave')waveFx=1.6;
-  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
+  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;bannerT=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
+  else if(ev.t==='combo')comboFx=1;
+  else if(ev.t==='comboEnd'){if(ev.broken)brokeT=1.2;}
+  else if(ev.t==='multi'){banner=ev.name||'';bannerN=ev.n|0;bannerT=1.3;}
+  else if(ev.t==='fall')addNum(ev.e,'추락!','#ffe1ae',true);
+  else if(ev.t==='hit'&&ev.e&&ev.dmg>=30&&ev.src!=='fall'&&!ev.e.fell)addNum(ev.e,''+Math.round(ev.dmg),NUM_COL[ev.src]||CREAM,ev.dmg>=100||ev.kill);
  },
  // One odd frame must not cost the player the whole 2.5D view: it is skipped. Only a hud that keeps failing
  // passes the error on, so that core falls back to the complete 2D drawing.

@@ -13,7 +13,7 @@ const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const C={white:[1,1,1],hot:[1,.96,.84],amber:sat(rgb(pal.amber),1.9,1.02),teal:sat(rgb(pal.teal),1.9,1),cream:rgb(pal.cream),eye:rgb(pal.enemyEye),
  fire0:[1,.68,.27],fire1:[.8,.15,.03],red0:[1,.5,.24],red1:[.72,.08,.03],smoke0:[.3,.2,.14],smoke1:[.12,.115,.11],black0:[.24,.14,.09],black1:[.075,.07,.07],
  dust0:sat(rgb(pal.haze),.55,.62),dust1:sat(rgb(pal.groundWarm),1,1.5),scorch:[.012,.01,.008],stone:rgb(pal.roadEdge),stoneDark:rgb(pal.metalDark),steel:rgb(pal.steel),dark:rgb(pal.enemyDark)};
-C.rub0=sat(rgb(pal.haze),.7,.96);C.rock=sat(rgb(pal.haze),.45,.8);C.tealHot=mix(C.teal,C.white,.55);C.amberHot=mix(C.amber,C.white,.5);C.ghost=mix(C.teal,C.cream,.62);C.lance=mix(C.amber,C.white,.7);C.ember=[1,.55,.2];
+C.zap=[.55,.9,1];C.rub0=sat(rgb(pal.haze),.7,.96);C.rock=sat(rgb(pal.haze),.45,.8);C.tealHot=mix(C.teal,C.white,.55);C.amberHot=mix(C.amber,C.white,.5);C.ghost=mix(C.teal,C.cream,.62);C.lance=mix(C.amber,C.white,.7);C.ember=[1,.55,.2];
 const ENEMY_COL={};for(const k in ENEMY)ENEMY_COL[k]=rgb(pal.enemy[k]);
 const LANE_COL=[C.amber,C.teal];
 // at low quality roughly half of the particles are spawned
@@ -413,6 +413,10 @@ function onHit(ev){
   else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
   else if(src==='field'&&ev.sy===ev.sy){const fx=ctx.wx(ev.sy);vS.set(fx,1.75,ctx.laneZAt(e.lane,fx));w=1.35;life=.14;}   // a field turret (base.js); the tracer leaves from its muzzle below
   else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,ctx.laneZAt(e.lane,ctx.wx(ev.sy)));c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
+  else if(src==='chain'&&ev.sy===ev.sy){const G=ctx.G,sl=Math.abs(ev.sx-G.LANES[1])<Math.abs(ev.sx-G.LANES[0])?1:0,sx=ctx.wx(ev.sy);vS.set(sx,ev.sy===G.DRONE_Y&&Math.abs(ev.sx-G.drone.x)<1?A.droneH:1.3,ctx.laneZAt(sl,sx));c=C.zap;w=1.7;life=.3;hot=1.8;emit(P.glow,vE.x,vE.y,vE.z,0,0,0,3,C.white,C.zap);}   // chain lightning: a jump from the last machine struck
+  else if(src==='orbital'){if(ev.kill)kill(e);return;}
+  else if(src==='shock'&&ev.sy===ev.sy){const sx=ctx.wx(ev.sy);vS.set(sx,.7,ctx.laneZAt(e.lane,sx));c=C.zap;w=1.05;life=.2;hot=1.4;}   // electricity running through the water
+  else if(src==='mine'||src==='vent'){if(src==='vent'&&Q>0)emit(P.fire,vE.x+(rnd()-.5)*d.r,GY+.3,vE.z+(rnd()-.5)*d.r,(rnd()-.5)*1.5,3+rnd()*3,(rnd()-.5)*1.5,.8,C.fire0,C.fire1);if(ev.kill)kill(e);return;}
   else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
   // stop at the hull on the side of the shooter, nudged towards the camera so the flash is not buried in the model
@@ -530,6 +534,14 @@ function stepWave(dt,t){
  }
  if(wT>.95){wOn=false;wave.visible=false;}
 }
+// fire vents (화염로): flames roar out of the grates on both lanes while the vents burn
+let ventAcc=0;
+function stepVents(dt,G){
+ const M=G.mapFlags;if(!M||!M.vent||G.phase!=='battle'||!G.VENT){ventAcc=0;return;}const ph=G.ventPhase();if(ph!==2){ventAcc=0;return;}
+ ventAcc+=dt*(Q?90:40);let n=ventAcc|0;ventAcc-=n;n=Math.min(n,12);const V=G.VENT;
+ for(let i=0;i<n;i++){const l=i&1,k=(Math.floor(rnd()*4)+.5)/4,x=ctx.wx(V.a+k*(V.b-V.a))+(rnd()-.5)*1.2,z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.8;
+  emit(P.fire,x,GY+.2,z,(rnd()-.5)*1.2,7+rnd()*6,(rnd()-.5)*1.2,1.5+rnd()*.8,C.fire0,C.fire1);if(i%3===0)emit(P.ember,x,GY+.5,z,(rnd()-.5)*3,4+rnd()*4,(rnd()-.5)*3,1,C.fire0,C.fire1);}
+}
 function findSun(o){if(o.isDirectionalLight)vS.copy(o.position).sub(o.target.position);}
 // The decals must sit just above the road, whose height belongs to env.js: probe it with a few short rays down onto both lanes.
 const ray=new THREE.Raycaster(),hits=[];
@@ -578,6 +590,10 @@ return{
    switch(ev.t){
     case 'hit':onHit(ev);break;
     case 'pulse':onPulse(ev);break;
+    case 'orbital':if(isLane(ev.lane)&&ev.y===ev.y){const x=ctx.wx(ev.y),z=ctx.laneZAt(ev.lane,x);ribbon(S_COLUMN,x,30,z,x,GY,z,6,.35,C.fire0,1.8,1.4);blast(x,.5,z,2.3,false,true);light(x,3,z,C.fire0,420,.35);ctx.shake(.9);ctx.fxScreen.white=1;}break;   // the shell comes down as a column of fire
+    case 'multi':ctx.shake(Math.min(.6,.15+.06*(ev.n|0)));break;
+    case 'mine':if(isLane(ev.lane)&&ev.y===ev.y){const x=ctx.wx(ev.y),z=ctx.laneZAt(ev.lane,x);blast(x,.4,z,1.35,false,true);light(x,2.2,z,C.fire0,160,.22);ctx.shake(.32);}break;   // a mine goes off (the chain sends one event per mine)
+    case 'shock':{const G=ctx.G,F=G.FLOOD;if(!F)break;const n=cnt(26);for(let i=0;i<n;i++){const l=i&1,x=ctx.wx(F[0]+rnd()*(F[1]-F[0])),z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.9;emit(P.zip,x,GY+.15,z,(rnd()-.5)*6,2+rnd()*5,(rnd()-.5)*6,1.1,C.white,C.zap);}ctx.fxScreen.white=Math.max(ctx.fxScreen.white,.35);}break;
     case 'splash':if(isLane(ev.lane)&&ev.y===ev.y){const sx=ctx.wx(ev.y);pop(sx,1.1,ctx.laneZAt(ev.lane,sx),.6,false);}break;   // splash rounds burst around the machine they hit
     case 'leak':onLeak(ev);break;
     case 'move':onMove(ev);break;
@@ -591,7 +607,7 @@ return{
  update(dt,t,G){
   if(dead||!(dt>=0)||(G.paused&&G.phase==='battle'))return;   // paused: the world is frozen, hold every effect where it is
   try{
-   stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
+   stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepVents(dt,G);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
    if(warm>0)warm--;   // everything is drawn (empty) for the first frames so shaders and buffers are ready before the first shot
   }catch(err){fail(err);}
  }

@@ -7,7 +7,7 @@ if(!s.includes('__t'))throw new Error('hook');const f=path.join(dir,'_lc_'+proce
  for(const [w,h] of [[844,390],[390,844]]){const p=await b.newPage({viewport:{width:w,height:h}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error'&&!/intro\.mp3|ERR_FILE_NOT_FOUND|scheme/.test(m.text()))errs.push(m.text().slice(0,200));});
   const T=x=>p.evaluate(x=>window.__t(x),x);await p.goto('file://'+f+'?q=1');await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});
   await p.waitForFunction(()=>window.__t('SFX.ready'),null,{timeout:30000});
-  await T("$('title').hidden=true;$('titleVid').pause();learned.item=learned.pulse=true;learned.maps={pinch:1,detour:1,wave:1};window.__n={};const s0=sfx;sfx=function(n,d,pp){window.__n[n]=(window.__n[n]||0)+1;s0(n,d,pp);};beginRun();pattern=[[1e9,0,'runner']];nextSpawn=0;0");
+  await T("$('title').hidden=true;$('titleVid').pause();learned.item=learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=1;window.__n={};const s0=sfx;sfx=function(n,d,pp){window.__n[n]=(window.__n[n]||0)+1;s0(n,d,pp);};beginRun();pattern=[[1e9,0,'runner']];nextSpawn=0;0");
   ck(w+'x'+h+' ambience starts with the battle',await T('SFX.ambOn===true'));
   const lab=await T("typeof hitStop==='function'");   // the lab build has the impact-feel changes; the game has the sounds only
   if(lab)await p.evaluate(()=>{const c=window.R3D.ctx,raw=c.fxScreen;window.__w=0;c.fxScreen=new Proxy(raw,{set(o,k,v){if(k==='white'&&v>=.5)window.__w++;o[k]=v;return true;}});});   // the white flash lasts a frame or two at the test machine's frame rate: count the times it is set

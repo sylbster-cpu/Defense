@@ -508,7 +508,7 @@ R3D.register('env',ctx=>{
    // Everything below depends only on the layout mode (the camera never turns inside a mode), so a plain resize skips it.
    if(key!==laidKey){laidKey=key;
     for(let i=0;i<2;i++)lanes[i].position.z=L.laneZ[i];
-    bendLanes();median.visible=!L.map||L.map==='straight'||L.map==='gate'||L.map==='tunnel';   // bent lanes and the bridge's chasm cross the median strip, so it is cleared on those maps
+    bendLanes();median.visible=!L.map||['straight','gate','tunnel','mine','boost','vent','pylon'].includes(L.map);   // bent lanes and the bridge's chasm cross the median strip, so it is cleared on those maps
     sideSet.visible=side;behindSet.visible=!side;
     cliff.position.set(side?-16:0,0,side?CLIFF_SIDE:CLIFF_BEHIND);   // in 'side' the low end of the ridge is slid off screen
     cliffK=side?1:.8;toneCliff();

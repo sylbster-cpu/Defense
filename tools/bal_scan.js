@@ -10,7 +10,7 @@ const BOT=(tick,items,N)=>`(function(){mute=true;const res=[];for(let run=0;run<
    if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);
    const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>=2)pulse();
    if(${items}){for(const d of drops.slice())if(DROP_LIFE-d.life>=.8)takeDrop(d);
-    if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else{bag.shift();applyItem(id);}}}}
+    if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else if(id==='orbital'){const l=c[1]>c[0]?1:0;let lead=null;for(const e of enemies)if(e.hp>0&&e.lane===l&&(!lead||e.y>lead.y))lead=e;aim=0;useAim(l,lead?lead.y-20:DRONE_Y);}else{bag.shift();applyItem(id);}}}}
  }
  res.push([core>0&&op===TOTAL_OPS?1:0,op,Math.round(core),kills,leaks]);}
  return JSON.stringify(res);})()`;

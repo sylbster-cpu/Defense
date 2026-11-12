@@ -16,7 +16,7 @@ const RUN=`window.__mk=function*(draw3d){
   if(o===6){upgradeRanks.stable=4;Object.assign(effects,BAL.card.stable(4));}
   if(o===7){upgradeRanks.emergency=3;Object.assign(effects,BAL.card.emergency(3));}
   newStage(o);core=100;facilities=[100,100];let n=0;
-  while(phase==='battle'&&n<60*150){update(1/60);n++;
+  while(phase==='battle'&&n<60*150){update(1/60);n++;if(core<50)core=100;   // the scripted play must reach every map: the hub is topped up the same way in both runs
    if(n%170===0)switchLane(1-drone.lane);if(n%430===0)pulse();
    if(draw3d&&n%8===0){now+=133;Math.random=fr;G3.renderer.frame(now);Math.random=gr;}
    if(n%240===0){Math.random=real;yield null;Math.random=gr;}}

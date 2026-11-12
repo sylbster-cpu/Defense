@@ -264,6 +264,8 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .controls,.inline-help,.right{display:none!important}
 .field{position:fixed!important;left:calc(4px + env(safe-area-inset-left,0px));right:calc(4px + env(safe-area-inset-right,0px));top:calc(4px + env(safe-area-inset-top,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));width:auto!important;height:auto!important}
 .field-sticker{display:none}
+.stars{color:#ffd866;letter-spacing:1px;margin-right:4px}.stars i{color:#3d4a4d;font-style:normal}.scoreline{font-size:12px;color:#a2c9c3;margin:-2px 0 6px;font-weight:700}
+.scorebig{display:flex;align-items:baseline;gap:6px;margin:2px 0 8px}.scorebig b{font-size:30px;font-weight:900;color:#ffe1ae;font-variant-numeric:tabular-nums}.scorebig span{color:#cfc3b0;font-weight:700}.scorebig em{font-style:normal;font-weight:900;color:#1a1208;background:#ffd866;border-radius:6px;padding:2px 7px;font-size:12px;animation:coachPulse 1.1s ease-in-out infinite}.scorebig small{color:#8fa0a2;font-size:12px}
 .fbtn{position:absolute;z-index:6;display:grid;place-items:center;padding:0;margin:0;font-family:inherit;color:#eae9dc;border:1px solid #55666b;background:rgba(18,30,36,.82);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
 #gearBtn{position:fixed;z-index:10001;right:calc(12px + env(safe-area-inset-right,0px));top:calc(11px + env(safe-area-inset-top,0px));width:34px;height:34px;font-size:19px;line-height:1}
 .fbtn.item{bottom:10px;width:50px;height:50px;border-radius:13px;border:2px dashed #7d9094;color:#8fa0a2;opacity:.6;cursor:default}#itemBtn{left:10px}#itemBtn2{left:68px}
@@ -376,7 +378,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow" id="vibRow"><span>진동</span><div class="seg" id="setVib"><button type="button" data-v="1">켜기</button><button type="button" data-v="0">끄기</button></div></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=2026.11.12-3"></script>
+<script src="sfx.js?v=2026.11.12-4"></script>
 <script>
 'use strict';
 (() => {
@@ -433,7 +435,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-3';
+const BUILD='2026.11.12-4';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={BUILD,active:false,renderer:null,events:[]};
@@ -449,29 +451,54 @@ const learned={drill:false,pulse:false,item:false,maps:{}};try{Object.assign(lea
 function saveLearned(){try{localStorage.setItem('relayLearn',JSON.stringify(learned));}catch(e){}}
 // drill = the scripted tutorial running on the real rules. lesson = the overload lesson waiting inside operation 1. holdState = the game is held until the player does one thing.
 let drill=null,lesson=null,holdState=null,pulseLock=false;
-// Maps: both lanes keep their length, a map bends them toward each other in stretches (positions are lane distance y) and each shape carries one rule.
-//  near(y): the lanes run side by side there, so the overload also hits machines of the other lane.   slow(lane,y): a detour, machines take 40% longer.
-//  gate: each lane has a gate at GATE.y; they shut in turn for GATE.half s and a shut gate holds machines in a queue in front of it.
+// Maps: both lanes keep their length (lane distance y runs from LANE_TOP 99 to LEAK_Y 608, 509 long). Each map has one rule and one stretch
+// where it acts (zone). All maps are tuned to a similar size of stretch, share of machines acted on and effect on breaches (tools/map_bal.js).
+//  near(y): the overload and the drone's own shots also reach machines of the other lane there.   slow(lane,y): a detour, machines are slower.
+//  gate: a gate on each lane; they shut in turn and a shut gate holds machines in a queue in front of it.
 //  fall(lane,y): a bridge; a machine struck by the overload there falls off and is destroyed (bosses are too heavy).
-//  cross: lane distance of a crossover; a machine reaching it while the drone holds its lane crosses to the other lane (bosses keep their lane).
 //  cover(lane,y): a tunnel; machines inside are hidden and nothing can hit them.
+//  cross [a,b]: a crossover; a machine inside it on the drone's lane crosses to the other lane once (bosses keep their lane).
+//  amp: high-voltage lines; machines under them take more damage.
 //  shape(lane,y): 0..1, how far the lane is pulled toward the median at y (drawing only). Nothing bends from y = 440 on: the turret bunker stands there.
-const sstep=(y,a,b,e)=>Math.max(0,Math.min(1,(y-a)/e,(b-y)/e)),ease=k=>k*k*(3-2*k);
-const DETOUR=[[[170,250],[330,405]],[[235,315],[385,440]]];
-const GATE={y:180,half:5},BRIDGE=[205,295],CROSS_Y=225,CROSS_T=.6,TUNNEL=[150,220];
-const gateShut=l=>map.gate&&Math.floor(stageTime/GATE.half)%2===l;   // lane 0's gate is shut first
+const sstep=(y,a,b,e)=>Math.max(0,Math.min(1,(y-a)/e,(b-y)/e)),ease=k=>k*k*(3-2*k),inZ=(y,z)=>y>z[0]&&y<z[1];
+const MAPK={pylon:{a:170,b:280,amp:1.2},pinch:{a:250,b:360,shoot:1},detour:{z:[[[150,260],[330,440]],[]],k:.7},wave:{z:[[240,295],[345,400]],shoot:1},gate:{y:211,cycle:12,shut:4},bridge:{a:230,b:340,low:.2,heavy:0},tunnel:{a:185,b:295,pulse:1},cross:{a:170,b:280,heavy:0,toward:1},mine:{a:200,b:310,n:3,dmg:35,r:30,rearm:30},flood:{a:240,b:350,k:.2,s:.1,r:25},boost:{z:[[],[[150,260],[330,440]]],k:1.15},vent:{a:200,b:310,cycle:6,burn:1.5,dps:10}};
+const VENT=MAPK.vent,MINE=MAPK.mine,FLOOD=[MAPK.flood.a,MAPK.flood.b],GATE=MAPK.gate,BRIDGE=[MAPK.bridge.a,MAPK.bridge.b],TUNNEL=[MAPK.tunnel.a,MAPK.tunnel.b],CROSS=[MAPK.cross.a,MAPK.cross.b],CROSS_T=.6,PYLON=[MAPK.pylon.a,MAPK.pylon.b];
+const gateShut=l=>map.gate&&((stageTime+(l?GATE.cycle/2:0))%GATE.cycle)<GATE.shut;   // lane 0's gate shuts first, lane 1's half a cycle later
+const bump=(y,z)=>{const c=(z[0]+z[1])/2,w=z[1]-z[0];return Math.abs(y-c)<w?Math.pow(Math.cos(Math.PI/2*(y-c)/w),2):0;};
 const MAPS=[
- {id:'straight',name:'직선로',rule:'',near:()=>false,slow:()=>false,shape:()=>0},
- {id:'pinch',name:'협곡',rule:'두 전선이 붙는 협곡 구간에서는 과부하가 양쪽 전선의 적을 함께 칩니다',near:y=>y>262&&y<418,slow:()=>false,shape:(l,y)=>ease(sstep(y,250,430,18))},
- {id:'detour',name:'우회로',rule:'꺾인 우회 구간을 지나는 적은 40% 느려집니다. 구간은 전선마다 위치가 다릅니다',near:()=>false,slow:(l,y)=>DETOUR[l].some(z=>y>z[0]&&y<z[1]),shape:(l,y)=>{let k=0;for(const z of DETOUR[l])k=Math.max(k,sstep(y,z[0],z[1],7));return .85*ease(k);}},
- {id:'wave',name:'굽잇길',rule:'전선이 가까워지는 두 굽이에서는 과부하가 양쪽 전선의 적을 함께 칩니다',near:y=>(y>178&&y<232)||(y>328&&y<382),slow:()=>false,shape:(l,y)=>y>130&&y<430?Math.pow(Math.sin(Math.PI*(y-130)/150),2):0},
- {id:'gate',name:'관문',rule:'두 전선의 차단문이 5초씩 번갈아 닫힙니다. 닫힌 문 앞에서는 적이 줄지어 멈췄다가 문이 열리면 한꺼번에 내려옵니다',gate:true,shape:()=>0},
- {id:'bridge',name:'다리',rule:'다리 위의 적은 과부하에 맞으면 아래로 떨어져 바로 부서집니다. 거대 병기는 떨어지지 않습니다',fall:(l,y)=>y>BRIDGE[0]&&y<BRIDGE[1],shape:()=>0},
- {id:'tunnel',name:'터널',rule:'터널 안의 적은 보이지 않고 어떤 공격도 닿지 않습니다. 예고 칸을 보고 출구에서 맞으십시오',cover:(l,y)=>y>TUNNEL[0]&&y<TUNNEL[1],shape:()=>0},
- {id:'cross',name:'샛길',rule:'샛길에 이른 적은 기체가 있는 전선을 피해 반대 전선으로 건너갑니다. 거대 병기는 건너가지 않습니다',cross:CROSS_Y,shape:(l,y)=>ease(sstep(y,CROSS_Y-45,CROSS_Y+45,30))},
+ {id:'straight',name:'직선로',rule:'',shape:()=>0},
+ {id:'pinch',name:'협곡',rule:'두 전선이 붙는 협곡 구간의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',near:y=>inZ(y,[MAPK.pinch.a,MAPK.pinch.b]),shoot:!!MAPK.pinch.shoot,shape:(l,y)=>ease(sstep(y,MAPK.pinch.a-12,MAPK.pinch.b+12,18))},
+ {id:'detour',name:'우회로',rule:'발전소 쪽 전선의 꺾인 우회 구간에서는 적이 30% 느려집니다',slow:(l,y)=>MAPK.detour.z[l].some(z=>inZ(y,z)),slowK:MAPK.detour.k,shape:(l,y)=>{let k=0;for(const z of MAPK.detour.z[l])k=Math.max(k,sstep(y,z[0],z[1],7));return .85*ease(k);}},
+ {id:'wave',name:'굽잇길',rule:'전선이 가까워지는 두 굽이의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',near:y=>MAPK.wave.z.some(z=>inZ(y,z)),shoot:!!MAPK.wave.shoot,shape:(l,y)=>Math.max(...MAPK.wave.z.map(z=>bump(y,z)))},
+ {id:'gate',name:'관문',rule:'두 전선의 차단문이 번갈아 4초씩 닫힙니다. 닫힌 문 앞에서는 적이 줄지어 멈췄다가 문이 열리면 한꺼번에 내려옵니다',gate:true,zone:(l,y)=>inZ(y,[LANE_TOP,GATE.y]),shape:()=>0},
+ {id:'bridge',name:'다리',rule:'다리 위의 소형·중형 적은 과부하에 맞거나 크게 부서지면 아래로 떨어져 바로 부서집니다. 대형과 거대 병기는 버팁니다',fall:(l,y)=>inZ(y,BRIDGE),fallLow:MAPK.bridge.low,fallHeavy:MAPK.bridge.heavy!==0,shape:()=>0},
+ {id:'tunnel',name:'터널',rule:'터널 안의 적은 보이지 않고 사격이 닿지 않습니다. 과부하는 터널 안까지 닿습니다',cover:(l,y)=>inZ(y,TUNNEL),coverPulse:!!MAPK.tunnel.pulse,shape:()=>0},
+ {id:'cross',name:'샛길',rule:'샛길 구간의 소형·중형 적은 기체를 노리고 기체가 있는 전선으로 건너옵니다',cross:CROSS,crossHeavy:!!MAPK.cross.heavy,crossWay:MAPK.cross.way===undefined?-1:MAPK.cross.way,crossToward:!!MAPK.cross.toward,zone:(l,y)=>inZ(y,CROSS),shape:(l,y)=>ease(sstep(y,CROSS[0]-10,CROSS[1]+10,30))},
+ {id:'mine',name:'지뢰밭',rule:'지뢰를 밟은 적은 폭발에 휘말립니다. 폭발은 가까운 적과 옆 지뢰로 번지고, 터진 지뢰는 30초 뒤 다시 묻힙니다',mine:true,zone:(l,y)=>inZ(y,[MINE.a,MINE.b]),shape:()=>0},
+ {id:'flood',name:'침수로',rule:'물에 잠긴 적은 전기가 번집니다. 과부하는 물 속 두 전선의 적을 모두 감전시키고, 기체 사격도 물 속 가까운 적에게 번집니다',flood:true,zone:(l,y)=>inZ(y,FLOOD),shape:()=>0},
+ {id:'boost',name:'가속로',rule:'정비소 쪽 전선의 가속 레일 위에서는 적이 15% 빨라집니다',boost:(l,y)=>MAPK.boost.z[l].some(z=>inZ(y,z)),zone:(l,y)=>MAPK.boost.z[l].some(z=>inZ(y,z)),shape:()=>0},
+ {id:'vent',name:'화염로',rule:'화염 분사구가 6초마다 불을 뿜어 그 구간의 적을 태웁니다. 붉게 달아오르면 곧 터집니다',vent:true,zone:(l,y)=>inZ(y,[VENT.a,VENT.b]),shape:()=>0},
+ {id:'pylon',name:'고압선',rule:'고압선 아래를 지나는 적은 감전되어 모든 공격에 1.2배 피해를 받습니다',amp:MAPK.pylon.amp,zone:(l,y)=>inZ(y,PYLON),shape:()=>0},
 ];
-for(const m of MAPS){const no=()=>false;m.near=m.near||no;m.slow=m.slow||no;m.fall=m.fall||no;m.cover=m.cover||no;m.gate=!!m.gate;m.cross=m.cross||0;}
-const MAP_OF=[0,0,1,2,3,4,5,6,7];let map=MAPS[0];   // chapter -> map: every chapter has its own
+for(const m of MAPS){const no=()=>false;m.near=m.near||no;m.slow=m.slow||no;m.fall=m.fall||no;m.cover=m.cover||no;m.boost=m.boost||no;m.gate=!!m.gate;m.cross=m.cross||null;m.amp=m.amp||0;
+ m.zone=m.zone||((l,y)=>m.near(y)||m.slow(l,y)||m.fall(l,y)||m.cover(l,y));}
+// map state that changes during a chapter: mines (lane, y, seconds until armed again) and the fire vents' clock
+let mines=[],ventT=0;
+const ventPhase=()=>{if(!map.vent)return -1;const t=stageTime%VENT.cycle;return t>=VENT.cycle-VENT.burn?2:t>=VENT.cycle-VENT.burn-1?1:0;};   // 0 quiet, 1 glowing (about to fire), 2 burning   // zone: the stretch where the rule can act (for measuring and drawing)
+// Bookkeeping only (no rule reads it): machines a map rule acted on this chapter, each counted once, and machines that came.
+let ruleCount=0,spawnCount=0;function ruleMark(e){if(!e.ruled){e.ruled=1;ruleCount++;}}
+// Feel: combo (kills less than COMBO.t apart; a breach breaks it), multi-kills (kills inside MULTI.t), score. Every COMBO.every kills
+// the overload recharges by COMBO.refund s: the only rule effect here, the rest is shown and counted.
+const COMBO={t:2,every:15,refund:2},MULTI={t:.3},SCORE={runner:10,grunt:20,brute:40,boss:250};
+let combo=0,comboT=0,bestCombo=0,multiN=0,multiT=0,score=0,stars=[],best=0;try{best=+localStorage.getItem('relayBest')||0;}catch(e){}
+const MULTI_NAME=n=>n>=8?'울트라 격파':n>=5?'메가 격파':n===4?'쿼드라 격파':'트리플 격파';
+function onKill(e){combo++;comboT=COMBO.t;if(combo>bestCombo)bestCombo=combo;const mult=1+Math.min(2,combo/20);score+=Math.round((SCORE[e.type]||10)*(e.rare?3:1)*mult);
+ multiN++;multiT=MULTI.t;
+ if(combo%5===0){ev3({t:'combo',n:combo});sfx('item_get',0,Math.min(1.8,1+combo*.012),.45);}
+ if(combo%COMBO.every===0){drone.pulseCooldown=Math.max(0,drone.pulseCooldown-COMBO.refund);showToast(combo+' 콤보 · 과부하 '+COMBO.refund+'초 충전',1300);sfx('upgrade',0,1.2,.6);}}
+function feelStep(dt){if(comboT>0){comboT-=dt;if(comboT<=0){if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;}}
+ if(multiT>0){multiT-=dt;if(multiT<=0){if(multiN>=3){ev3({t:'multi',n:multiN,name:MULTI_NAME(multiN)});score+=multiN*multiN*10;hitStop(.05);buzz(40);sfx('upgrade',0,1.5,.7);}multiN=0;}}}
+const MAP_OF=[0,12,1,2,3,4,5,6,7,8,9,10,11];let map=MAPS[0];   // chapter -> map: every chapter has its own (the drill keeps the plain straight road)
 // Items. Rare machines and mid bosses drop them on the field: a drop stays DROP_LIFE seconds and has to be touched to be taken.
 // Up to BAG_MAX are kept and used with the two buttons at the bottom left. They are single rescues, not standing upgrades.
 const ITEMS={
@@ -485,6 +512,8 @@ const ITEMS={
  pierce:{name:'관통',col:'#8dd7d0',desc:'8초 동안 기체의 사격이 표적 뒤의 적 둘까지 꿰뚫습니다'},
  splash:{name:'스플래시',col:'#f0c47b',desc:'8초 동안 기체의 사격이 표적 주변의 적에게도 피해를 줍니다'},
  magnet:{name:'자석',col:'#c9a5f0',desc:'칸을 누른 뒤 전장의 한 곳을 터치하면 그 주변의 적을 그곳으로 끌어모읍니다'},
+ chain:{name:'연쇄 번개',col:'#9fdcff',desc:'가장 앞선 적에서 시작해 가까운 적 다섯에게 차례로 번개가 튑니다'},
+ orbital:{name:'궤도 포격',col:'#ff9f6a',desc:'칸을 누른 뒤 전장의 한 곳을 터치하면 1초 뒤 그곳에 큰 포격이 떨어집니다'},
 };
 // Icons: line drawings on a 24 x 24 grid, one path each. The same path is used in the buttons (SVG) and on the field (canvas).
 const ICON={
@@ -498,9 +527,12 @@ const ICON={
  pierce:'M2 12h19M17 8l4 4-4 4M7 6v12M12 6v12',
  splash:'M9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M18.7 5.3l-2.8 2.8M8.1 15.9l-2.8 2.8',
  magnet:'M5 4h5v8a2 2 0 0 0 4 0V4h5v8a7 7 0 0 1-14 0zM5 8h5M14 8h5',
+ chain:'M4 4.5l4.5 5-3 1.5 5 5.5M13 8.5l3.5 3-2.5 1.5 4.5 6.5M3.5 4.5h.01M12.5 8.5h.01M20.5 19.5h.01',
+ orbital:'M12 2v6M9 5.5l3 3 3-3M5 15a7 4 0 1 0 14 0a7 4 0 1 0-14 0M12 15h.01M2 15h2M20 15h2',
 };
 const iconSVG=id=>'<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+ICON[id]+'"/></svg>';
-const DROP_LIFE=5,BAG_MAX=2,STIM={time:8,rate:1.5,move:.5},PIERCE={time:8,more:2,dmg:.7},SPLASH={time:8,r:45,dmg:.5},MAG={range:150,time:.6};
+const DROP_LIFE=5,BAG_MAX=2,STIM={time:8,rate:1.5,move:.5},PIERCE={time:8,more:2,dmg:.7},SPLASH={time:8,r:45,dmg:.5},MAG={range:150,time:.6},CHAIN={jumps:6,dmg:60,reach:110,across:60},ORB={delay:1,r:60,dmg:160};
+const AIMED=['magnet','orbital'];   // items that wait for a place on the field
 // bag: the kept items (ids). drops: items lying on the field {id,item,lane,y,life}. aim: the bag slot of a magnet waiting for its place (-1 none).
 let bag=[],drops=[],aim=-1,liveRun=false,stageHurt=false,stageGift='';const aid={wall:0,wallLane:0,turret:0,turretLane:0,turretCool:0,jam:0,clone:0,cloneCool:0,stim:0,pierce:0,splash:0,mag:0,magLane:0,magY:0};
 function applyItem(id){const other=1-drone.lane;
@@ -513,11 +545,22 @@ function applyItem(id){const other=1-drone.lane;
  else if(id==='stim'){aid.stim=STIM.time;drone.moveCooldown*=STIM.move;}
  else if(id==='pierce')aid.pierce=PIERCE.time;
  else if(id==='splash')aid.splash=SPLASH.time;
+ else if(id==='chain')chainBolt();
  ev3({t:'item',id,lane:other});sfx('item_use');}
+// chain lightning: from the foremost machine to the nearest one not yet struck (a jump to the other lane counts CHAIN.across farther)
+function chainBolt(){let cur=null;for(const e of enemies)if(e.hp>0&&!map.cover(e.lane,e.y)&&(!cur||e.y>cur.y))cur=e;let px=drone.x,py=drone.y;const hit=[];
+ for(let k=0;k<CHAIN.jumps&&cur;k++){hit.push(cur);const cx=cur.x,cy=cur.y,cl=cur.lane;damageEnemy(cur,CHAIN.dmg,px,py,'chain');px=cx;py=cy;let nx=null,bd=CHAIN.reach;
+  for(const q of enemies){if(q.hp<=0||hit.includes(q)||map.cover(q.lane,q.y))continue;const d=Math.abs(q.y-cy)+(q.lane!==cl?CHAIN.across:0);if(d<=bd){bd=d;nx=q;}}cur=nx;}
+ if(hit.length>1)showToast('연쇄 번개 · '+hit.length+'기',1300);}
 function itemLocked(){return liveRun&&!learned.item;}   // in a real run the bag cannot be used before the item lesson has been given
 function useItem(i){if(i>=bag.length||phase!=='battle'||paused||holdState||drill||itemLocked())return;const id=bag[i];
- if(id==='magnet'){aim=aim===i?-1:i;if(aim>=0)showToast('끌어모을 곳을 터치하세요',2600);updateControls();return;}   // the magnet waits for a place; pressing it again puts it back
+ if(AIMED.includes(id)){aim=aim===i?-1:i;if(aim>=0)showToast(id==='magnet'?'끌어모을 곳을 터치하세요':'포격할 곳을 터치하세요',2600);updateControls();return;}   // aimed items wait for a place; pressing again puts them back
  aim=-1;bag.splice(i,1);applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
+function useAim(lane,y){if(aim<0)return;if(bag[aim]==='orbital')useOrbital(lane,y);else useMagnet(lane,y);}
+// orbital strike: after ORB.delay a shell lands on that place; machines of that lane within ORB.r take ORB.dmg (bosses too)
+let strikes=[];
+function useOrbital(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='orbital'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+10,Math.min(LEAK_Y-20,y));strikes.push({lane,y,t:ORB.delay});ev3({t:'item',id:'orbital',lane,y});sfx('boss_warn',0,1.4,.5);showToast('궤도 포격 · 낙하 중',1200);updateControls();}
+function strikeStep(dt){for(const k of strikes){k.t-=dt;if(k.t<=0){let n=0;ev3({t:'orbital',lane:k.lane,y:k.y});for(const e of enemies)if(e.hp>0&&e.lane===k.lane&&Math.abs(e.y-k.y)<=ORB.r){n++;damageEnemy(e,ORB.dmg,LANES[k.lane],k.y,'orbital');}hitStop(.08);buzz([30,60,90]);sfx('kill_boss',0,1.15,.8);}}if(strikes.some(k=>k.t<=0))strikes=strikes.filter(k=>k.t>0);}
 // the magnet: machines of that lane within MAG.range of the place are dragged to it (large machines are too heavy)
 function useMagnet(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='magnet'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+20,Math.min(LEAK_Y-60,y));let n=0;
  for(const e of enemies)if(e.hp>0&&e.lane===lane&&e.type!=='boss'&&Math.abs(e.y-y)<=MAG.range&&!map.cover(e.lane,e.y)){e.pull=y;e.pullT=MAG.time;n++;}
@@ -558,7 +601,7 @@ const both=(t,ty)=>[[t,0,ty],[t,1,ty]];
 const meet=(t,l,lead,followers,gap=.4)=>[[t,l,lead],...followers.map((ty,i)=>[t+MEET_AT/TYPES[lead].speed-MEET_AT/TYPES[ty].speed+(i+1)*gap,l,ty])];
 // Three waves per operation; times inside a wave are relative to its section of `len` seconds.
 function combineWaves(len,parts){return parts.flatMap((part,i)=>part.flat().map(([t,l,type])=>[+(t+len*i).toFixed(2),l,type])).sort((a,b)=>a[0]-b[0]);}
-const TOTAL_OPS=8;
+const TOTAL_OPS=12;
 const stages={
  // 1 첫 대응: one gentle example of each shape.
  1:combineWaves(17,[
@@ -602,29 +645,54 @@ const stages={
   [both(.6,B),meet(3.5,0,B,[G,G,R]),meet(7.5,1,B,[G,R,R]),pack(12,0,[R,R,R,R],.35),row(14,1,[G,G,G],1.1),both(18.5,R)],
   [[[.8,0,X]],pack(2,1,[G,G,G],.5),meet(6.5,1,B,[G,G,R]),pack(10,0,[R,R,R],.4),both(13,B),pack(16.5,1,[G,G],.5),[[18,0,G]]]
  ]),
- // 8 최후 방어 (샛길): machines cross away from the drone, so holding one lane fills the other. The last boss changes lanes twice.
+ // 8 샛길 공세 (샛길): machines cross over to the drone's lane, so they gather where the drone is.
  8:combineWaves(22,[
   [both(.6,G),meet(2.5,0,B,[G,G,R]),meet(5.5,1,B,[G,G,R]),pack(10,0,[R,R,R],.4),pack(10.3,1,[R,R,R],.4),row(14,0,[G,B,G],1.4),both(18.5,G)],
   [zig(.6,1,[[G,G,G],[R,R,R],[G,G,B],[R,R]],2.4),both(11,B),meet(13.5,0,B,[G,G,R]),pack(17.5,1,[G,G,G],.5)],
   [[[.8,1,X]],pack(1.6,0,[G,G],.6),meet(5,0,B,[G,G,R]),pack(8,1,[R,R,R],.4),both(11.5,B),meet(14.5,1,B,[G,R,R]),both(18,G),[[19.5,0,R]]]
+ ]),
+ // 9 지뢰 지대 (지뢰밭): packs walk onto the mines and set off chains.
+ 9:combineWaves(22,[
+  [pack(.6,0,[G,G,G],.5),pack(1,1,[R,R,R],.4),meet(5,1,B,[G,G,R]),row(8,0,[G,B,G,G],1.3),pack(13,1,[R,R,R,R],.35),both(17.5,G)],
+  [both(.6,B),zig(3,0,[[G,G,G],[R,R,R],[G,G]],2.4),meet(11,0,B,[G,G,R]),meet(14,1,B,[G,R,R]),both(18,R)],
+  [[[.8,0,X]],pack(2,1,[G,G,G],.5),meet(6,1,B,[G,G,R]),pack(9,0,[R,R,R,R],.35),both(12.5,B),pack(16,1,[G,G,G],.45),[[18.5,0,G]]]
+ ]),
+ // 10 침수 구역 (침수로): groups in the water on both lanes at once, so one overload can catch them all.
+ 10:combineWaves(22,[
+  [both(.6,G),meet(2.5,0,B,[G,G,R]),meet(2.8,1,B,[G,G,R]),pack(9,0,[R,R,R],.4),pack(9.4,1,[R,R,R],.4),row(13,1,[G,B,G],1.4),both(18,G)],
+  [zig(.6,0,[[G,G,G],[R,R,R],[G,G,B],[R,R,R]],2.4),both(11,B),meet(13.5,1,B,[G,G,R]),pack(17.5,0,[G,G,G],.5)],
+  [both(.6,B),pack(2.5,0,[G,G,G,G],.45),pack(2.9,1,[R,R,R,R],.35),meet(8,1,B,[G,G,R]),both(12,B),meet(15,0,B,[G,R,R]),both(18.5,G)]
+ ]),
+ // 11 가속 구간 (가속로): the workshop lane runs fast; a boss closes it.
+ 11:combineWaves(22,[
+  [row(.6,1,[G,G,B,G,G],1.3),pack(3,0,[R,R,R],.4),meet(7,0,B,[G,G,R]),zig(11,1,[[R,R],[G,G],[R,R,R]],2.4),both(18,G)],
+  [both(.6,B),meet(3.5,1,B,[G,G,R]),meet(6.5,0,B,[G,G,R]),pack(11,1,[R,R,R,R],.35),row(13.5,0,[G,G,G],1.1),both(18.5,R)],
+  [[[.8,1,X]],pack(2,0,[G,G,G],.5),meet(6,0,B,[G,G,R]),pack(9.5,1,[R,R,R,R],.35),both(13,B),pack(16.5,0,[G,G],.5),[[18,1,G]],[[19,0,R]]]
+ ]),
+ // 12 최후 방어 (화염로): the last stand among the fire vents. The last boss changes lanes twice.
+ 12:combineWaves(22,[
+  [both(.6,G),meet(2.5,0,B,[G,G,R]),meet(5.5,1,B,[G,G,R]),pack(9.5,0,[R,R,R,R],.35),pack(10,1,[R,R,R],.4),row(14,1,[G,B,G],1.4),both(18.5,B)],
+  [zig(.6,0,[[G,G,G],[R,R,R],[G,G,B],[R,R,R]],2.3),both(10.5,B),meet(13,1,B,[G,G,R]),meet(15.5,0,B,[G,R,R]),pack(18,1,[G,G,G],.5)],
+  [[[.8,0,X]],pack(1.6,1,[G,G],.6),meet(5,1,B,[G,G,R]),pack(8,0,[R,R,R],.4),both(11.5,B),meet(14.5,0,B,[G,R,R]),both(17.5,G),[[19,1,R]],[[19.5,0,R]]]
  ])
 };
 // More, smaller machines: runners and grunts in a schedule bring an extra machine close behind them, and ordinary machines have less hull (HP_SCALE).
 for(const k in stages){const add=[],every=k>1?2:3;let n=0;for(const ev of stages[k])if(ev[2]==='runner'||ev[2]==='grunt'){if(++n%every===0)add.push([ev[0]+.45,ev[1],n%4===0&&k>2?'grunt':'runner']);}stages[k]=stages[k].concat(add).sort((a,b)=>a[0]-b[0]);}   // chapter 1 every third, later chapters every second (their maps favour the defender)
-const HP_SCALE=.85,RARE_P=.015,OP_HP=[0,1,1,1.18,1.32,1.45,1.52,1.58,1.68];   // hull per chapter
+const HP_SCALE=.85,RARE_P=.015,OP_HP=[0,1,1,1.18,1.32,1.38,1.52,1.5,2.1,1.72,2.02,1.95,2.02];   // hull per chapter
 const BOSS_OPS=Object.keys(stages).map(Number).filter(k=>k<TOTAL_OPS&&stages[k].some(ev=>ev[2]==='boss'));   // chapters with a mid boss (named in the drill's last words)
-const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44],6:[22,44],7:[22,44],8:[22,44]};
-const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','관문 돌파','낙하 지대','암흑 터널','최후 방어'];
+const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44],6:[22,44],7:[22,44],8:[22,44],9:[22,44],10:[22,44],11:[22,44],12:[22,44]};
+const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','관문 돌파','낙하 지대','암흑 터널','샛길 공세','지뢰 지대','침수 구역','가속 구간','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
-function reset(){bag=[];drops=[];aim=-1;liveRun=false;stageHurt=false;stageGift='';aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
-function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];stageHurt=false;aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;stopT=0;stopQ.length=0;sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
+function reset(){bag=[];drops=[];aim=-1;strikes=[];combo=comboT=bestCombo=multiN=multiT=score=0;stars=[];liveRun=false;stageHurt=false;stageGift='';aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
+function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];stageHurt=false;strikes=[];combo=comboT=multiN=multiT=0;ruleCount=spawnCount=0;ventT=0;mines=[];if(map.mine)for(let l=0;l<2;l++)for(let i=0;i<MINE.n;i++)mines.push({lane:l,y:MINE.a+(i+.5)*(MINE.b-MINE.a)/MINE.n,arm:0});aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;stopT=0;stopQ.length=0;sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
 function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*OP_HP[op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
  if(!drill){if(type==='boss'){if(op===TOTAL_OPS){final=true;hp=Math.round(hp*1.5);}}else if(Math.random()<RARE_P){rare=true;hp=Math.round(hp*1.6);}}   // rare machines drop an item; the last boss changes lanes twice
- const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
-function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;e.hp-=damage;e.flash=.12;
+ const e={id:Math.random(),lane,type,x:LANES[lane],y:LANE_TOP-Math.random()*15,hp,maxHp:hp,speed:m.speed,flash:0,wiggle:Math.random()*6.28,stun:0};spawnCount++;if(rare)e.rare=true;if(final){e.final=true;e.hops=2;}enemies.push(e);ev3({t:'spawn',e});}
+function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;if(map.amp&&src!=='fall'&&map.zone(e.lane,e.y)){damage*=map.amp;ruleMark(e);}e.hp-=damage;e.flash=.12;
+ if(map.fallLow&&e.hp>0&&canFall(e)&&e.hp<e.maxHp*map.fallLow){knockOff(e);return;}
  if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.from=e.lane;e.crossT=CROSS_T;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);sfx('kill_brute',0,.78);ev3({t:'spawn',e});}
- ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sfxKill(e);if(e.type==='boss'){hitStop(.11,.5);buzz([40,420,160]);}if(e.rare||(e.type==='boss'&&!e.final))dropItem(e);}else sfxHit(src);}
+ ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;if(!drill)onKill(e);burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sfxKill(e);if(e.type==='boss'){hitStop(.11,.5);buzz([40,420,160]);}if(e.rare||(e.type==='boss'&&!e.final))dropItem(e);}else sfxHit(src);}
 function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
 /* ---------- sound (sfx.js): every sound is built once from layers while the title screen shows; playing only starts buffers ---------- */
 const SFX={raw:{},amb:null,ready:false,last:{},bus:null,cache:new Map(),killAt:-9,chain:0,ambOn:false};
@@ -655,29 +723,42 @@ let stopT=0,leakAt=-9;const stopQ=[];
 function hitStop(sec,delay=0){if(drill)return;if(delay>0)stopQ.push([performance.now()+delay*1000,sec]);else stopT=Math.max(stopT,sec);}
 function stopTick(dt){const now=performance.now();for(let i=stopQ.length-1;i>=0;i--)if(now>=stopQ[i][0]){stopT=Math.max(stopT,stopQ[i][1]);stopQ.splice(i,1);}if(stopT>0){stopT-=dt;return true;}return false;}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
+// a machine knocked off a bridge: it falls and is destroyed whatever its hull (the renderer drops it over the edge)
+function canFall(e){return e.type!=='boss'&&(map.fallHeavy||e.type!=='brute')&&map.fall(e.lane,e.y);}
+function knockOff(e,src){e.fell=true;ruleMark(e);ev3({t:'fall',e});damageEnemy(e,e.hp,drone.x,drone.y,src||'fall');}
+function boosted(e){ruleMark(e);return MAPK.boost.k;}   // boost rails
+// a mine goes off: machines of that lane nearby are hit, and armed mines within reach go off too (a chain)
+function mineBlast(m){m.arm=MINE.rearm;ev3({t:'mine',lane:m.lane,y:m.y});sfx('kill_grunt',0,.85);for(const q of enemies)if(q.hp>0&&q.lane===m.lane&&Math.abs(q.y-m.y)<=MINE.r){ruleMark(q);damageEnemy(q,MINE.dmg,LANES[m.lane],m.y,'mine');}for(const o of mines)if(o!==m&&o.lane===m.lane&&o.arm<=0&&Math.abs(o.y-m.y)<=MINE.r*1.35)mineBlast(o);}
+function slowed(e){ruleMark(e);return map.slowK||.6;}   // a detour
 // A shut gate: machines that had not passed it at the start of the frame queue up in front of it, each a body length behind the one ahead.
 function gateHold(){for(let l=0;l<2;l++){if(!gateShut(l))continue;const q=enemies.filter(e=>e.hp>0&&e.lane===l&&e.py<=GATE.y-TYPES[e.type].r+.01).sort((a,b)=>b.y-a.y);let lim=GATE.y,prev=null;
- for(const e of q){lim=prev?Math.min(lim,prev.y-(TYPES[prev.type].r+TYPES[e.type].r+3)):GATE.y-TYPES[e.type].r;if(e.y>lim)e.y=Math.max(lim,Math.min(e.py,e.y));prev=e;}}}
-function pickTarget(lane,y,range,skip){let chosen=null;let best=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip||map.cover(e.lane,e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(priority>best){chosen=e;best=priority;}}return chosen;}
+ for(const e of q){lim=prev?Math.min(lim,prev.y-(TYPES[prev.type].r+TYPES[e.type].r+3)):GATE.y-TYPES[e.type].r;if(e.y>lim){e.y=Math.max(lim,Math.min(e.py,e.y));ruleMark(e);}prev=e;}}}
+// The drone's target: its own lane, and where the lanes run side by side (map.shoot) also the other lane's machines in that stretch.
+function pickDrone(){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(map.shoot){const o=pickTarget(1-drone.lane,drone.y,effects.droneRange,null,true);if(o&&(!e||o.y+(o.type==='boss'?6:0)>e.y+(e.type==='boss'?6:0))){e=o;ruleMark(o);}}return e;}
+function pickTarget(lane,y,range,skip,nearOnly){let chosen=null,best=-Infinity,hid=null,hidP=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;if(nearOnly&&!map.near(e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(map.cover(e.lane,e.y)){if(priority>hidP){hid=e;hidP=priority;}continue;}if(priority>best){chosen=e;best=priority;}}if(hid&&hidP>best)ruleMark(hid);return chosen;}   // a hidden machine counts for the tunnel only when it would have been the target
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
  if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
-function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y));if(!close.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.type!=='boss'&&map.fall(e.lane,e.y)){fell++;e.fell=true;ev3({t:'fall',e});damageEnemy(e,e.hp,drone.x,drone.y,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
+function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y))&&(map.coverPulse||!map.cover(e.lane,e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}ev3({t:'shock',n:wet.length});if(wet.length)showToast('감전 · '+wet.length+'기',1000);}   // the overload runs through the water
+ burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;if(combo>=5)ev3({t:'comboEnd',n:combo,broken:true});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);addLog('제'+wave+'파 공격 감지.');}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sfx('surge_warn');}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sfx('boss_warn');}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
   for(const e of enemies){if(e.hp<=0)continue;const y0=e.py=e.y;if(e.crossT>0)e.crossT-=dt;if(e.pullT>0){e.pullT-=dt;e.y+=(e.pull-e.y)*Math.min(1,dt*9);if(e.pullT<=0)e.stun=Math.max(e.stun,.35);}   // dragged by the magnet
-   else e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?.6:1);
-   if(map.cross&&e.type!=='boss'&&y0<map.cross&&e.y>=map.cross&&e.lane===drone.lane){e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ev3({t:'cross',e});}   // the crossover: away from the drone
-   e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y){e.hp=-999;enemyLeak(e);}}
+   else e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?slowed(e):1)*(map.boost(e.lane,e.y)?boosted(e):1);
+   if(map.cross&&e.type!=='boss'&&(map.crossHeavy||e.type!=='brute')&&!e.crossed&&inZ(e.y,map.cross)&&(map.crossToward?e.lane!==drone.lane:e.lane===drone.lane)&&(map.crossWay<0||e.lane===map.crossWay)){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: away from the drone
+   if(map.mine)for(const m of mines)if(m.lane===e.lane&&m.arm<=0&&y0<m.y&&e.y>=m.y)mineBlast(m);   // stepped on a mine
+   e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y&&e.hp>0){e.hp=-999;enemyLeak(e);}}
+  if(map.mine)for(const m of mines)m.arm=Math.max(0,m.arm-dt);
+  if(map.vent&&ventPhase()===2){ventT+=dt;while(ventT>=.25-1e-6){ventT-=.25;for(const e of enemies)if(e.hp>0&&inZ(e.y,[VENT.a,VENT.b])){ruleMark(e);damageEnemy(e,VENT.dps*.25,LANES[e.lane],e.y,'vent');}}}else ventT=0;   // the vents burn in quarter-second ticks
   if(map.gate)gateHold();
   for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}shotSound('turret');}}}
-  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1)/(aid.stim>0?STIM.rate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');shotSound('drone');
+  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickDrone();if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1)/(aid.stim>0?STIM.rate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');shotSound('drone');if(map.flood&&inZ(e.y,FLOOD)&&MAPK.flood.s>0)for(const q of enemies)if(q!==e&&q.hp>0&&q.lane===e.lane&&inZ(q.y,FLOOD)&&Math.abs(q.y-e.y)<=MAPK.flood.r){ruleMark(q);ruleMark(e);damageEnemy(q,BAL.droneDmg*MAPK.flood.s,e.x,e.y,'shock');}
    if(aid.pierce>0){let last=e,seen=[e];for(let k=0;k<PIERCE.more;k++){let nx=null,best=-Infinity;for(const q of enemies){if(q.lane!==e.lane||q.hp<=0||seen.includes(q)||Math.abs(q.y-drone.y)>effects.droneRange||map.cover(q.lane,q.y))continue;if(q.y>best){best=q.y;nx=q;}}if(!nx)break;seen.push(nx);damageEnemy(nx,BAL.droneDmg*PIERCE.dmg,last.x,last.y,'pierce');last=nx;}}   // the round carries on through the machines behind
    if(aid.splash>0){ev3({t:'splash',lane:e.lane,y:e.y});for(const q of enemies)if(q!==e&&q.hp>0&&q.lane===e.lane&&Math.abs(q.y-e.y)<=SPLASH.r&&!map.cover(q.lane,q.y))damageEnemy(q,BAL.droneDmg*SPLASH.dmg,e.x,e.y,'splash');}}}
   if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y,'echo');shotSound('echo');}}}
-  aidStep(dt);fieldStep(dt);dropStep(dt/speed);
+  aidStep(dt);fieldStep(dt);dropStep(dt/speed);strikeStep(dt);feelStep(dt);
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
   if(core<=0){if(drill){drillCoreDown();return;}finish(false);return;}
@@ -697,7 +778,9 @@ function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?
  case 'rubble':return !b?`기체가 떠난 전선의 적 ${f1(a.rubbleSlow)}초 감속 (이동 속도 ${pc(a.rubbleFactor)})`:`감속 ${f1(b.rubbleSlow)} → ${f1(a.rubbleSlow)}초 · 이동 속도 ${pc(b.rubbleFactor)} → ${pc(a.rubbleFactor)}`;
  }
 }
-function upgradeScreen(){phase='upgrade';sfxAmb(false);stageReports.push({op,facilities:[...facilities],core});
+function chapterStars(){const n=!stageHurt?3:facilities[0]>0&&facilities[1]>0?2:1;stars.push(n);score+=n*250;return n;}
+const starHTML=n=>'<span class="stars">'+'★★★'.slice(0,n)+'<i>'+'★★★'.slice(n)+'</i></span>';
+function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();stageReports.push({op,facilities:[...facilities],core,stars:st});
  const names=['발전소','정비소'],statuses=facilities.map((h,i)=>names[i]+' '+(h>0?'유지':'붕괴')+' ('+Math.round(h)+' / 100)');
  // Keep the two facility-dependent offers. Rotate one alternative so all four existing upgrades are reachable without destroying a facility.
  // A card stops at the cap (rankCap); a full card's place goes to the next open one.
@@ -706,16 +789,19 @@ function upgradeScreen(){phase='upgrade';sfxAmb(false);stageReports.push({op,fac
  offeredUpgrades=[...facilityOffers,...alternatives.slice(k),...alternatives.slice(0,k)].slice(0,3);
  const tags={stable:'발전소 생존',emergency:'발전소 붕괴',precision:'정비소 생존',rubble:'정비소 붕괴'};
  const choices=offeredUpgrades.map((id,i)=>({id,label:CARD_NAMES[id],rank:upgradeRanks[id],tag:i<facilityOffers.length?tags[id]:'추가 선택',desc:cardDescription(id)}));
- const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / ${String(TOTAL_OPS-1).padStart(2,'0')}</div><h2>강화 선택</h2><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}${stageGift?'<br>돌파 없이 방어 · '+(stageGift==='full'?'보관 칸이 가득 차 보상을 받지 못했습니다':'아이템 획득: '+ITEMS[stageGift].name):''}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
+ const html=`<div class="tiny">WAVE ${op}-3 완료 · 강화 ${upgradeHistory.length+1} / ${String(TOTAL_OPS-1).padStart(2,'0')}</div><h2>${starHTML(st)} 강화 선택</h2><div class="scoreline">점수 ${score.toLocaleString()} · 최고 콤보 ${bestCombo}</div><div class="report"><strong>시설 피해 보고</strong><br>${statuses.map(escapeHTML).join(' · ')}<br>송신소 ${Math.round(core)} / 100 · 다음 작전 시작 시 +${BAL.opHeal}${stageGift?'<br>돌파 없이 방어 · '+(stageGift==='full'?'보관 칸이 가득 차 보상을 받지 못했습니다':'아이템 획득: '+ITEMS[stageGift].name):''}</div><div class="choices">${choices.map(ch=>`<button type="button" class="choice" data-choice="${ch.id}"><div class="choice-top"><h3>${ch.label} <small>Lv.${ch.rank+1}</small></h3><span>${ch.tag}</span></div><p>${ch.desc}</p></button>`).join('')}</div>`;
  renderOverlay(html,'upgrade');for(const btn of document.querySelectorAll('[data-choice]'))btn.addEventListener('click',()=>choose(btn.dataset.choice));}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id]||upgradeRanks[id]>=rankCap())return;const n=++upgradeRanks[id];
  Object.assign(effects,BAL.card[id](n));if(id==='rubble')effects.rubble=1;
  upgradeHistory.push({op,id,rank:n});offeredUpgrades=[];sfx('upgrade');addLog('강화 기술 적용: '+CARD_NAMES[id]+' Lv.'+n);newStage(op+1);}
 function finish(victory){phase='finish';ev3({t:'finish',victory});const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sfxAmb(false);sfx(victory?'win':'lose');
+ if(victory){chapterStars();score+=Math.round(core)*20;}const record=!drill&&score>best;if(record){best=score;try{localStorage.setItem('relayBest',String(best));}catch(e){}}const starSum=stars.reduce((a,v)=>a+v,0);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
  const progress='WAVE '+op+'-'+wave+' · '+(victory?'전체 방어 성공':'도전 종료');
- renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${switches}</div><div class="k">기체 이동</div></div><div class="result-stat"><div class="n">${Math.round(core)} / 100</div><div class="k">송신소 내구도</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());updateControls();updateUI();}
+ renderOverlay(`<div class="tiny">${victory?'SIGNAL RESTORED / MISSION CLEAR':'SIGNAL LOST / MISSION FAILED'} · 판 ${BUILD}</div><h2>${victory?'중계선이 살아남았습니다.':'기지를 지키지 못했습니다.'}</h2><div class="scorebig"><b id="scoreNum">0</b><span>점</span>${record?'<em>최고 기록</em>':'<small>최고 '+best.toLocaleString()+'</small>'}</div><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${bestCombo}</div><div class="k">최고 콤보</div></div><div class="result-stat"><div class="n">★ ${starSum} / ${stars.length*3||3}</div><div class="k">별</div></div></div><div class="report"><strong>${progress}</strong><br>강화 ${upgradeHistory.length}회: ${upgradeText}</div><button type="button" class="primary" id="retryBtn"><span>다른 전략으로 다시 시작</span><span>↗</span></button>`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());countUp($('scoreNum'),score);updateControls();updateUI();}
+// the final score runs up from zero (DOM only)
+function countUp(el,to){if(!el)return;const t0=performance.now(),dur=1300;const tick=()=>{const k=Math.min(1,(performance.now()-t0)/dur),v=Math.round(to*(1-Math.pow(1-k,3)));el.textContent=v.toLocaleString();if(k<1&&el.isConnected)setTimeout(tick,30);};tick();}
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=50*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
  for(const a of alerts){a.life-=dt;a.r+=dt*650;}alerts=alerts.filter(a=>a.life>0);}
@@ -846,7 +932,7 @@ function text(t,x,y,size=12,color='#fff',align='left',bold=false){ctx.fillStyle=
 function circle(x,y,r,fill,stroke,width=1){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke();}}
 function drawBackdrop(now){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#16282e');g.addColorStop(.5,'#182b31');g.addColorStop(1,'#0f2128');rect(0,0,W,H,g);
  for(let x=20;x<W;x+=24)line(x,65,x,H-10,'rgba(118,155,148,.065)');for(let y=70;y<H;y+=24)line(0,y,W,y,'rgba(118,155,148,.06)');
- rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text('OP '+String(op).padStart(2,'0')+' / '+String(TOTAL_OPS).padStart(2,'0'),465,22,11,'#e3ece4','right',true);text('WAVE '+(noWave()?'—':wave)+' / 03',465,41,10,'#a2c9c3','right',true);
+ rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text('OP '+String(op).padStart(2,'0')+' / '+String(TOTAL_OPS).padStart(2,'0'),465,22,11,'#e3ece4','right',true);text('WAVE '+(noWave()?'—':wave)+' / 03',465,41,10,'#a2c9c3','right',true);text(score.toLocaleString()+(combo>=3?'  ×'+combo:''),15,30,13,'#ffe1ae','left',true);
  for(let i=0;i<2;i++){const x=LANES[i];rounded(x-53,81,106,443+DY,11,'#273b41','#4e696e',1.3);rounded(x-44,90,88,423+DY,8,'#20343a','#304a4e',1);ctx.save();ctx.setLineDash([7,18]);line(x,121,x,484+DY,'rgba(174,195,184,.15)',2);ctx.restore();
  for(let n=0;n<5;n++){const cy=149+n*(282+DY)/4;rounded(x-63,cy,11,24,2,'#30464b','#3e595a');rounded(x+52,cy,11,24,2,'#30464b','#3e595a');}
  text(i===0?'A / POWER':'B / WORKSHOP',x,99,10,i===0?'#e8ca9b':'#a5d6ce','center',true);
@@ -887,10 +973,16 @@ function drawIncoming(){if(phase!=='battle')return;const soon=[[],[]];for(let i=
 function mapMarks2D(pos,at,hw,span,vertical,over){
  const band=(a,b,c0,c1,i)=>{const p0=pos(a),p1=pos(b),q=at(i);if(vertical)rounded(q-hw-6,Math.min(p0,p1),2*hw+12,Math.abs(p1-p0),5,c0,c1,1.4);else rounded(Math.min(p0,p1),q-hw-6,Math.abs(p1-p0),2*hw+12,5,c0,c1,1.4);};
  if(over){if(map.id==='tunnel')for(let i=0;i<2;i++)band(TUNNEL[0],TUNNEL[1],'#2c2a27','#6a6257',i);return;}
+ const zoneBand=(i,z,c)=>{const p0=pos(z[0]),p1=pos(z[1]),q=at(i);if(vertical)rect(q-hw,Math.min(p0,p1),2*hw,Math.abs(p1-p0),c);else rect(Math.min(p0,p1),q-hw,Math.abs(p1-p0),2*hw,c);};
+ if(map.id==='pylon')for(let i=0;i<2;i++)zoneBand(i,PYLON,'rgba(127,216,255,.16)');
+ if(map.flood)for(let i=0;i<2;i++)zoneBand(i,FLOOD,'rgba(60,150,200,.32)');
+ if(map.vent){const ph=ventPhase();for(let i=0;i<2;i++)zoneBand(i,[VENT.a,VENT.b],ph===2?'rgba(255,120,40,.55)':ph===1?'rgba(255,90,40,.28)':'rgba(120,80,60,.22)');}
+ if(map.id==='boost')for(let i=0;i<2;i++)for(const z of MAPK.boost.z[i])zoneBand(i,z,'rgba(255,138,58,.22)');
+ if(map.mine)for(const m of mines){const p=pos(m.y),q=at(m.lane);if(vertical)circle(q,p,6,m.arm>0?'#2a2a2a':'#e0503a','#111',1);else circle(p,q,5,m.arm>0?'#2a2a2a':'#e0503a','#111',1);}
  if(map.gate)for(let i=0;i<2;i++){const p=pos(GATE.y),q=at(i),c=gateShut(i)?'#e0503a':'#4fd18a';if(vertical)rect(q-hw,p-2,2*hw,4,c);else rect(p-2,q-hw,4,2*hw,c);}
  if(map.id==='bridge'){const p0=pos(BRIDGE[0]),p1=pos(BRIDGE[1]);if(vertical)rect(span[0],p0,span[1]-span[0],p1-p0,'rgba(3,5,7,.82)');else rect(p0,span[0],p1-p0,span[1]-span[0],'rgba(3,5,7,.82)');
   for(let i=0;i<2;i++){const q=at(i);if(vertical)rect(q-hw,p0,2*hw,p1-p0,'#24383e');else rect(p0,q-hw,p1-p0,2*hw,'#30464c');for(const sd of [-1,1]){if(vertical)line(q+sd*(hw+2),p0,q+sd*(hw+2),p1,'#9fb3b4',2);else line(p0,q+sd*(hw+2),p1,q+sd*(hw+2),'#9fb3b4',2);}}}
- if(map.cross){const p=pos(CROSS_Y),a=at(0),b=at(1),lo=Math.min(a,b)+hw,hi=Math.max(a,b)-hw,to=at(1-drone.lane)>at(drone.lane)?1:-1,mid=(lo+hi)/2;
+ if(map.cross){const p=pos((CROSS[0]+CROSS[1])/2),a=at(0),b=at(1),lo=Math.min(a,b)+hw,hi=Math.max(a,b)-hw,to=at(drone.lane)>at(1-drone.lane)?1:-1,mid=(lo+hi)/2;
   if(vertical){rect(lo,p-12,hi-lo,24,'#33474c');ctx.beginPath();ctx.moveTo(mid+to*12,p);ctx.lineTo(mid-to*6,p-8);ctx.lineTo(mid-to*6,p+8);ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}
   else{rect(p-10,lo,20,hi-lo,'#33474c');ctx.beginPath();ctx.moveTo(p,mid+to*9);ctx.lineTo(p-7,mid-to*5);ctx.lineTo(p+7,mid-to*5);ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}}
 }
@@ -929,7 +1021,7 @@ function drawCompact(now){
  line(xEnd+15,ys[1],hubX-7,hubY,'#578b84',1.2);
  circle(hubX-4,hubY,7,core>0?'#477e72':'#7e4641','#a0cdb6',1.2);
  // Header is compact and stays out of the incoming enemies.
- text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave),8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
+ text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave)+'   '+score.toLocaleString()+(combo>=3?'   ×'+combo+' 콤보':''),8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
  // Preview the next five seconds of arrivals in each lane without using tiny top-of-canvas icons.
  if(phase==='battle'){
   const warn=surges.some(s=>s.t-stageTime>=-.3&&s.t-stageTime<=3.5);
@@ -1021,7 +1113,7 @@ function dropUnder(ev){let best=null,bd=DROP_REACH;for(const d of drops){let x,y
 function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(holdState&&holdState.need==='tap'){if(performance.now()-holdState.t0>450)releaseHold();return;}
  if(holdState&&holdState.need==='pick'){const d=dropUnder(ev);if(d&&performance.now()-holdState.t0>350&&takeDrop(d))releaseHold();return;}
  if(phase!=='battle')return;
- if(!holdState&&!paused&&!drill){if(aim>=0){const q=tapSpot(ev);useMagnet(q.lane,q.y);return;}const d=dropUnder(ev);if(d){takeDrop(d);return;}}   // a magnet waiting for its place, then a drop under the finger, come before moving
+ if(!holdState&&!paused&&!drill){if(aim>=0){const q=tapSpot(ev);useAim(q.lane,q.y);return;}const d=dropUnder(ev);if(d){takeDrop(d);return;}}   // a magnet waiting for its place, then a drop under the finger, come before moving
  if(G3.active&&G3.renderer.laneAt){switchLane(G3.renderer.laneAt(ev.clientX,ev.clientY));return;}const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
 canvas.addEventListener('pointerdown',fieldTap);
 /* Settings: opened with the gear, the P or Esc key, or the browser's back button. The game holds while it is open. */
@@ -1045,8 +1137,8 @@ window.addEventListener('keydown',ev=>{const k0=ev.key.toLowerCase();if(k0==='es
 window.addEventListener('blur',()=>{if(phase==='battle'&&!paused){paused=true;updateControls();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='battle'&&!paused){paused=true;updateControls();}});
 // 2.5D view (r3d/): loaded only when WebGL exists. If a script or the renderer fails, the 2D canvas keeps working. ?2d=1 forces 2D.
-Object.assign(G3,{FIELD,ITEMS,ICON,DROP_LIFE,MAG,GATE,BRIDGE,CROSS_Y,CROSS_T,TUNNEL,TOTAL_OPS,gateShut,W,H,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,LANE_LEN,BAL,TYPES,COLORS,focusBonus,pierceOn,echoOn,noWave,compact:wantsCompactCanvas});
-Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},bag:{get:()=>bag},drops:{get:()=>drops},aim:{get:()=>aim},aid:{get:()=>aid},mapId:{get:()=>map.id},mapShape:{get:()=>map.shape},mapNear:{get:()=>map.near},mapSlow:{get:()=>map.slow},mapCover:{get:()=>map.cover},mapFall:{get:()=>map.fall},mapGate:{get:()=>map.gate},mapCross:{get:()=>map.cross},fieldTurrets:{get:()=>fieldTurrets},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
+Object.assign(G3,{FIELD,ITEMS,ICON,DROP_LIFE,MAG,ORB,COMBO,MAPK,VENT,MINE,FLOOD,ventPhase,GATE,BRIDGE,CROSS,CROSS_T,TUNNEL,PYLON,TOTAL_OPS,gateShut,W,H,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,LANE_LEN,BAL,TYPES,COLORS,focusBonus,pierceOn,echoOn,noWave,compact:wantsCompactCanvas});
+Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},bag:{get:()=>bag},drops:{get:()=>drops},aim:{get:()=>aim},aid:{get:()=>aid},mapId:{get:()=>map.id},mapShape:{get:()=>map.shape},mapNear:{get:()=>map.near},mapSlow:{get:()=>map.slow},mapCover:{get:()=>map.cover},mapFall:{get:()=>map.fall},mapGate:{get:()=>map.gate},mapCross:{get:()=>map.cross},mines:{get:()=>mines},mapFlags:{get:()=>map},strikes:{get:()=>strikes},combo:{get:()=>combo},comboT:{get:()=>comboT},score:{get:()=>score},fieldTurrets:{get:()=>fieldTurrets},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
 window.__relay=G3;
 (function load3d(){if(/[?&]2d\b/.test(location.search)||!window.WebGLRenderingContext)return;
  const files=['three.min.js','core.js','env.js','maps.js','base.js','units.js','fx.js','hud.js'];let i=0;

@@ -23,7 +23,7 @@ const BOT=(tick,react,pulseAt,n,seed)=>`(function(){mute=true;const swap=${JSON.
    if(fr%${tick}===0){const c=[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190&&!map.cover(e.lane,e.y)).reduce((a,e)=>a+TYPES[e.type].value,0));
     if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);
     const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>=${pulseAt})pulse();
-    if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else{bag.shift();applyItem(id);}}}
+    if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];if(id==='magnet'){aim=0;useMagnet(drone.lane,DRONE_Y-30);}else if(id==='orbital'){const l=c[1]>c[0]?1:0;let lead=null;for(const e of enemies)if(e.hp>0&&e.lane===l&&(!lead||e.y>lead.y))lead=e;aim=0;useAim(l,lead?lead.y-20:DRONE_Y);}else{bag.shift();applyItem(id);}}}
   }
   if(phase==='finish'){const won=core>0&&op===TOTAL_OPS;close(!won);if(won)wins++;}}
  const maps=MAP_OF.map(i=>MAPS[i].id);Math.random=r0;ev3=e0;for(let k=0;k<MAP_OF.length;k++)MAP_OF[k]=keep[k];
