@@ -24,7 +24,7 @@ const HELP=`window.__ui={
 };0`;
 // name -> code run inside the game's scope after __ui.base(); `post` runs after a real-time wait (media promises settle)
 const STATES={
- title_film:{code:`filmDone=false;learned.drill=false;intro();`,post:`$('titleVid').pause();$('filmPlay').hidden=true;$('titleCap').textContent='두 개의 전선';`},
+ title_film:{code:`filmDone=false;learned.drill=false;intro();`,post:`$('titleVid').pause();$('filmPlay').hidden=true;$('titleCap').textContent='전선은 둘';`},
  title_film_play:{code:`filmDone=false;learned.drill=false;intro();`,post:`$('titleVid').pause();$('filmPlay').hidden=false;$('titleCap').textContent='';`},
  title_menu:{code:`filmDone=true;learned.drill=false;intro();`,post:`$('titleVid').pause();$('filmPlay').hidden=true;`},
  title_menu_learned:{code:`filmDone=true;learned.drill=true;prefs.bgm=true;intro();`,post:`$('titleVid').pause();$('filmPlay').hidden=true;`},

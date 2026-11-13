@@ -1,5 +1,6 @@
 // 판 2026.11.13-3 시험: 화면을 떠났다 돌아올 때(설정 창), 배경음 재시도, 강화·결과 화면의 전투 단추 숨김, 8장(배율 1.85와 새 일정),
 // 다시 도전(한 판에 한 번), 패배 기록, 유인 섬멸, 다음 작전 정찰, 맵별 특별 목표(열한 장 각각 달성과 하나 모자랄 때), 화면 맞춤(스크롤 없음).
+// 판 2026.11.13-4: 뒤로 가기(한 번 설정 열기, 두 번 닫기, 뒤로 가는 동안 기록을 쌓지 않음, 터치로 다시 두 칸), 바꾼 화면 문구.
 // node tools/goal_test.js <게임 폴더 절대 경로> [출력 폴더(화면 사진, 생략 가능)]
 const { chromium } = require('playwright');const {hooked,inGame,checks}=require('./lib.js');const path=require('path'),fs=require('fs');
 const dir=path.resolve(process.argv[2]),out=process.argv[3]?path.resolve(process.argv[3]):null;if(out)fs.mkdirSync(out,{recursive:true});
@@ -53,7 +54,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
    for(let i=0;i<3;i++)put(drone.lane,'runner',DRONE_Y-40+i*20,{hp:1,crossed:${crossed?1:0},from:1-drone.lane});const s0=score;drone.pulseCooldown=0;pulse();for(let i=0;i<20;i++)update(1/30);ev3=e0;
    const m=evs.find(o=>o.t==='multi');return JSON.stringify({name:m&&m.name,n:m&&m.n,gain:score-s0});})()`));
   const l1=await lure(true),l0=await lure(false);
-  ck('lure kill: three crossed machines in one overload are named and paid 50 each on top',l1.name==='유인 섬멸'&&l0.name==='트리플 격파'&&l1.gain-l0.gain===150,{l1,l0});
+  ck('lure kill: three crossed machines in one overload are named and paid 50 each on top',l1.name==='유인 섬멸'&&l0.name==='동시 격파'&&l1.gain-l0.gain===150,{l1,l0});
   // special goals: every chapter from 2 on, met with exactly n, missed with n-1
   const G=JSON.parse(await T("JSON.stringify({count:goalCount(),one:!!goalOf(1),maps:Array.from({length:TOTAL_OPS},(_,i)=>goalOf(i+1)?MAPS[MAP_OF[i+1]].id:'-')})"));
   ck('eleven special goals, none in chapter 1',G.count===11&&!G.one&&G.maps.filter(x=>x!=='-').length===11,G);
@@ -107,6 +108,46 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   const win=await T(`(()=>{${START(12)}stars=[1,1,1,1,1,1,1,1,1,1,1];enemies=[];nextSpawn=pattern.length;update(1/30);return JSON.stringify({phase,again:!!$('againBtn'),retry:$('retryBtn').textContent,rec:/돌파 · 발전소 쪽/.test(document.querySelector('#overlayContent .report').textContent)});})()`);
   ck('victory: no retry button and no loss record',JSON.parse(win).phase==='finish'&&!JSON.parse(win).again&&JSON.parse(win).retry==='다시 출격'&&!JSON.parse(win).rec,win);
   ck('no page errors (2D)',!errs.length,errs.slice(0,3).join(' | '));await p.close();}
+ // ---------- back button (real page, real touches): the first back opens the settings, the second closes them, going back adds nothing ----------
+ // Chrome skips history entries a page adds without a user activation (docs/history_manipulation_intervention.md in Chromium), so the game may add
+ // entries only during a touch or a key press. The test counts every pushState and when it happens. (page.goBack() is history.back(), which Chrome does
+ // not subject to the skipping, so the skipping itself cannot be reproduced here; what is checked is that the game never needs it.)
+ for(const mode of ['','?2d=1']){const c=await b.newContext({viewport:{width:844,height:390},hasTouch:true});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+  await p.addInitScript(()=>{window.__push=[];window.__inPop=false;const ps=history.pushState.bind(history);history.pushState=function(st,t,u){window.__push.push({inPop:window.__inPop,relay:st&&st.relay});return ps(st,t,u);};
+   window.addEventListener('popstate',()=>{window.__inPop=true;setTimeout(()=>{window.__inPop=false;},0);},{capture:true});});
+  await p.goto('file://'+f+mode);if(!mode){try{await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay&&window.__relay.active,null,{timeout:8000});}catch(e){errs.push('2.5D did not start');}}
+  await p.waitForTimeout(300);const T=inGame(p);const url0=p.url();
+  await T("mute=true;learned.drill=learned.item=learned.pulse=learned.combo=true;for(const m of MAPS)learned.maps[m.id]=true;0");
+  await p.click('#skipFilm');await p.click('#skipBtn');await p.waitForTimeout(400);await T("holdState=null;hideCoach();0");
+  const st=()=>p.evaluate(()=>({open:!document.getElementById('settings').hidden,depth:history.state&&history.state.relay||0,pushes:window.__push.length,inPop:window.__push.filter(x=>x.inPop).length,phase:window.__relay.phase,t:+window.__relay.stageTime.toFixed(2)}));
+  const box=await p.locator('#field').boundingBox();const tap=()=>p.mouse.click(box.x+box.width*.4,box.y+box.height*.3);
+  await tap();await p.waitForTimeout(200);const s0=await st();
+  await p.goBack();await p.waitForTimeout(300);const s1=await st();
+  await p.goBack();await p.waitForTimeout(300);const s2=await st();await p.waitForTimeout(300);const s2b=await st();
+  await tap();await p.waitForTimeout(200);const s3=await st();
+  await p.goBack();await p.waitForTimeout(300);const s4=await st();
+  await p.click('#setClose');await p.waitForTimeout(300);const s5=await st();
+  await p.goBack();await p.waitForTimeout(300);const s6=await st();await p.goBack();await p.waitForTimeout(300);const s7=await st();
+  await tap();await p.waitForTimeout(200);const s8b=await st();   // playing again (tops up to two), then the player leaves the page
+  await p.evaluate(()=>window.dispatchEvent(new Event('blur')));await p.waitForTimeout(200);const s8=await st();
+  await p.goBack();await p.waitForTimeout(300);const s9=await st();
+  const tag=(mode?'2D':'2.5D')+' back button';
+  ck(tag+': a touch lays down two entries',s0.depth===2&&s0.pushes>=2&&!s0.open,s0);
+  ck(tag+': first back opens the settings',s1.open&&s1.depth===1,s1);
+  ck(tag+': second back closes them and the battle goes on',!s2.open&&s2.depth===0&&s2b.t>s2.t&&s2.phase==='battle'&&p.url()===url0,{s2,s2b});
+  ck(tag+': nothing is added while going back',s9.inPop===0&&s2.pushes===s0.pushes,{pushes:[s0.pushes,s1.pushes,s2.pushes],inPop:s9.inPop});
+  ck(tag+': the next touch tops up to two, back opens again, "닫고 계속" closes and tops up',s3.depth===2&&s4.open&&s4.depth===1&&!s5.open&&s5.depth===2&&s6.open&&!s7.open,{s3,s4,s5,s6,s7});
+  ck(tag+': settings opened by leaving the page close with one back',s8b.depth===2&&s8.open&&!s9.open&&s9.depth===1&&s9.phase==='battle',{s8b,s8,s9});
+  ck(tag+': no page errors',!errs.length,errs.slice(0,2));await c.close();}
+ // ---------- wording (2026-11-13 review): the new texts are on screen and the old ones are gone ----------
+ {const p=await b.newPage({viewport:{width:844,height:390}});await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(300);const T=inGame(p);
+  const w=JSON.parse(await T(`JSON.stringify({title:document.title,tag:document.querySelector('.title-tag').textContent,caps:FILM_CAPS.map(c=>c[2]),cards:Object.values(CARD_NAMES),multi:[3,4,5,8].map(MULTI_NAME),
+   rules:MAPS.map(m=>m.rule).join(' '),repair:ITEMS.repair.desc,build:$('titleBuild').textContent})`));
+  ck('wording: title, tagline, film captions, card names, multi-kill names',w.title==='중계선: 최후의 방어'&&w.tag.startsWith('전선은 둘, 지원 기체는 하나.')&&w.caps.join('/')==='전선은 둘/지원 기체는 하나/중앙 송신소를 지켜라'&&w.cards.join('/')==='기동 사격/비상 축전/협동 조준/잔해 살포'&&w.multi.join('/')==='동시 격파/동시 격파/대량 격파/섬멸'&&/^시험판 · /.test(w.build),w);
+  ck('wording: map rules and the repair text',w.rules.includes('협곡에서는 두 전선이 붙어 있어')&&w.rules.includes('물에 잠긴 적에게는')&&w.rules.includes('피해를 입습니다')&&w.rules.includes('바로 파괴됩니다')&&w.rules.includes('번집니다. 터진 지뢰는')&&!/(고|며|면서|어서|아서),/.test(w.rules)&&w.repair.startsWith('두 시설 가운데 더 부서진 쪽의'),w.rules.slice(0,120));
+  const up=await T(`(()=>{mute=true;$('title').hidden=true;reset();newStage(1);liveRun=true;phase='battle';pattern=[];nextSpawn=0;enemies=[];facilities=[0,100];update(1/30);return document.querySelector('#overlayContent').textContent;})()`);
+  ck('wording: facility words on the upgrade screen (가동/정지), no 유지/붕괴/생존',up.includes('발전소 정지')&&up.includes('정비소 가동')&&!/유지|붕괴|생존/.test(up),up.slice(0,160));
+  await p.close();}
  // ---------- screens: no scroll, every button inside the screen, text size (2.5D and 2D) ----------
  const sizes=[[568,320],[667,375],[844,390],[390,844],[360,740]];
  for(const mode of ['','?2d=1'])for(const [w,h] of sizes){const c=await b.newContext({viewport:{width:w,height:h},hasTouch:true});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));

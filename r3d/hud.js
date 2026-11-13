@@ -355,7 +355,7 @@ function feel(dt,t,G){
  c.globalAlpha=1;
  if(bannerT<=0&&bq.length)showBanner(bq.shift());
  if(bannerT>0){bannerT-=dt;const a=Math.min(1,bannerT*2.5),k=bannerT>1.05?1+3*(bannerT-1.05):1,x=L.w/2,y=L.h*.3;c.globalAlpha=a;c.save();c.translate(x,y);c.scale(k,k);
-  text(banner,0,0,fBanner,bannerCol||(bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT),'center');text(bannerSub!=null?bannerSub:bannerN+'기 동시 격파',0,20*ui,fSmall,CREAM,'center');c.restore();curFont='';c.globalAlpha=1;}
+  text(banner,0,0,fBanner,bannerCol||(bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT),'center');text(bannerSub!=null?bannerSub:bannerN+'기',0,20*ui,fSmall,CREAM,'center');c.restore();curFont='';c.globalAlpha=1;}
  const S=G.strikes;for(const k of S){ctx.lanePos(k.lane,k.y,0,v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const f=Math.max(0,k.t/G.ORB.delay),r=(10+40*f)*ui;c.strokeStyle='rgba(255,120,80,.95)';c.lineWidth=2.5;c.setLineDash([6,5]);c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();c.setLineDash([]);
   c.beginPath();c.moveTo(p.x-r-6,p.y);c.lineTo(p.x-r+6,p.y);c.moveTo(p.x+r-6,p.y);c.lineTo(p.x+r+6,p.y);c.moveTo(p.x,p.y-r-6);c.lineTo(p.x,p.y-r+6);c.moveTo(p.x,p.y+r-6);c.lineTo(p.x,p.y+r+6);c.stroke();}
