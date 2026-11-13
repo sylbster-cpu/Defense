@@ -2,8 +2,9 @@
 // 규칙과 그리기는 난수를 따로 쓴다. 그래서 그리기만 고친 수정은 규칙 쪽 결과를 건드리지 않는다. 두 판을 각각 기록한 뒤 cmp.js로 비교한다.
 // 모든 장을 가로·세로로 도는 진행 둘과 화질 0·1, 작은 화면, 지는 판이 들어 있다. 전체는 15분쯤 걸린다(소프트웨어 렌더링).
 // node tools/same/frames.js <게임 폴더 절대 경로> <결과.json> [진행 이름들]      SHOTS=<폴더>면 중간 화면 사진을 남긴다
+// PRE=<코드>면 진행을 시작하기 전에 그 코드를 게임 안에서 돌린다. 일부러 바꾼 것 하나를 예전 방식으로 되돌려 놓고 나머지 그림이 이전 판과 같은지 볼 때 쓴다(인계 문서 19.3절의 예).
 const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const U=require('./states.js'),cov=require('./cov.js');
-const dir=path.resolve(process.argv[2]),outFile=path.resolve(process.argv[3]),ONLY=process.argv[4]?process.argv[4].split(','):null,SHOTS=process.env.SHOTS;
+const dir=path.resolve(process.argv[2]),outFile=path.resolve(process.argv[3]),ONLY=process.argv[4]?process.argv[4].split(','):null,SHOTS=process.env.SHOTS,PRE=process.env.PRE||'';
 const RUN=`window.__frames=function*(o){
  const gr=__mk(o.seed),fr=__mk(o.seed+7);Math.random=gr;mute=true;best=0;
  Object.assign(learned,{drill:false,pulse:false,item:false,maps:{},items:{},combo:false});if(!o.live)Object.assign(learned,{drill:true,pulse:true,item:true,combo:true}),MAPS.forEach(m=>learned.maps[m.id]=true),Object.keys(ITEMS).forEach(k=>learned.items[k]=true);
@@ -37,6 +38,7 @@ const RUN=`window.__frames=function*(o){
  };
  const state=()=>phase+'|'+op+'|'+core.toFixed(3)+'|'+score+'|'+kills+'|'+leaks+'|'+enemies.length+'|'+drone.lane+'|'+bag.join(',')+'|'+stageTime.toFixed(3);
  for(let i=0;i<30;i++)__clock.step(1000/30);   // the title screen: the scene idles behind it
+ if(o.pre)eval(o.pre);
  if(o.drill){leaveTitle();startDrill();}else{leaveTitle();beginRun();if(!o.live){liveRun=false;lesson=null;pulseLock=false;updateControls();}}
  const limit=o.limit||30*60*40,EV=o.every||16;
  while(phase!=='finish'&&n<limit){
@@ -59,7 +61,7 @@ const VARIANTS={
   await cov.start(p);await p.goto('file://'+file+'?q='+v.q);let ok=false;for(let i=0;i<200&&!ok;i++){await p.waitForTimeout(100);ok=await p.evaluate(()=>!!(window.R3D&&window.R3D.ready&&window.__relay&&window.__relay.active));}
   if(!ok){out[name]={error:'2.5D view did not start'};console.log(name,'did not start');await c.close();continue;}
   await p.evaluate(()=>Promise.all(['BHS','TDISP','TMONO'].map(f=>document.fonts.load('16px "'+f+'"','가A1'))));
-  await p.evaluate(r=>window.__t(r),RUN);await p.evaluate(o=>{window.__it=window.__frames(o);},v);
+  await p.evaluate(r=>window.__t(r),RUN);await p.evaluate(o=>{window.__it=window.__frames(o);},Object.assign({pre:PRE},v));
   let r=null,shot=0;for(;;){const x=await p.evaluate(()=>{const x=window.__it.next();return x.done?{done:x.value}:{y:x.value};});if(x.done){r=x.done;break;}
    if(x.y==='shot'&&SHOTS){fs.mkdirSync(SHOTS,{recursive:true});await p.screenshot({path:path.join(SHOTS,name+'_'+String(shot++).padStart(2,'0')+'.png')});}}
   out[name]=JSON.parse(r);out[name].errors=errs;await cov.stop(p);

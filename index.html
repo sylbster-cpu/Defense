@@ -133,15 +133,13 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 #gearBtn{position:fixed;z-index:10001;right:calc(12px + env(safe-area-inset-right,0px));top:calc(11px + env(safe-area-inset-top,0px));width:34px;height:34px;font-size:19px;line-height:1}
 .fbtn.item{bottom:10px;width:50px;height:50px;border-radius:13px;border:2px dashed #7d9094;color:#8fa0a2;opacity:.6;cursor:default}#itemBtn{left:10px}#itemBtn2{left:68px}
 .fbtn.item svg{display:block;pointer-events:none}
-.fbtn.item.has{border-style:solid;border-color:currentColor;background:rgba(24,42,46,.94);opacity:1;cursor:pointer}.fbtn.item.has:disabled{opacity:.6}
-.fbtn.item.aiming{box-shadow:0 0 0 3px rgba(201,165,240,.75);animation:coachPulse 1.1s ease-in-out infinite}
+.fbtn.item.has{opacity:1;cursor:pointer}.fbtn.item.has:disabled{opacity:.6}
 #pulseBtn{right:10px;bottom:10px;width:58px;height:58px;border-radius:15px;border:2px solid var(--amber);color:#f5cf8a;--cd:0;background:conic-gradient(rgba(10,18,22,.9) calc(var(--cd)*360deg),rgba(70,52,38,.94) 0)}
 #drillSkip{left:8px;top:30px;height:30px;padding:0 11px;font-size:12px;font-weight:700}#drillSkip[hidden]{display:none}
 #pulseBtn .ico{font-size:28px;line-height:1}
 #pulseBtn .sub{display:none;font-size:20px;font-weight:800;color:#eae9dc}
-#pulseBtn.cooling{border-color:#7a6a52}#pulseBtn.cooling .ico{display:none}#pulseBtn.cooling .sub{display:block}
-#pulseBtn:disabled:not(.cooling){opacity:.5}#pulseBtn.locked{opacity:.28;border-color:#55666b}
-#pulseBtn.coach-target{box-shadow:0 0 0 3px rgba(240,196,123,.7);animation:coachPulse 1.1s ease-in-out infinite}
+#pulseBtn.cooling .ico{display:none}#pulseBtn.cooling .sub{display:block}
+#pulseBtn:disabled:not(.cooling){opacity:.5}#pulseBtn.locked{opacity:.28}
 .hubchip{position:absolute;z-index:4;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:9px;border:1px solid #47585d;background:rgba(18,30,36,.8);font-size:12px;font-weight:800;color:#eae9dc;pointer-events:none}
 .hubchip span{color:#a6d4a9;font-size:10px}.hubchip i{display:block;width:54px;height:4px;border-radius:2px;background:#2b3c42;overflow:hidden}
 .hubchip b{display:block;height:100%;width:100%;background:#a6d4a9}.hubchip b.danger{background:var(--red,#f17c6f)}.hubchip em{font-style:normal;min-width:22px;text-align:right}
@@ -261,13 +259,20 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .coach::before{width:8px!important;height:8px!important;left:20px!important;border-radius:50%;background:var(--sig);box-shadow:0 0 0 4px rgba(226,70,47,.25);animation:ping 1.4s ease-out infinite}
 .coach strong{font-family:var(--f);color:var(--sig)!important;letter-spacing:0!important}.coach strong::after{content:' —'}.coach span{font-family:var(--f);font-weight:800;color:var(--w)!important}.coach small{color:var(--w2)!important}
 .toast{font-family:var(--f);font-weight:800;background:transparent!important;color:var(--w)!important;border:0!important;text-shadow:0 1px 3px #000,0 0 12px #000;box-shadow:none!important}
-.fbtn{background:rgba(10,10,11,.55)!important;border:1px solid rgba(241,235,224,.35)!important;border-radius:50%!important;color:var(--w)!important;box-shadow:none!important}
+.fbtn{background:rgba(10,10,11,.55)!important;border:1px solid rgba(241,235,224,.35)!important;border-radius:50%!important;box-shadow:none}
+.fbtn:not(.has){color:var(--w)!important}
 .fbtn.item:not(.has){opacity:.45}
 #pulseBtn{background:conic-gradient(rgba(10,10,11,.7) calc(var(--cd)*360deg),rgba(226,70,47,.55) 0)!important;border-color:var(--sig)!important}
+/* States of the battle buttons. A held item shows in its own colour (the script sets it together with the icon). The slot being aimed and the button a lesson asks for send out rings, like the dot of the radio message. The overload button's border is red only while it is ready. */
+.fbtn.item.has{border-color:currentColor!important}
+.fbtn.item.aiming{border-width:2px!important;animation:pingc 1.2s ease-out infinite}
+#pulseBtn.cooling,#pulseBtn.locked{border-color:rgba(241,235,224,.35)!important}
+#pulseBtn.coach-target{animation:ping 1.4s ease-out infinite}
 .hubchip{background:transparent!important;border:0!important;color:var(--w)!important;text-shadow:0 1px 3px #000}
 .settings{background:rgba(8,8,9,.96)!important;border:0!important;border-left:2px solid var(--sig)!important;border-radius:0!important;color:var(--w)!important}.settings h3{font-family:var(--f);color:var(--w)!important}
 .seg button{border-radius:0!important;border:0!important;border-bottom:1px solid rgba(241,235,224,.3)!important;background:transparent!important;color:var(--w2)!important}.seg button.on{color:var(--w)!important;border-bottom:2px solid var(--sig)!important}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(226,70,47,.6)}100%{box-shadow:0 0 0 12px rgba(226,70,47,0)}}
+@keyframes pingc{0%{box-shadow:0 0 0 0 currentColor}100%{box-shadow:0 0 0 12px transparent}}
 /* Title screen: C (dusk heavy machinery: black bars, engraved steel letters with an orange rim light, metal buttons with lamps)
    with A mixed in (the relay console: amber monospace boot lines, a scanline veil, a blinking caret). The rest of the game uses D. */
 @font-face{font-family:'TDISP';src:url('media/doh.woff2?v=2') format('woff2');font-display:swap}
@@ -378,7 +383,7 @@ function syncCanvasMode(){
 
 let phase='intro',op=1,wave=0,stageTime=0, speed=1,paused=false,lastTime=0,uiClock=0;
 let core=100,facilities=[100,100],turrets=[],enemies=[],shots=[],particles=[],alerts=[];
-let drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};
+let drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,moveWait:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};
 let pattern=[],nextSpawn=0,kills=0,leaks=0,switches=0,upgradeHistory=[],upgradeRanks={stable:0,emergency:0,precision:0,rubble:0},offeredUpgrades=[];   // switches: lane moves made, a count kept for tools/purity3d.js
 // Balance numbers in one place. Card values are read by the upgrade screen text, so the text never drifts from the rule.
 const BAL={droneRange:155,droneDmg:19,droneRate:.29,turretDmg:14,turretRate:.52,turretRange:165,moveBase:2.2,pulseRange:110,pulseDamage:75,pulseBase:11,pulseStun:.5,powerDownMove:1.5,shopDownTurret:1.35,opHeal:15,preview:5,
@@ -399,7 +404,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.13-1';
+const BUILD='2026.11.13-2';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={active:false,renderer:null,events:[]};
@@ -660,7 +665,7 @@ const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44],6:[22,44],7:[22,4
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
 // what a new run and a new chapter both start from: an empty field, both facilities whole
 function clearField(){stageHurt=false;strikes=[];combo=comboT=multiN=multiT=0;aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];paused=false;}
-function reset(){clearField();bag=[];bestCombo=score=0;stars=[];liveRun=false;stageGift='';op=1;wave=0;speed=prefs.speed;core=100;turrets=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};kills=0;leaks=0;switches=0;upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];}
+function reset(){clearField();bag=[];bestCombo=score=0;stars=[];liveRun=false;stageGift='';op=1;wave=0;speed=prefs.speed;core=100;turrets=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,moveWait:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};kills=0;leaks=0;switches=0;upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];}
 function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];clearField();ruleCount=spawnCount=0;ventT=0;mines=[];if(map.mine)for(let l=0;l<2;l++)for(const y of MINE.ys)mines.push({lane:l,y,arm:0});op=index;wave=1;core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';stopT=0;stopQ.length=0;sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
 function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*OP_HP[op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
@@ -715,7 +720,8 @@ function gateHold(){for(let l=0;l<2;l++){if(!gateShut(l))continue;const q=enemie
 // The drone's target: its own lane, and where the lanes run side by side (map.shoot) also the other lane's machines in that stretch.
 function pickDrone(){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(map.shoot){const o=pickTarget(1-drone.lane,drone.y,effects.droneRange,null,true);if(o&&(!e||o.y+(o.type==='boss'?6:0)>e.y+(e.type==='boss'?6:0))){e=o;ruleMark(o);}}return e;}
 function pickTarget(lane,y,range,skip,nearOnly){let chosen=null,best=-Infinity,hid=null,hidP=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;if(nearOnly&&!map.near(e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(map.cover(e.lane,e.y)){if(priority>hidP){hid=e;hidP=priority;}continue;}if(priority>best){chosen=e;best=priority;}}if(hid&&hidP>best)ruleMark(hid);return chosen;}   // a hidden machine counts for the tunnel only when it would have been the target
-function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);switches++;ev3({t:'move',from,to:lane,rubble:!!effects.rubble});
+// moveWait keeps the full wait this move set (stimpack and a dead power plant change it); the view draws the wait ring against it
+function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=drone.moveWait=effects.moveBase*(facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);switches++;ev3({t:'move',from,to:lane,rubble:!!effects.rubble});
  if(effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');updateControls();}
 function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0)showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
  burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);updateControls();}

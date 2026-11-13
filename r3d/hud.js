@@ -290,12 +290,12 @@ function aidMarks(G,t){
  if(a.mag>0){ctx.lanePos(a.magLane,a.magY,.6,v);ctx.project(v,p);if(p.z>-1&&p.z<1){const k=clamp(a.mag/G.MAG.show,0,1);c.strokeStyle=IT.magnet.col;for(let i=0;i<2;i++){const q=(k+i*.5)%1;c.globalAlpha=.75*(1-q*.6);c.lineWidth=2.4*ui;c.beginPath();c.arc(p.x,p.y,(8+46*q)*ui,0,6.2832);c.stroke();}c.globalAlpha=1;drawIcon(G,'magnet',p.x,p.y,15*ui,IT.magnet.col);c.lineCap='butt';}}
  if(G.aim>=0){const it=IT[G.bag[G.aim]];c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle=(it||IT.magnet).col;c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
 }
-/* move cooldown: a ring around the drone that empties until it can move again */
+/* move cooldown: a ring around the drone that empties until it can move again.
+   Full is the wait this move started with (drone.moveWait, set by the game): stimpack halves the wait and a dead power plant lengthens it, so it is not one number. */
 function moveRing(G){
  const d=G.drone,cd=d?+d.moveCooldown:0;if(!(cd>.02))return;
- const ef=G.effects,f=G.facilities,max=(ef&&ef.moveBase>0?ef.moveBase:2.2)*(f&&f[0]<=0?G.BAL.powerDownMove:1);
  ctx.dronePos(v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
- const r=16*ui,k=clamp(cd/max,0,1);
+ const r=16*ui,k=clamp(cd/Math.max(+d.moveWait||0,cd),0,1);
  c.lineCap='butt';c.globalAlpha=1;timerRing(p.x,p.y,r,k,4.5*ui,2.4*ui);
 }
 // a clock ring: a dark full ring (w0 wide) under an amber arc (w1 wide) that covers the share k, from the top
