@@ -46,6 +46,8 @@ const blast=(o,h,R,size)=>{   // size .6 small machine ... 1.7 boss: a sharp sho
  sweep(o,0,.22+.22*size,230/size,48/size,1,'sine',.003,.6);sweep(o,0,.16+.1*size,460/size,120/size,.35,'tri',.002,.7);
  noise(h,.008,.34+.5*size,'lp',3400/size,180,.7,.55,R,.004);noise(o,.05,.35+.75*size,'lp',420/size,70,.9,.6*size,R,.03);noise(h,.02,.2+.3*size,'hp',1500,2600,.7,.1,R,.01);
  debris(h,.05,Math.round(3+size*6),.18+.35*size,.14,R,1/Math.sqrt(size));};
+// a blast `len` seconds long, mixed in at t0 with gain g (the boss and a collapsing facility are several blasts in a row)
+const blastAt=(o,h,R,len,size,t0,g)=>{const a=new Float32Array(N(len)),ah=new Float32Array(N(len));blast(a,ah,R,size);add(o,a,t0,g);add(h,ah,t0,g);};
 const RECIPES={
  // heavy autocannon: crack, a saturated low body, the breech cycling a moment later, a short tail
  turret:[4,1.1,2.4,.8,.62,.5,(o,h,R)=>{noise(h,0,.009,'hp',1800,1800,.7,.7,R,.0004);sweep(o,0,.16,250,82,1,'sine',.002,.55);sweep(o,0,.07,520,170,.4,'square',.001);noise(h,.002,.1,'bp',900,380,.8,.5,R);noise(h,.004,.24,'lp',2600,260,.7,.3,R);noise(h,.006,.16,'hp',2000,3200,.7,.07,R,.003);
@@ -61,8 +63,8 @@ const RECIPES={
  kill_grunt:[3,1.7,2.4,.7,.98,.62,(o,h,R)=>blast(o,h,R,.9)],
  kill_brute:[2,2.4,2.6,.75,1.35,.78,(o,h,R)=>blast(o,h,R,1.3)],
  // the boss goes the way it is drawn: first blast, five pops, the big one half a second in
- kill_boss:[1,3.2,2.6,.6,1.4,.95,(o,h,R)=>{const a=new Float32Array(N(1)),ah=new Float32Array(N(1));blast(a,ah,R,1.1);add(o,a,0,.6);add(h,ah,0,.6);for(let i=0;i<5;i++){const p=new Float32Array(N(.5)),ph=new Float32Array(N(.5));blast(p,ph,R,.5+R()*.2);add(o,p,.07+i*.085,.3+i*.03);add(h,ph,.07+i*.085,.3+i*.03);}
-   const b=new Float32Array(N(2.4)),bh=new Float32Array(N(2.4));blast(b,bh,R,1.7);add(o,b,.5,1);add(h,bh,.5,1);sweep(o,.5,1.6,95,26,.9,'sine',.004,.5);noise(o,.55,2.2,'lp',300,50,.8,.5,R,.1);}],
+ kill_boss:[1,3.2,2.6,.6,1.4,.95,(o,h,R)=>{blastAt(o,h,R,1,1.1,0,.6);for(let i=0;i<5;i++)blastAt(o,h,R,.5,.5+R()*.2,.07+i*.085,.3+i*.03);
+   blastAt(o,h,R,2.4,1.7,.5,1);sweep(o,.5,1.6,95,26,.9,'sine',.004,.5);noise(o,.55,2.2,'lp',300,50,.8,.5,R,.1);}],
  // overload: a crack, a rectified electric buzz, the thump, the ring running outward, sparks dying away
  pulse:[2,2.0,2.2,.5,.9,.92,(o,h,R)=>{noise(h,0,.02,'hp',2000,2000,.7,.8,R,.0004);sweep(o,0,.42,150,44,1,'sine',.002,.5);
    const z=new Float32Array(N(.5));sweep(z,0,.5,112,96,1,'saw',.002);sweep(z,0,.5,224,190,.6,'square',.002);sweep(z,0,.45,336,300,.4,'saw',.002);for(let i=0;i<z.length;i++){const t=i/SR;z[i]=Math.abs(z[i])*(.55+.45*Math.sign(Math.sin(TAU*52*t)))*(.6+.4*R());}hp1(z,180);add(h,z,.005,.5);
@@ -70,9 +72,9 @@ const RECIPES={
  // a machine slams through the line: structure ringing under a two-note klaxon
  leak:[1,1.5,2,.45,.8,.8,(o,h,R)=>{noise(h,0,.01,'hp',1500,1500,.7,.7,R,.0004);sweep(o,0,.3,170,58,1,'sine',.002,.55);noise(h,.003,.28,'lp',1800,200,.8,.5,R);modal(h,.005,[[212,.5,1],[347,.42,.8],[523,.3,.6],[887,.2,.4],[1410,.12,.25]],.25,R);
    for(const [t,f] of [[.06,940],[.24,705]]){sweep(h,t,.2,f,f*.985,.22,'saw',.004,1);sweep(h,t,.2,f*1.5,f*1.48,.1,'square',.004,1);}},3.2],
- facdown:[1,3.0,2.4,.6,1.5,1,(o,h,R)=>{const b=new Float32Array(N(2.4)),bh=new Float32Array(N(2.4));blast(b,bh,R,1.5);add(o,b,0,1);add(h,bh,0,1);sweep(h,.05,1.5,520,38,.2,'saw',.02,1.6);modal(o,.02,[[96,1.2,1],[151,1.0,.8],[233,.8,.6],[410,.5,.4]],.35,R);
+ facdown:[1,3.0,2.4,.6,1.5,1,(o,h,R)=>{blastAt(o,h,R,2.4,1.5,0,1);sweep(h,.05,1.5,520,38,.2,'saw',.02,1.6);modal(o,.02,[[96,1.2,1],[151,1.0,.8],[233,.8,.6],[410,.5,.4]],.35,R);
    for(const [i,f] of [[0,880],[1,660],[2,440]]){sweep(h,.12+i*.2,.2,f,f*.98,.2,'saw',.004,1);sweep(h,.12+i*.2,.2,f*1.5,f*1.47,.09,'square',.004,1);}
-   for(let i=0;i<4;i++){const p=new Float32Array(N(.5)),ph=new Float32Array(N(.5));blast(p,ph,R,.55);add(o,p,.14+i*.13,.28);add(h,ph,.14+i*.13,.28);}}],
+   for(let i=0;i<4;i++)blastAt(o,h,R,.5,.55,.14+i*.13,.28);}],
  // a horn that a phone can carry: low reeds pushed into saturation, twice
  boss_warn:[1,2.2,3,.5,1.3,.8,(o,h,R)=>{for(const t of [0,.48]){for(const [f,a] of [[73.4,1],[110,.8],[146.8,.6],[220.5,.4]]){const x=new Float32Array(N(.42));sweep(x,0,.42,f,f*.97,a,'saw',.03,1.4);for(let i=0;i<x.length;i++){const u=i/x.length;x[i]*=Math.min(1,(1-u)*6);}add(o,x,t,.5);}noise(h,t,.4,'bp',620,540,2.2,.2,R,.03,.3);noise(h,t,.38,'hp',1800,1800,.7,.03,R,.03,.3);}},3.2],
  surge_warn:[1,1.0,2,.4,.6,.6,(o,h,R)=>{for(const [t,f] of [[0,587],[.13,784]]){sweep(h,t,.16,f,f*.99,.5,'saw',.003,1);sweep(h,t,.16,f*2,f*1.98,.2,'square',.003,1);sweep(o,t,.14,f*.5,f*.5,.5,'sine',.003,1);}},1.6],

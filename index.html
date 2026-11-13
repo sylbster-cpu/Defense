@@ -7,42 +7,18 @@
 <title>방어 실험 02 | 중계선</title>
 <style>
 :root{--bg:#111c22;--panel:#1a2a30;--panel2:#22363c;--edge:#385056;--ink:#f2f1e9;--dim:#aabbb9;--soft:#77918f;--amber:#f0c47b;--amber2:#d99b54;--cyan:#8dd7d0;--rust:#eb806c;--good:#a7d8a3}
-*{box-sizing:border-box}html{min-width:320px;scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:radial-gradient(ellipse at 10% 4%,#2d4144 0,transparent 41%),radial-gradient(ellipse at 95% 64%,#21333a 0,transparent 40%),var(--bg);letter-spacing:-.025em}button{font:inherit;cursor:pointer}button:focus-visible,canvas:focus-visible{outline:3px solid var(--amber);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}h1,h2,h3,p{margin:0}.wrap{width:min(1110px,calc(100% - 36px));margin:0 auto;padding:28px 0 38px}.mast{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:23px}.tiny{font-size:11px;font-weight:800;letter-spacing:.17em;color:var(--amber);text-transform:uppercase}.mast h1{font-size:clamp(27px,4.6vw,43px);font-weight:850;line-height:1.19;letter-spacing:-.065em;margin:9px 0 8px}.subtitle{color:var(--dim);line-height:1.65;font-size:14px}.meta{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:6px;color:#b8cac7;font-size:11px;letter-spacing:.06em}.meta .dot{width:7px;height:7px;background:var(--amber);box-shadow:0 0 0 4px rgba(240,196,123,.1);border-radius:50%}.dashboard{display:grid;grid-template-columns:minmax(0,550px) minmax(280px,1fr);align-items:start;gap:18px}.left{min-width:0}.field{position:relative;isolation:isolate;border:1px solid #52656a;box-shadow:0 18px 55px #0006,0 0 0 5px #12252b;background:#102126;border-radius:13px;overflow:hidden}.field:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 70px rgba(8,16,19,.18)}canvas{display:block;width:100%;height:auto;aspect-ratio:480/702;touch-action:manipulation;cursor:crosshair}.field-sticker{display:none}.toast{position:absolute;z-index:4;pointer-events:none;left:50%;top:21%;transform:translate(-50%,-5px);border:1px solid rgba(240,196,123,.55);background:rgba(14,31,35,.94);color:#ffe5b1;padding:9px 16px;border-radius:5px;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 10px 26px #0005;opacity:0;transition:opacity .2s,transform .2s}.toast.show{opacity:1;transform:translate(-50%,0)}
-.overlay{position:absolute;z-index:10;inset:0;display:flex;justify-content:center;align-items:center;padding:15px;background:rgba(9,19,23,.79);backdrop-filter:blur(5px);overflow:auto}.overlay[hidden]{display:none}.overlay.is-modal{position:fixed;z-index:1000;inset:0;padding:24px;background:rgba(5,15,18,.87)}.overlay.is-modal .overlay-card{max-width:530px;max-height:min(91dvh,760px)}.overlay-card{width:100%;max-width:435px;max-height:100%;overflow:auto;border:1px solid #6a7770;background:linear-gradient(145deg,#26393d,#1b2b31 58%,#15272c);padding:clamp(18px,4vw,27px);box-shadow:0 25px 80px #0008;border-radius:8px}.overlay h2{font-size:clamp(24px,5.2vw,34px);letter-spacing:-.06em;line-height:1.23;margin:12px 0 12px}.overlay p{font-size:13px;line-height:1.73;color:#c6d3ce}.separator{height:1px;background:linear-gradient(90deg,#6e8580,transparent);margin:19px 0}.howto{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0}.howto div{background:#1b3033;border:1px solid #395052;border-radius:6px;padding:12px}.howto strong{display:block;color:#f7deac;font-size:13px;margin-bottom:6px}.howto span{font-size:12px;line-height:1.55;color:#a6c0bc}.primary{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid #e9bb75;background:#e6b970;color:#18262a;font-size:15px;font-weight:850;padding:14px 15px;border-radius:5px;transition:background .15s,transform .15s}.primary:hover{background:#f4ce8b;transform:translateY(-1px)}.primary:active{transform:translateY(1px)}.muted-tip{margin-top:12px;font-size:11px!important;color:#8fa8a4!important}.report{font-size:12px;line-height:1.7;background:#1a3034;border:1px solid #415458;padding:12px;margin:16px 0;color:#d9e5dc}.report strong{color:var(--amber)}.choices{display:grid;grid-template-columns:1fr;gap:9px;margin:15px 0 8px}.choice{width:100%;text-align:left;padding:14px;border:1px solid #5a6f69;background:rgba(21,42,45,.85);border-radius:5px;color:#f2f1e9;transition:border-color .15s,background .15s}.choice:hover,.choice:focus-visible{border-color:#ebbf79;background:#314246}.choice .choice-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.choice h3{font-size:15px;letter-spacing:-.03em}.choice span{color:#d8a66c;font-size:10px;font-weight:800;letter-spacing:.05em}.choice p{font-size:12px;line-height:1.55;color:#bcd0c9}.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px 0}.result-stat{border:1px solid #52615f;background:#172e32;padding:12px;border-radius:4px}.result-stat .n{font-size:23px;font-weight:800;line-height:1.2;color:#f0c47b}.result-stat .k{font-size:11px;color:#aebfbb;margin-top:5px}
-.controls{display:grid;grid-template-columns:1fr 1fr 1.18fr;gap:9px;margin-top:14px}.action{min-width:0;padding:12px 7px 11px;border-radius:7px;border:1px solid #52686b;background:#21353a;color:#edf2eb;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .15s,border-color .15s}.action:hover:not(:disabled){background:#2b4448;border-color:#a6c2bc}.action.active{border-color:var(--amber);background:#37433e}.action .ico{font-size:19px;font-weight:900;line-height:1}.action .label{font-size:12px;font-weight:800;white-space:nowrap}.action .sub{font-size:10px;color:#b2c2bf;font-weight:500;white-space:nowrap}.action.special{background:#3f3531;border-color:#bd8b5b}.action.special:hover:not(:disabled){background:#554339}.action.special .ico{color:#ffd49b}.action.special .sub{color:#e2c8a8}.inline-help{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:11px 2px 0;color:#95aba7;font-size:11px;line-height:1.5}.textbtn{border:0;background:transparent;color:#d5e0d5;padding:3px 5px;font-size:11px;text-decoration:underline;text-decoration-color:#718785;text-underline-offset:3px}
-.right{display:grid;gap:14px}.panel{border:1px solid #3c5258;border-radius:9px;background:linear-gradient(151deg,#1e3036,#16252b);padding:19px;box-shadow:0 8px 24px #0002}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panel-title{font-size:13px;font-weight:800;letter-spacing:.025em}.pill{font-size:10px;color:#e7c38f;background:#3b3b34;border:1px solid #726348;padding:4px 7px;border-radius:3px;font-weight:700}.mission{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:19px}.mission small{font-size:10px;color:#99afac;display:block;margin-bottom:4px}.mission strong{font-size:20px;letter-spacing:.015em;font-weight:800}.status-list{display:grid;gap:17px}.status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.status-row .name{font-size:12px;color:#d7e0d8;font-weight:650}.status-row .value{font-size:12px;font-variant-numeric:tabular-nums;font-weight:800}.bar{height:7px;background:#101f25;border:1px solid #33474d;border-radius:100px;overflow:hidden}.bar span{display:block;height:100%;width:100%;background:#9fcfbd;border-radius:100px;transition:width .25s,background .25s}.bar.amber span{background:#ebc07c}.bar.core span{background:#a7d7a3}.bar .danger{background:#e48771!important}.panel-note{font-size:12px;line-height:1.7;color:#aabfbb}.panel-note strong{color:#f2d7a4}.log{display:flex;flex-direction:column;gap:10px;min-height:134px}.entry{font-size:11px;line-height:1.55;color:#b8c8c4;padding-left:15px;position:relative}.entry:before{content:"";position:absolute;left:0;top:6px;background:#ccaa75;width:5px;height:5px;border-radius:50%}.entry:first-child{color:#f6e4bf}.keyline{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #3c5354}.key{font-size:11px;color:#94aba6}.key strong{color:#d4c4a2}.dev-note{padding:5px 3px;font-size:11px;color:#829d99;line-height:1.55}.foot{font-size:11px;color:#778e8b;margin-top:22px;padding-top:16px;border-top:1px solid #31464d;line-height:1.65}.foot b{color:#b1c8c3}
+*{box-sizing:border-box}html{min-width:320px;scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:radial-gradient(ellipse at 10% 4%,#2d4144 0,transparent 41%),radial-gradient(ellipse at 95% 64%,#21333a 0,transparent 40%),var(--bg);letter-spacing:-.025em}button{font:inherit;cursor:pointer}button:focus-visible,canvas:focus-visible{outline:3px solid var(--amber);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}h1,h2,h3,p{margin:0}.wrap{width:min(1110px,calc(100% - 36px));margin:0 auto;padding:28px 0 38px}.tiny{font-size:11px;font-weight:800;letter-spacing:.17em;color:var(--amber);text-transform:uppercase}.dashboard{display:grid;grid-template-columns:minmax(0,550px) minmax(280px,1fr);align-items:start;gap:18px}.left{min-width:0}.field{position:relative;isolation:isolate;border:1px solid #52656a;box-shadow:0 18px 55px #0006,0 0 0 5px #12252b;background:#102126;border-radius:13px;overflow:hidden}.field:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 70px rgba(8,16,19,.18)}canvas{display:block;width:100%;height:auto;aspect-ratio:480/702;touch-action:manipulation;cursor:crosshair}.toast{position:absolute;z-index:4;pointer-events:none;left:50%;top:21%;transform:translate(-50%,-5px);border:1px solid rgba(240,196,123,.55);background:rgba(14,31,35,.94);color:#ffe5b1;padding:9px 16px;border-radius:5px;font-weight:800;font-size:13px;white-space:nowrap;box-shadow:0 10px 26px #0005;opacity:0;transition:opacity .2s,transform .2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.overlay{position:absolute;z-index:10;inset:0;display:flex;justify-content:center;align-items:center;padding:15px;background:rgba(9,19,23,.79);backdrop-filter:blur(5px);overflow:auto}.overlay[hidden]{display:none}.overlay.is-modal{position:fixed;z-index:1000;inset:0;padding:24px;background:rgba(5,15,18,.87)}.overlay.is-modal .overlay-card{max-width:530px;max-height:min(91dvh,760px)}.overlay-card{width:100%;max-width:435px;max-height:100%;overflow:auto;border:1px solid #6a7770;background:linear-gradient(145deg,#26393d,#1b2b31 58%,#15272c);padding:clamp(18px,4vw,27px);box-shadow:0 25px 80px #0008;border-radius:8px}.overlay h2{font-size:clamp(24px,5.2vw,34px);letter-spacing:-.06em;line-height:1.23;margin:12px 0 12px}.overlay p{font-size:13px;line-height:1.73;color:#c6d3ce}.primary{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid #e9bb75;background:#e6b970;color:#18262a;font-size:15px;font-weight:850;padding:14px 15px;border-radius:5px;transition:background .15s,transform .15s}.primary:hover{background:#f4ce8b;transform:translateY(-1px)}.primary:active{transform:translateY(1px)}.report{font-size:12px;line-height:1.7;background:#1a3034;border:1px solid #415458;padding:12px;margin:16px 0;color:#d9e5dc}.report strong{color:var(--amber)}.choices{display:grid;grid-template-columns:1fr;gap:9px;margin:15px 0 8px}.choice{width:100%;text-align:left;padding:14px;border:1px solid #5a6f69;background:rgba(21,42,45,.85);border-radius:5px;color:#f2f1e9;transition:border-color .15s,background .15s}.choice:hover,.choice:focus-visible{border-color:#ebbf79;background:#314246}.choice h3{font-size:15px;letter-spacing:-.03em}.choice span{color:#d8a66c;font-size:10px;font-weight:800;letter-spacing:.05em}.choice p{font-size:12px;line-height:1.55;color:#bcd0c9}.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px 0}.result-stat{border:1px solid #52615f;background:#172e32;padding:12px;border-radius:4px}.result-stat .n{font-size:23px;font-weight:800;line-height:1.2;color:#f0c47b}.result-stat .k{font-size:11px;color:#aebfbb;margin-top:5px}
 /* Full-viewport application shell: no document or modal scrolling in either orientation. */
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 :root{--ui-gap:clamp(3px,.85vmin,8px)}
 html,body{min-width:0!important;max-width:100%;width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none;scroll-behavior:auto!important}
 body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .wrap{display:block;width:100%;max-width:none;min-width:0;height:100vh;height:100dvh;max-height:100dvh;margin:0;padding:calc(5px + env(safe-area-inset-top,0px)) calc(5px + env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) calc(5px + env(safe-area-inset-left,0px));overflow:hidden}
-.mast,.foot,.dev-note{display:none!important}
 .dashboard{width:100%;height:100%;min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.42fr);gap:var(--ui-gap);align-items:stretch;overflow:hidden}
 .left{min-width:0;min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) clamp(92px,16vw,158px);grid-template-rows:minmax(0,1fr) auto;gap:var(--ui-gap)}
 .field{min-width:0;min-height:0;width:100%;height:100%;grid-column:1;grid-row:1/3;box-shadow:none;border-radius:7px;overflow:hidden}
 .field canvas{display:block;width:100%;height:100%;aspect-ratio:auto;object-fit:contain;touch-action:manipulation}
-.controls{min-width:0;min-height:0;margin:0;display:grid;grid-column:2;grid-row:1;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:var(--ui-gap)}
-.action{min-width:0;min-height:0;padding:2px 2px;gap:clamp(1px,.6dvh,5px);justify-content:center;border-radius:6px;overflow:hidden}
-.action .ico{font-size:clamp(14px,4.5dvh,24px);line-height:1}
-.action .label{font-size:clamp(9px,2.65dvh,13px);line-height:1.15;white-space:normal;text-align:center;word-break:keep-all}
-.action .sub{font-size:clamp(8px,2.1dvh,11px);line-height:1.1;white-space:normal;text-align:center;word-break:keep-all}
-.inline-help{grid-column:2;grid-row:2;display:block;margin:0;min-height:0}
-.inline-help>span:first-child{display:none}
-.inline-help>span:last-child{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%}
-.textbtn{min-width:0;width:100%;min-height:clamp(24px,6.5dvh,38px);padding:3px 1px;border-radius:5px;border:1px solid #537073;background:#22363c;color:#e8eee8;text-decoration:none;font-size:clamp(9px,2.2dvh,12px);line-height:1.1;white-space:normal;word-break:keep-all}
-.right{min-width:0;min-height:0;height:100%;display:block;overflow:hidden}
-.right .panel{min-width:0;min-height:0;width:100%;height:100%;padding:clamp(6px,1.6vmin,14px);border-radius:7px;overflow:hidden;box-shadow:none;display:flex;flex-direction:column;justify-content:flex-start}
-.panel-head{margin-bottom:clamp(5px,1.4dvh,12px);gap:3px}
-.panel-title{font-size:clamp(10px,2.9dvh,15px)}
-.pill{font-size:clamp(8px,2dvh,10px);padding:3px 5px}
-.mission{grid-template-columns:1fr 1fr;gap:5px;margin-bottom:clamp(7px,2dvh,16px)}
-.mission small{font-size:clamp(8px,1.9dvh,11px);margin-bottom:3px}
-.mission strong{font-size:clamp(13px,4dvh,22px)}
-.status-list{gap:clamp(8px,2.6dvh,18px)}
-.status-row{gap:4px;margin-bottom:5px}
-.status-row .name,.status-row .value{font-size:clamp(9px,2.8dvh,13px)}
-.bar{height:clamp(5px,1.5dvh,8px)}
 .toast{left:50%;top:20%;max-width:94%;white-space:normal;text-align:center;padding:5px 7px;font-size:clamp(9px,2.5dvh,13px);pointer-events:none}
 /* All dialogs are viewport fixed, and the dialog content is scaled to available space by JS. */
 .overlay,.overlay.is-modal{position:fixed!important;z-index:10000;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden!important;padding:calc(7px + env(safe-area-inset-top,0px)) calc(7px + env(safe-area-inset-right,0px)) calc(7px + env(safe-area-inset-bottom,0px)) calc(7px + env(safe-area-inset-left,0px));background:rgba(5,15,18,.88)}
@@ -56,7 +32,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .overlay .report{font-size:clamp(10px,2.35vmin,12px);line-height:1.42;padding:9px;margin:8px 0}
 .overlay .choices{gap:7px;margin:8px 0}
 .overlay .choice{padding:8px 10px}
-.overlay .choice .choice-top{margin-bottom:3px}
 .overlay .choice h3{font-size:clamp(12px,2.7vmin,15px)}
 .overlay .choice p{font-size:clamp(10px,2.25vmin,12px);line-height:1.32}
 .overlay .choice span{font-size:10px;white-space:nowrap}
@@ -64,58 +39,17 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .overlay .result-stat{padding:8px}
 .overlay .result-stat .n{font-size:clamp(17px,3.7vmin,24px)}
 .overlay .result-stat .k{font-size:clamp(9px,2.1vmin,11px);margin-top:2px}
-.overlay .muted-tip{display:none!important}
-.overlay .separator{margin:9px 0}
-.tutorial-progress{display:flex;gap:6px;margin:9px 0 10px}
-.tutorial-progress i{display:block;height:4px;flex:1;background:#496168;border-radius:6px}
-.tutorial-progress i.on{background:#e7be77}
-.tutorial-visual{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0}
-.tutorial-visual>div.practiced{border-color:#f0c47b;background:#35453c}
-.tutorial-done{font-size:12px;color:#f0c47b;margin-top:3px;font-weight:800}
-.tutorial-visual>div{border:1px solid #465f5f;background:#21353a;padding:10px;border-radius:7px;text-align:center}
-.tutorial-visual .symbol{font-size:clamp(19px,4vmin,29px);color:#f4d59d;font-weight:900}
-.tutorial-visual strong{display:block;margin-top:3px;font-size:12px}
-.tutorial-visual small{display:block;margin-top:3px;font-size:11px;line-height:1.35;color:#bdd3cd}
-.tutorial-actions{display:flex;gap:8px;margin-top:12px}
-.tutorial-actions .primary{flex:1}
-.tutorial-actions .secondary{flex:0 0 auto;border:1px solid #5c7977;color:#d7e4dc;background:#26393c;border-radius:5px;padding:6px 12px;font-size:12px}
-.tutorial-menu{display:flex;gap:8px;margin-top:14px}
-.tutorial-menu .primary{flex:1}
-.tutorial-menu .secondary{border:1px solid #5c7977;color:#d7e4dc;background:#26393c;border-radius:5px;padding:6px 14px;font-size:13px}
 @media(orientation:portrait){
  .dashboard{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) clamp(98px,18dvh,144px)}
  .left{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) clamp(52px,9dvh,76px) clamp(28px,5dvh,36px)}
  .field{grid-column:1;grid-row:1;width:100%;height:100%}
- .controls{grid-column:1;grid-row:2;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
- .action{flex-direction:column;gap:1px}
- .action .ico{font-size:clamp(16px,4dvh,24px)}
- .action .label{font-size:clamp(10px,2.3dvh,13px)}
- .action .sub{font-size:clamp(8px,1.6dvh,10px)}
- .inline-help{grid-column:1;grid-row:3;display:flex;justify-content:flex-end}
- .inline-help>span:last-child{display:flex;width:auto;gap:5px}
- .textbtn{min-width:clamp(70px,22vw,110px);min-height:25px;font-size:11px;padding:3px 5px}
- .right .panel{padding:7px 10px}
- .right .panel-head{margin-bottom:5px}
- .mission{display:flex;gap:22px;margin:0 0 7px}
- .mission>div{display:flex;gap:4px;align-items:baseline}
- .mission small{font-size:9px;margin:0}
- .mission strong{font-size:13px}
- .status-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
- .status-row{display:block;margin-bottom:4px}
- .status-row .name{font-size:clamp(9px,2.25vw,12px);display:block;white-space:nowrap}
- .status-row .value{font-size:clamp(9px,2.4vw,12px);display:block}
- .bar{height:5px}
  .overlay-card,.overlay.is-modal .overlay-card{width:min(490px,100%)}
 }
 @media (orientation:landscape) and (max-height:390px){
  .dashboard{grid-template-columns:minmax(0,1fr) minmax(0,.43fr)}
- .right .panel{padding:6px 8px}
- .panel-head{margin-bottom:5px}
- .status-list{gap:7px}.status-row{margin-bottom:3px}.mission{margin-bottom:8px}
- .action .sub{font-size:9px}
  .overlay-card,.overlay.is-modal .overlay-card{width:min(710px,100%);padding:7px 10px}
  #overlayContent[data-screen="upgrade"],#overlayContent[data-screen="finish"]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 12px;align-items:start}
- #overlayContent[data-screen="upgrade"]>.tiny,#overlayContent[data-screen="finish"]>.tiny{grid-column:1;grid-row:1}
+ #overlayContent[data-screen="upgrade"]>.tiny{grid-column:1;grid-row:1}
  #overlayContent[data-screen="upgrade"]>h2,#overlayContent[data-screen="finish"]>h2{grid-column:1;grid-row:2}
  #overlayContent[data-screen="upgrade"]>.report,#overlayContent[data-screen="finish"]>.report{grid-column:1;grid-row:3}
  #overlayContent[data-screen="upgrade"]>.choices{grid-column:2;grid-row:1/4;margin:0}
@@ -123,9 +57,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  #overlayContent[data-screen="finish"]>.primary{grid-column:1;grid-row:4}
  .overlay .result-stat{padding:6px}
  .overlay .choice{padding:6px}
- .tutorial-visual{margin:5px 0;gap:5px}
- .tutorial-visual>div{padding:5px}
- .tutorial-actions{margin-top:7px}
 }
 @media(min-width:1200px) and (min-height:690px){
  .dashboard{max-width:min(1470px,calc(100dvh * 1.45));margin:0 auto;grid-template-columns:minmax(0,1fr) minmax(270px,.30fr)}
@@ -134,25 +65,14 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 @media(max-width:390px){
  .wrap{padding:3px}
  .dashboard,.left{gap:3px}
- .right .panel{padding:5px 6px}
- .status-list{gap:4px}
  .overlay,.overlay.is-modal{padding:5px}
  .overlay-card,.overlay.is-modal .overlay-card{padding:7px 9px}
 }
 @media(orientation:landscape) and (max-width:590px){
  .dashboard{grid-template-columns:minmax(0,1fr) clamp(104px,29vw,155px)}
  .left{grid-template-columns:minmax(0,1fr) clamp(72px,18vw,104px)}
- .action .label{font-size:10px}
- .action .sub{font-size:8px}
- .mission strong{font-size:13px}
- .status-row .name,.status-row .value{font-size:9px}
- .panel-title{font-size:10px}
 }
 @media (max-height:260px){
- .action .sub{display:none}
- .right .panel .mission small{display:none}
- .right .panel .mission strong{font-size:11px}
- .right .panel .status-list{gap:4px}
  .overlay p{line-height:1.23}
 }
 /* Readability pass: larger minimum type and touch targets. Dialogs still fit through fitDialog(). */
@@ -165,28 +85,14 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .overlay .choice p{font-size:clamp(12px,2.45vmin,14px);line-height:1.4}
 .overlay .choice span{font-size:11px}
 .overlay .result-stat .k{font-size:clamp(11px,2.2vmin,12.5px)}
-.tutorial-visual strong{font-size:13px}
-.tutorial-visual small{font-size:12px}
-.tutorial-done{font-size:13px;margin:6px 0 0}
-.tutorial-actions .secondary,.tutorial-menu .secondary{font-size:13px;min-height:clamp(38px,7.5dvh,48px)}
-.action .label{font-size:clamp(11px,2.7dvh,14px)}
-.action .sub{font-size:clamp(10px,2.2dvh,12px)}
-.textbtn{min-height:clamp(30px,8dvh,40px);font-size:clamp(11px,2.4dvh,13px)}
-.panel-title{font-size:clamp(11px,2.9dvh,15px)}
-.status-row .name,.status-row .value{font-size:clamp(11px,2.8dvh,14px)}
-.mission small{font-size:clamp(10px,1.9dvh,11px)}
-.pill{font-size:clamp(10px,2dvh,11px)}
-.overlay p,.overlay .report,.overlay h2,.overlay h3,.tutorial-visual small{word-break:keep-all}
+.overlay p,.overlay .report,.overlay h2,.overlay h3{word-break:keep-all}
 /* Tutorial practice coach: shown only while the tutorial waits for a real input. */
 .coach{position:absolute;z-index:5;left:50%;bottom:clamp(5px,1.6%,12px);transform:translateX(-50%);width:max-content;max-width:94%;pointer-events:none;border:1px solid rgba(240,196,123,.75);background:rgba(11,26,30,.95);border-radius:7px;padding:clamp(5px,1.2vmin,9px) clamp(9px,2vmin,15px);text-align:center;box-shadow:0 8px 24px #0007}
 .coach[hidden]{display:none}
 .coach strong{display:block;color:var(--amber);font-size:clamp(10px,1.8vmin,12px);letter-spacing:.05em}
 .coach span{display:block;color:#f6f4ea;font-size:clamp(13px,2.5vmin,16px);font-weight:800;line-height:1.3;margin-top:2px;word-break:keep-all}
 .coach small{display:block;color:#bcd3cd;font-size:clamp(11px,2vmin,13px);line-height:1.3;margin-top:2px;word-break:keep-all}
-.coach.done{border-color:var(--good)}.coach.done strong{color:var(--good)}
-.action.coach-target{border-color:var(--amber)!important;box-shadow:0 0 0 2px rgba(240,196,123,.6);animation:coachPulse 1.1s ease-in-out infinite}
 @keyframes coachPulse{50%{box-shadow:0 0 0 6px rgba(240,196,123,.2)}}
-@media(prefers-reduced-motion:reduce){.action.coach-target{animation:none}}
 @media(orientation:portrait){
  .overlay .tiny{font-size:clamp(10.5px,2.8vw,12px)}
  .overlay h2{font-size:clamp(23px,6.6vw,31px)}
@@ -196,28 +102,11 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .overlay .choice p{font-size:clamp(13px,3.5vw,15px)}
  .overlay .result-stat .n{font-size:clamp(20px,6vw,26px)}
  .overlay .result-stat .k{font-size:12px}
- .tutorial-visual strong{font-size:clamp(13px,3.6vw,15px)}
- .tutorial-visual small{font-size:clamp(12px,3.2vw,14px)}
  .left{grid-template-rows:minmax(0,1fr) clamp(56px,9.5dvh,80px) clamp(32px,5.5dvh,42px)}
- .action .label{font-size:clamp(12px,2.3dvh,15px)}
- .action .sub{font-size:clamp(10px,1.6dvh,12px)}
- .inline-help{align-items:stretch}
- .textbtn{min-height:0;font-size:12px}
- .mission small{font-size:10px}
- .status-row .name{font-size:clamp(10.5px,2.9vw,13px)}
- .status-row .value{font-size:clamp(10.5px,3vw,13px)}
-}
-@media(orientation:landscape) and (max-width:590px){
- .action .label{font-size:11px}
- .action .sub{font-size:10px}
- .status-row .name,.status-row .value{font-size:10.5px}
- .panel-title{font-size:11px}
 }
 @media (max-height:260px){
  .overlay p{line-height:1.25}
- .action .sub{display:none}
 }
-
 /* Mobile landscape: use the whole battlefield viewport instead of letterboxing the tall canvas. */
 .field canvas.compact-landscape{object-fit:fill}
 /* 2.5D view: a WebGL canvas and a 2D overlay cover the same box; the plain 2D canvas stays underneath as the fallback. */
@@ -229,41 +118,15 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .coach{width:min(94%,310px);padding:5px 7px;bottom:4px}
  .coach strong{font-size:11px}.coach span{font-size:12px}.coach small{font-size:10px}
 }
-
-/* In very small landscape viewports, stack the status label and value instead of clipping them. */
-@media (orientation:landscape) and (max-width:500px) and (max-height:340px){
- .panel-title{display:none}
- .panel-head{justify-content:flex-end;margin-bottom:4px}
- .mission{gap:4px;margin-bottom:7px}
- .mission small{font-size:9px}
- .mission strong{font-size:11px}
- .right .panel{padding:4px}
- .status-list{gap:6px}
- .status-row{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;margin-bottom:3px}
- .status-row .name,.status-row .value{font-size:9px;line-height:1.15;white-space:nowrap}
- .bar{height:5px}
-}
-
 /* Phone landscape is held with both hands at the ends: lane buttons on the left edge, overload on the right edge, battlefield in the middle. */
 @media(orientation:landscape) and (max-height:520px) and (max-width:1100px){
  .dashboard{grid-template-columns:clamp(78px,13vw,118px) minmax(0,1fr) clamp(116px,17vw,168px);grid-template-rows:auto auto minmax(0,1fr)}
- .left,.controls{display:contents}
+ .left{display:contents}
  .field{grid-column:2;grid-row:1/4}
- #leftBtn,#rightBtn{grid-column:1;grid-row:1/4;height:calc(50% - var(--ui-gap)/2)}
- #leftBtn{align-self:start}#rightBtn{align-self:end}
- .right{grid-column:3;grid-row:1;height:auto}
- .right .panel{height:auto}
- .right .mission{display:none}
- .right .panel-title,.status-row .long{display:none}
- .right .panel-head{justify-content:flex-end}
- .inline-help{grid-column:3;grid-row:2}
  #pulseBtn{grid-column:3;grid-row:3}
 }
-
 /* Full-screen battlefield: the field fills the viewport; controls are small icon buttons laid over its corners. */
-.controls,.inline-help,.right{display:none!important}
 .field{position:fixed!important;left:calc(4px + env(safe-area-inset-left,0px));right:calc(4px + env(safe-area-inset-right,0px));top:calc(4px + env(safe-area-inset-top,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));width:auto!important;height:auto!important}
-.field-sticker{display:none}
 .stars{color:#ffd866;letter-spacing:1px;margin-right:4px}.stars i{color:#3d4a4d;font-style:normal}.scoreline{font-size:12px;color:#a2c9c3;margin:-2px 0 6px;font-weight:700}
 .scorebig{display:flex;align-items:baseline;gap:6px;margin:2px 0 8px}.scorebig b{font-size:30px;font-weight:900;color:#ffe1ae;font-variant-numeric:tabular-nums}.scorebig span{color:#cfc3b0;font-weight:700}.scorebig em{font-style:normal;font-weight:900;color:#1a1208;background:#ffd866;border-radius:6px;padding:2px 7px;font-size:12px;animation:coachPulse 1.1s ease-in-out infinite}.scorebig small{color:#8fa0a2;font-size:12px}
 .fbtn{position:absolute;z-index:6;display:grid;place-items:center;padding:0;margin:0;font-family:inherit;color:#eae9dc;border:1px solid #55666b;background:rgba(18,30,36,.82);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -307,7 +170,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .title video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b1418 center/cover no-repeat}
 .title-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,14,18,.55) 0,rgba(8,14,18,.08) 30%,rgba(8,14,18,.2) 52%,rgba(8,14,18,.93) 100%)}
 .title-body{position:relative;align-self:end;justify-self:center;width:min(100%,560px);padding:0 22px calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:10px;text-align:center}
-.title-kicker{font-size:11px;font-weight:800;letter-spacing:.32em;color:var(--amber);text-shadow:0 1px 6px #000}
 .title h1{margin:0;font-size:clamp(44px,13vw,76px);line-height:.98;font-weight:900;letter-spacing:-.02em;color:#f6f1e4;text-shadow:0 3px 22px rgba(0,0,0,.75),0 0 2px #000}
 .title h1 span{display:block;margin-top:8px;font-size:.36em;letter-spacing:.34em;font-weight:800;color:var(--amber);text-indent:.34em}
 .title-tag{margin:2px 0 6px;font-size:clamp(13px,3.6vw,15px);line-height:1.5;font-weight:600;color:#d6e2de;text-shadow:0 1px 8px #000;word-break:keep-all}
@@ -331,9 +193,8 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  .title h1{font-size:clamp(34px,13dvh,64px)}.title-tag{margin:0 0 2px}.title-tag br{display:none}
  .title-actions{grid-template-columns:1.25fr 1fr}.tbtn{min-height:44px;font-size:14px}
 }
-@media(orientation:landscape) and (max-height:330px){.title-kicker{font-size:9px}.title-tag{font-size:12px}.tbtn{min-height:38px}}
+@media(orientation:landscape) and (max-height:330px){.title-tag{font-size:12px}.tbtn{min-height:38px}}
 /* layout of the redesigned screens (upgrade cards with icons and rank pips, result banner and stars) */
-.title-kicker{display:none!important}
 .overlay .choices{display:grid;gap:8px}
 .overlay .choice{position:relative;display:grid!important;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;animation:cardIn .42s cubic-bezier(.2,1.3,.4,1) both;animation-delay:calc(var(--i,0)*95ms)}
 .overlay .choice .cicon{grid-row:1/3;width:44px;height:44px;display:grid;place-items:center}
@@ -368,7 +229,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
  #overlayContent[data-screen="upgrade"]>.report{grid-column:1;grid-row:4!important}
  #overlayContent[data-screen="upgrade"]>.choices{grid-row:1/6!important}
 }
-
 /* Look (2026-11-12, the owner's choice from four proposals): D "signal" for the battle, upgrade, result, settings and radio lines:
    type over the picture, a large serif (Nanum Myeongjo), hairlines, one red signal line, film-subtitle captions. The title screen follows below. */
 @font-face{font-family:'BHS';src:url('media/myeong.woff2?v=2') format('woff2');font-display:swap}
@@ -397,11 +257,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .bigstars i{font-size:clamp(14px,3.5vmin,20px);color:#3d3a36;letter-spacing:4px}.bigstars i.on{color:var(--sig)}
 .scorebig b{font-family:var(--f);font-weight:800;color:var(--w);font-size:clamp(34px,8vmin,50px)!important}.scorebig span,.scorebig small{color:var(--w2)}.scorebig em{background:none;color:var(--sig);font-style:normal;border:1px solid var(--sig)}
 .overlay .result-stat{background:transparent!important;border:0!important;border-left:1px solid rgba(241,235,224,.2)!important;border-radius:0!important;text-align:left!important}.overlay .result-stat .n{font-family:var(--f);font-weight:800;color:var(--w)}.overlay .result-stat .k{color:var(--w2)}
-.title-shade{background:linear-gradient(90deg,rgba(6,6,7,.9) 0,rgba(6,6,7,.6) 40%,rgba(6,6,7,0) 70%)!important}
-.title h1{font-family:var(--f);font-weight:800;color:var(--w);font-size:clamp(58px,18vh,104px);letter-spacing:.02em;text-shadow:0 2px 24px rgba(0,0,0,.6);padding-bottom:14px;background:var(--wave) left bottom/260px 22px no-repeat}
-.title h1 span{font-family:var(--f);color:var(--w2);letter-spacing:.5em;font-size:.2em;text-indent:0;margin-top:2px}
-.title-tag{color:var(--w2);font-weight:400}
-.title-foot button{background:transparent!important;color:var(--w)!important;border:1px solid rgba(241,235,224,.4)!important;border-radius:50%!important}#titleBuild{color:#77716a}
 .coach{background:transparent!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 3px #000,0 0 12px rgba(0,0,0,.9)}
 .coach::before{width:8px!important;height:8px!important;left:20px!important;border-radius:50%;background:var(--sig);box-shadow:0 0 0 4px rgba(226,70,47,.25);animation:ping 1.4s ease-out infinite}
 .coach strong{font-family:var(--f);color:var(--sig)!important;letter-spacing:0!important}.coach strong::after{content:' —'}.coach span{font-family:var(--f);font-weight:800;color:var(--w)!important}.coach small{color:var(--w2)!important}
@@ -451,7 +306,6 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
     <section class="left" aria-label="전투 영역">
       <div class="field" id="field">
         <canvas id="game" width="480" height="702" tabindex="0" aria-label="두 전선의 전투 화면. 왼쪽 절반은 발전소, 오른쪽 절반은 정비소. 전투 중 터치하여 지원 기체를 이동합니다."></canvas>
-        <div class="field-sticker">RIDGE RELAY / SECTOR 02</div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
         <div class="coach" id="coach" role="status" aria-live="polite" hidden><strong id="coachTitle"></strong><span id="coachMain"></span><small id="coachHint"></small></div>
         <div class="hubchip" id="hubChip" role="img" aria-label="중앙 송신소 내구도"><span>●</span><i><b id="hubBar"></b></i><em id="hubNum">100</em></div>
@@ -488,7 +342,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <div class="srow" id="vibRow"><span>진동</span><div class="seg" id="setVib"><button type="button" data-v="1">켜기</button><button type="button" data-v="0">끄기</button></div></div>
   <button type="button" class="sclose" id="setClose">닫고 계속</button>
 </div>
-<script src="sfx.js?v=2026.11.12-5"></script>
+<script src="sfx.js?v=2026.11.13-1"></script>
 <script>
 'use strict';
 (() => {
@@ -525,7 +379,7 @@ function syncCanvasMode(){
 let phase='intro',op=1,wave=0,stageTime=0, speed=1,paused=false,lastTime=0,uiClock=0;
 let core=100,facilities=[100,100],turrets=[],enemies=[],shots=[],particles=[],alerts=[];
 let drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};
-let pattern=[],nextSpawn=0,kills=0,leaks=0,switches=0,stageReports=[],upgradeHistory=[],upgradeRanks={stable:0,emergency:0,precision:0,rubble:0},offeredUpgrades=[];
+let pattern=[],nextSpawn=0,kills=0,leaks=0,switches=0,upgradeHistory=[],upgradeRanks={stable:0,emergency:0,precision:0,rubble:0},offeredUpgrades=[];   // switches: lane moves made, a count kept for tools/purity3d.js
 // Balance numbers in one place. Card values are read by the upgrade screen text, so the text never drifts from the rule.
 const BAL={droneRange:155,droneDmg:19,droneRate:.29,turretDmg:14,turretRate:.52,turretRange:165,moveBase:2.2,pulseRange:110,pulseDamage:75,pulseBase:11,pulseStun:.5,powerDownMove:1.5,shopDownTurret:1.35,opHeal:15,preview:5,
  card:{
@@ -545,12 +399,12 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.12-7';
+const BUILD='2026.11.13-1';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
-const G3={BUILD,active:false,renderer:null,events:[]};
+const G3={active:false,renderer:null,events:[]};
 function ev3(o){if(G3.active){G3.events.push(o);if(G3.events.length>500)G3.events.splice(0,250);}}
-let audio=null,mute=false,toastExpiry=0,frameTime=0,logLines=[];
+let audio=null,mute=false,toastExpiry=0;
 // Player settings (kept in this browser). Volume 100 is the original loudness.
 const prefs={speed:1,vol:100,bright:100,bgm:true,vib:true};try{Object.assign(prefs,JSON.parse(localStorage.getItem('relayPrefs')||'{}'));}catch(e){}
 prefs.vib=prefs.vib!==false;prefs.speed=prefs.speed===2?2:1;prefs.vol=Math.max(0,Math.min(100,+prefs.vol||0));prefs.bright=Math.max(70,Math.min(150,+prefs.bright||100));
@@ -569,34 +423,40 @@ let drill=null,lesson=null,holdState=null,pulseLock=false,comboLesson=false;   /
 //  gate: a gate on each lane; they shut in turn and a shut gate holds machines in a queue in front of it.
 //  fall(lane,y): a bridge; a machine struck by the overload there falls off and is destroyed (bosses are too heavy).
 //  cover(lane,y): a tunnel; machines inside are hidden and nothing can hit them.
-//  cross [a,b]: a crossover; a machine inside it on the drone's lane crosses to the other lane once (bosses keep their lane).
+//  cross: a crossover; a small or medium machine inside it crosses over to the drone's lane, once (large machines and bosses keep their lane).
 //  amp: high-voltage lines; machines under them take more damage.
 //  shape(lane,y): 0..1, how far the lane is pulled toward the median at y (drawing only). Nothing bends from y = 440 on: the turret bunker stands there.
+//  The 2.5D renderer reads the current map through the bridge (G.map): id, z, near, cover, shape, median.
 const sstep=(y,a,b,e)=>Math.max(0,Math.min(1,(y-a)/e,(b-y)/e)),ease=k=>k*k*(3-2*k),inZ=(y,z)=>y>z[0]&&y<z[1];
-const MAPK={pylon:{a:170,b:280,amp:1.2},pinch:{a:250,b:360,shoot:1},detour:{z:[[[150,260],[330,440]],[]],k:.7},wave:{z:[[240,295],[345,400]],shoot:1},gate:{y:211,cycle:12,shut:4},bridge:{a:230,b:340,low:.2,heavy:0},tunnel:{a:185,b:295,pulse:1},cross:{a:170,b:280,heavy:0,toward:1},mine:{a:200,b:310,n:3,dmg:35,r:30,rearm:30},flood:{a:240,b:350,k:.2,s:.1,r:25},boost:{z:[[],[[150,260],[330,440]]],k:1.15},vent:{a:200,b:310,cycle:6,burn:1.5,dps:10}};
-const VENT=MAPK.vent,MINE=MAPK.mine,FLOOD=[MAPK.flood.a,MAPK.flood.b],GATE=MAPK.gate,BRIDGE=[MAPK.bridge.a,MAPK.bridge.b],TUNNEL=[MAPK.tunnel.a,MAPK.tunnel.b],CROSS=[MAPK.cross.a,MAPK.cross.b],CROSS_T=.6,PYLON=[MAPK.pylon.a,MAPK.pylon.b];
-const gateShut=l=>map.gate&&((stageTime+(l?GATE.cycle/2:0))%GATE.cycle)<GATE.shut;   // lane 0's gate shuts first, lane 1's half a cycle later
+const MAPK={pylon:{a:170,b:280,amp:1.2},pinch:{a:250,b:360},detour:{z:[[[150,260],[330,440]],[]],k:.7},wave:{z:[[240,295],[345,400]]},gate:{y:211,cycle:12,shut:4},bridge:{a:230,b:340,low:.2},tunnel:{a:185,b:295},cross:{a:170,b:280},mine:{a:200,b:310,n:3,dmg:35,r:30,rearm:30},flood:{a:240,b:350,k:.2,s:.1,r:25},boost:{z:[[],[[150,260],[330,440]]],k:1.15},vent:{a:200,b:310,cycle:6,burn:1.5,dps:10}};
+const VENT=MAPK.vent,MINE=MAPK.mine;MINE.ys=Array.from({length:MINE.n},(_,i)=>MINE.a+(i+.5)*(MINE.b-MINE.a)/MINE.n);   // where the mines lie on each lane
+const FLOOD=[MAPK.flood.a,MAPK.flood.b],GATE=MAPK.gate,BRIDGE=[MAPK.bridge.a,MAPK.bridge.b],TUNNEL=[MAPK.tunnel.a,MAPK.tunnel.b],CROSS=[MAPK.cross.a,MAPK.cross.b],CROSS_T=.6,PYLON=[MAPK.pylon.a,MAPK.pylon.b];
+const gatePhase=l=>(stageTime+(l?GATE.cycle/2:0))%GATE.cycle,gateShut=l=>map.gate&&gatePhase(l)<GATE.shut;   // a gate's clock; lane 0's gate shuts first, lane 1's half a cycle later
 const bump=(y,z)=>{const c=(z[0]+z[1])/2,w=z[1]-z[0];return Math.abs(y-c)<w?Math.pow(Math.cos(Math.PI/2*(y-c)/w),2):0;};
+// z: the stretch where the map's rule acts, as [from,to] pieces for lane 0 and lane 1. zone and the rule predicates are derived from it below.
+const onBoth=(a,b)=>[[[a,b]],[[a,b]]],pct=v=>Math.round(v*100)+'%';
+const inZs=(y,zs)=>{for(let i=0;i<zs.length;i++)if(y>zs[i][0]&&y<zs[i][1])return true;return false;};   // no allocation: this runs for every machine every frame
 const MAPS=[
- {id:'straight',name:'직선로',rule:'',shape:()=>0},
- {id:'pinch',name:'협곡',rule:'두 전선이 붙는 협곡 구간의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',near:y=>inZ(y,[MAPK.pinch.a,MAPK.pinch.b]),shoot:!!MAPK.pinch.shoot,shape:(l,y)=>ease(sstep(y,MAPK.pinch.a-12,MAPK.pinch.b+12,18))},
- {id:'detour',name:'우회로',rule:'발전소 쪽 전선의 꺾인 우회 구간에서는 적이 30% 느려집니다',slow:(l,y)=>MAPK.detour.z[l].some(z=>inZ(y,z)),slowK:MAPK.detour.k,shape:(l,y)=>{let k=0;for(const z of MAPK.detour.z[l])k=Math.max(k,sstep(y,z[0],z[1],7));return .85*ease(k);}},
- {id:'wave',name:'굽잇길',rule:'전선이 가까워지는 두 굽이의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',near:y=>MAPK.wave.z.some(z=>inZ(y,z)),shoot:!!MAPK.wave.shoot,shape:(l,y)=>Math.max(...MAPK.wave.z.map(z=>bump(y,z)))},
- {id:'gate',name:'관문',rule:'두 전선의 차단문이 번갈아 4초씩 닫힙니다. 닫힌 문 앞에서는 적이 줄지어 멈췄다가 문이 열리면 한꺼번에 내려옵니다',gate:true,zone:(l,y)=>inZ(y,[LANE_TOP,GATE.y]),shape:()=>0},
- {id:'bridge',name:'다리',rule:'다리 위의 소형·중형 적은 과부하에 맞거나 크게 부서지면 아래로 떨어져 바로 부서집니다. 대형과 거대 병기는 버팁니다',fall:(l,y)=>inZ(y,BRIDGE),fallLow:MAPK.bridge.low,fallHeavy:MAPK.bridge.heavy!==0,shape:()=>0},
- {id:'tunnel',name:'터널',rule:'터널 안의 적은 보이지 않고 사격이 닿지 않습니다. 과부하는 터널 안까지 닿습니다',cover:(l,y)=>inZ(y,TUNNEL),coverPulse:!!MAPK.tunnel.pulse,shape:()=>0},
- {id:'cross',name:'샛길',rule:'샛길 구간의 소형·중형 적은 기체를 노리고 기체가 있는 전선으로 건너옵니다',cross:CROSS,crossHeavy:!!MAPK.cross.heavy,crossWay:MAPK.cross.way===undefined?-1:MAPK.cross.way,crossToward:!!MAPK.cross.toward,zone:(l,y)=>inZ(y,CROSS),shape:(l,y)=>ease(sstep(y,CROSS[0]-10,CROSS[1]+10,30))},
- {id:'mine',name:'지뢰밭',rule:'지뢰를 밟은 적은 폭발에 휘말립니다. 폭발은 가까운 적과 옆 지뢰로 번지고, 터진 지뢰는 30초 뒤 다시 묻힙니다',mine:true,zone:(l,y)=>inZ(y,[MINE.a,MINE.b]),shape:()=>0},
- {id:'flood',name:'침수로',rule:'물에 잠긴 적은 전기가 번집니다. 과부하는 물 속 두 전선의 적을 모두 감전시키고, 기체 사격도 물 속 가까운 적에게 번집니다',flood:true,zone:(l,y)=>inZ(y,FLOOD),shape:()=>0},
- {id:'boost',name:'가속로',rule:'정비소 쪽 전선의 가속 레일 위에서는 적이 15% 빨라집니다',boost:(l,y)=>MAPK.boost.z[l].some(z=>inZ(y,z)),zone:(l,y)=>MAPK.boost.z[l].some(z=>inZ(y,z)),shape:()=>0},
- {id:'vent',name:'화염로',rule:'화염 분사구가 6초마다 불을 뿜어 그 구간의 적을 태웁니다. 붉게 달아오르면 곧 터집니다',vent:true,zone:(l,y)=>inZ(y,[VENT.a,VENT.b]),shape:()=>0},
- {id:'pylon',name:'고압선',rule:'고압선 아래를 지나는 적은 감전되어 모든 공격에 1.2배 피해를 받습니다',amp:MAPK.pylon.amp,zone:(l,y)=>inZ(y,PYLON),shape:()=>0},
+ {id:'straight',name:'직선로',rule:'',z:[[],[]]},
+ {id:'pinch',name:'협곡',rule:'두 전선이 붙는 협곡 구간의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',z:onBoth(MAPK.pinch.a,MAPK.pinch.b),near:true,shape:(l,y)=>ease(sstep(y,MAPK.pinch.a-12,MAPK.pinch.b+12,18))},
+ {id:'detour',name:'우회로',rule:`발전소 쪽 전선의 꺾인 우회 구간에서는 적이 ${pct(1-MAPK.detour.k)} 느려집니다`,z:MAPK.detour.z,slowK:MAPK.detour.k,shape:(l,y)=>{let k=0;for(const z of MAPK.detour.z[l])k=Math.max(k,sstep(y,z[0],z[1],7));return .85*ease(k);}},
+ {id:'wave',name:'굽잇길',rule:'전선이 가까워지는 두 굽이의 적은 반대 전선의 기체 사격과 과부하에도 맞습니다',z:[MAPK.wave.z,MAPK.wave.z],near:true,shape:(l,y)=>{let k=0;for(const z of MAPK.wave.z)k=Math.max(k,bump(y,z));return k;}},
+ {id:'gate',name:'관문',rule:`두 전선의 차단문이 번갈아 ${GATE.shut}초씩 닫힙니다. 닫힌 문 앞에서는 적이 줄지어 멈췄다가 문이 열리면 한꺼번에 내려옵니다`,z:onBoth(LANE_TOP,GATE.y),gate:true},
+ {id:'bridge',name:'다리',rule:'다리 위의 소형·중형 적은 과부하에 맞거나 크게 부서지면 아래로 떨어져 바로 부서집니다. 대형과 거대 병기는 버팁니다',z:onBoth(BRIDGE[0],BRIDGE[1]),fallLow:MAPK.bridge.low,median:false},
+ {id:'tunnel',name:'터널',rule:'터널 안의 적은 보이지 않고 사격이 닿지 않습니다. 과부하는 터널 안까지 닿습니다',z:onBoth(TUNNEL[0],TUNNEL[1]),cover:true},
+ {id:'cross',name:'샛길',rule:'샛길 구간의 소형·중형 적은 기체를 노리고 기체가 있는 전선으로 건너옵니다',z:onBoth(CROSS[0],CROSS[1]),cross:true,shape:(l,y)=>ease(sstep(y,CROSS[0]-10,CROSS[1]+10,30))},
+ {id:'mine',name:'지뢰밭',rule:`지뢰를 밟은 적은 폭발에 휘말립니다. 폭발은 가까운 적과 옆 지뢰로 번지고, 터진 지뢰는 ${MINE.rearm}초 뒤 다시 묻힙니다`,z:onBoth(MINE.a,MINE.b),mine:true},
+ {id:'flood',name:'침수로',rule:'물에 잠긴 적은 전기가 번집니다. 과부하는 물 속 두 전선의 적을 모두 감전시키고, 기체 사격도 물 속 가까운 적에게 번집니다',z:onBoth(FLOOD[0],FLOOD[1]),flood:true,median:false},
+ {id:'boost',name:'가속로',rule:`정비소 쪽 전선의 가속 레일 위에서는 적이 ${pct(MAPK.boost.k-1)} 빨라집니다`,z:MAPK.boost.z,boostK:MAPK.boost.k},
+ {id:'vent',name:'화염로',rule:`화염 분사구가 ${VENT.cycle}초마다 불을 뿜어 그 구간의 적을 태웁니다. 붉게 달아오르면 곧 터집니다`,z:onBoth(VENT.a,VENT.b),vent:true},
+ {id:'pylon',name:'고압선',rule:`고압선 아래를 지나는 적은 감전되어 모든 공격에 ${MAPK.pylon.amp}배 피해를 받습니다`,z:onBoth(PYLON[0],PYLON[1]),amp:MAPK.pylon.amp},
 ];
-for(const m of MAPS){const no=()=>false;m.near=m.near||no;m.slow=m.slow||no;m.fall=m.fall||no;m.cover=m.cover||no;m.boost=m.boost||no;m.gate=!!m.gate;m.cross=m.cross||null;m.amp=m.amp||0;
- m.zone=m.zone||((l,y)=>m.near(y)||m.slow(l,y)||m.fall(l,y)||m.cover(l,y));}
+for(const m of MAPS){const no=()=>false,zone=m.zone=(l,y)=>inZs(y,m.z[l]);   // zone(lane,y): inside the stretch (rules, measuring, drawing)
+ m.shoot=!!m.near;m.near=m.near?y=>inZs(y,m.z[0]):no;m.slow=m.slowK?zone:no;m.fall=m.fallLow?zone:no;m.cover=m.cover?zone:no;m.boost=m.boostK?zone:no;
+ m.gate=!!m.gate;m.cross=!!m.cross;m.amp=m.amp||0;m.median=!m.shape&&m.median!==false;m.shape=m.shape||(()=>0);}   // median: the strip between the lanes is drawn (not where a lane bends across it, nor over the chasm or the water)
 // map state that changes during a chapter: mines (lane, y, seconds until armed again) and the fire vents' clock
 let mines=[],ventT=0;
-const ventPhase=()=>{if(!map.vent)return -1;const t=stageTime%VENT.cycle;return t>=VENT.cycle-VENT.burn?2:t>=VENT.cycle-VENT.burn-1?1:0;};   // 0 quiet, 1 glowing (about to fire), 2 burning   // zone: the stretch where the rule can act (for measuring and drawing)
+const ventPhase=()=>{if(!map.vent)return -1;const t=stageTime%VENT.cycle;return t>=VENT.cycle-VENT.burn?2:t>=VENT.cycle-VENT.burn-1?1:0;};   // -1 no vents on this map, 0 quiet, 1 glowing (about to fire), 2 burning
 // Bookkeeping only (no rule reads it): machines a map rule acted on this chapter, each counted once, and machines that came.
 let ruleCount=0,spawnCount=0;function ruleMark(e){if(!e.ruled){e.ruled=1;ruleCount++;}}
 // Feel: combo (kills less than COMBO.t apart; a breach breaks it), multi-kills (kills inside MULTI.t), score. Every COMBO.every kills
@@ -608,26 +468,30 @@ function onKill(e){combo++;comboT=COMBO.t;if(combo>bestCombo)bestCombo=combo;con
  multiN++;multiT=MULTI.t;
  if(combo%5===0){ev3({t:'combo',n:combo});sfx('item_get',0,Math.min(1.8,1+combo*.012),.45);}
  if(combo%COMBO.every===0){drone.pulseCooldown=Math.max(0,drone.pulseCooldown-COMBO.refund);showToast(combo+' 콤보 · 과부하 '+COMBO.refund+'초 충전',1300);sfx('upgrade',0,1.2,.6);if(liveRun&&!learned.combo)comboLesson=true;}}
-function feelStep(dt){if(comboT>0){comboT-=dt;if(comboT<=0){if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;}}
+function feelStep(dt){if(comboT>0){comboT-=dt;if(comboT<=0)combo=0;}
  if(multiT>0){multiT-=dt;if(multiT<=0)settleMulti();}}
 function settleMulti(end){if(multiN>=3){ev3({t:'multi',n:multiN,name:MULTI_NAME(multiN)});score+=multiN*multiN*10;if(!end)hitStop(.05);buzz(40);sfx('upgrade',0,1.5,.7);}multiN=0;multiT=0;}   // also called when a chapter ends inside the window
 const MAP_OF=[0,12,1,2,3,4,5,6,7,8,9,10,11];let map=MAPS[0];   // chapter -> map: every chapter has its own (the drill keeps the plain straight road)
 // Items. Rare machines and mid bosses drop them on the field: a drop stays DROP_LIFE seconds and has to be touched to be taken.
 // Up to BAG_MAX are kept and used with the two buttons at the bottom left. They are single rescues, not standing upgrades.
+// Item numbers. A timed item's seconds are its `time`; an item that waits for a place has its prompt in `aim`. The texts are built from the same numbers.
+const DROP_LIFE=5,BAG_MAX=2,REPAIR=30,STIM={rate:1.5,move:.5},PIERCE={more:2,dmg:.7},SPLASH={r:45,dmg:.5},MAG={range:150,time:.6},CHAIN={jumps:6,dmg:60,reach:110,across:60},ORB={delay:1,r:60,dmg:160};
+MAG.show=MAG.time+.5;   // how long the magnet's rings stay on the field
 const ITEMS={
- wall:{name:'차단벽',col:'#f0c47b',desc:'기체가 없는 전선의 적을 4초 동안 멈춥니다'},
- repair:{name:'긴급 수리',col:'#a6d4a9',desc:'더 많이 부서진 시설의 내구도를 30 회복합니다'},
+ wall:{name:'차단벽',col:'#f0c47b',time:4,desc:t=>`기체가 없는 전선의 적을 ${t}초 동안 멈춥니다`},
+ repair:{name:'긴급 수리',col:'#a6d4a9',desc:`더 많이 부서진 시설의 내구도를 ${REPAIR} 회복합니다`},
  charge:{name:'과충전',col:'#f0c47b',desc:'이동 대기와 과부하 재충전을 즉시 끝냅니다'},
- turret:{name:'임시 포탑',col:'#f0c47b',desc:'기체가 없는 전선에 8초 동안 포탑을 세웁니다'},
- jam:{name:'전파 교란',col:'#8dd7d0',desc:'모든 적을 5초 동안 느리게 합니다'},
- clone:{name:'분신 기체',col:'#8dd7d0',desc:'6초 동안 반대 전선에도 기체가 사격합니다'},
- stim:{name:'스팀팩',col:'#f48f7f',desc:'8초 동안 기체의 사격이 1.5배 빨라지고 이동 대기가 절반이 됩니다'},
- pierce:{name:'관통',col:'#8dd7d0',desc:'8초 동안 기체의 사격이 표적 뒤의 적 둘까지 꿰뚫습니다'},
- splash:{name:'스플래시',col:'#f0c47b',desc:'8초 동안 기체의 사격이 표적 주변의 적에게도 피해를 줍니다'},
- magnet:{name:'자석',col:'#c9a5f0',desc:'칸을 누른 뒤 전장의 한 곳을 터치하면 그 주변의 적을 그곳으로 끌어모읍니다'},
+ turret:{name:'임시 포탑',col:'#f0c47b',time:8,desc:t=>`기체가 없는 전선에 ${t}초 동안 포탑을 세웁니다`},
+ jam:{name:'전파 교란',col:'#8dd7d0',time:5,desc:t=>`모든 적을 ${t}초 동안 느리게 합니다`},
+ clone:{name:'분신 기체',col:'#8dd7d0',time:6,desc:t=>`${t}초 동안 반대 전선에도 기체가 사격합니다`},
+ stim:{name:'스팀팩',col:'#f48f7f',time:8,desc:t=>`${t}초 동안 기체의 사격이 ${STIM.rate}배 빨라지고 이동 대기가 절반이 됩니다`},
+ pierce:{name:'관통',col:'#8dd7d0',time:8,desc:t=>`${t}초 동안 기체의 사격이 표적 뒤의 적 둘까지 꿰뚫습니다`},
+ splash:{name:'스플래시',col:'#f0c47b',time:8,desc:t=>`${t}초 동안 기체의 사격이 표적 주변의 적에게도 피해를 줍니다`},
+ magnet:{name:'자석',col:'#c9a5f0',aim:'끌어모을 곳을 터치하세요',desc:'칸을 누른 뒤 전장의 한 곳을 터치하면 그 주변의 적을 그곳으로 끌어모읍니다'},
  chain:{name:'연쇄 번개',col:'#9fdcff',desc:'가장 앞선 적에서 시작해 가까운 적 다섯에게 차례로 번개가 튑니다'},
- orbital:{name:'궤도 포격',col:'#ff9f6a',desc:'칸을 누른 뒤 전장의 한 곳을 터치하면 1초 뒤 그곳에 큰 포격이 떨어집니다'},
+ orbital:{name:'궤도 포격',col:'#ff9f6a',aim:'포격할 곳을 터치하세요',desc:`칸을 누른 뒤 전장의 한 곳을 터치하면 ${ORB.delay}초 뒤 그곳에 큰 포격이 떨어집니다`},
 };
+for(const k in ITEMS)if(typeof ITEMS[k].desc==='function')ITEMS[k].desc=ITEMS[k].desc(ITEMS[k].time);
 // Icons: line drawings on a 24 x 24 grid, one path each. The same path is used in the buttons (SVG) and on the field (canvas).
 const ICON={
  wall:'M3 6h18v12H3zM3 12h18M9 6v6M15 6v6M6 12v6M12 12v6M18 12v6',
@@ -643,47 +507,46 @@ const ICON={
  chain:'M4 4.5l4.5 5-3 1.5 5 5.5M13 8.5l3.5 3-2.5 1.5 4.5 6.5M3.5 4.5h.01M12.5 8.5h.01M20.5 19.5h.01',
  orbital:'M12 2v6M9 5.5l3 3 3-3M5 15a7 4 0 1 0 14 0a7 4 0 1 0-14 0M12 15h.01M2 15h2M20 15h2',
 };
-const iconSVG=id=>'<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+ICON[id]+'"/></svg>';
-const DROP_LIFE=5,BAG_MAX=2,STIM={time:8,rate:1.5,move:.5},PIERCE={time:8,more:2,dmg:.7},SPLASH={time:8,r:45,dmg:.5},MAG={range:150,time:.6},CHAIN={jumps:6,dmg:60,reach:110,across:60},ORB={delay:1,r:60,dmg:160};
-const AIMED=['magnet','orbital'];   // items that wait for a place on the field
-// bag: the kept items (ids). drops: items lying on the field {id,item,lane,y,life}. aim: the bag slot of a magnet waiting for its place (-1 none).
+const svgIcon=(d,width,size)=>'<svg viewBox="0 0 24 24"'+(size?' width="'+size+'" height="'+size+'"':'')+' fill="none" stroke="currentColor" stroke-width="'+width+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+d+'"/></svg>';
+const iconSVG=id=>svgIcon(ICON[id],1.9,30);
+// bag: the kept items (ids). drops: items lying on the field {id,item,lane,y,life}. aim: the bag slot of an item waiting for its place (-1 none).
 let bag=[],drops=[],aim=-1,liveRun=false,stageHurt=false,stageGift='';const aid={wall:0,wallLane:0,turret:0,turretLane:0,turretCool:0,jam:0,clone:0,cloneCool:0,stim:0,pierce:0,splash:0,mag:0,magLane:0,magY:0};
-function applyItem(id){const other=1-drone.lane;
- if(id==='wall'){aid.wall=4;aid.wallLane=other;}
- else if(id==='repair'){const l=facilities[0]<=facilities[1]?0:1;facilities[l]=Math.min(100,facilities[l]+30);}
+function applyItem(id){const other=1-drone.lane,it=ITEMS[id];if(it.time)aid[id]=it.time;   // a timed item starts its clock
+ if(id==='wall')aid.wallLane=other;
+ else if(id==='repair'){const l=facilities[0]<=facilities[1]?0:1;facilities[l]=Math.min(100,facilities[l]+REPAIR);}
  else if(id==='charge'){drone.moveCooldown=0;drone.pulseCooldown=0;}
- else if(id==='turret'){aid.turret=8;aid.turretLane=other;aid.turretCool=0;}
- else if(id==='jam')aid.jam=5;
- else if(id==='clone'){aid.clone=6;aid.cloneCool=0;}
- else if(id==='stim'){aid.stim=STIM.time;drone.moveCooldown*=STIM.move;}
- else if(id==='pierce')aid.pierce=PIERCE.time;
- else if(id==='splash')aid.splash=SPLASH.time;
+ else if(id==='turret'){aid.turretLane=other;aid.turretCool=0;}
+ else if(id==='clone')aid.cloneCool=0;
+ else if(id==='stim')drone.moveCooldown*=STIM.move;
  else if(id==='chain')chainBolt();
- ev3({t:'item',id,lane:other});sfx('item_use');}
+ sfx('item_use');}
+// What an attack that picks its own victims may hit: live machines that are not hidden in a tunnel. (Only the overload reaches inside: pulse().)
+const exposed=e=>e.hp>0&&!map.cover(e.lane,e.y);
+function eachNear(lane,y,r,fn){for(const e of enemies)if(e.lane===lane&&Math.abs(e.y-y)<=r&&exposed(e))fn(e);}   // those of one lane within r of y
 // chain lightning: from the foremost machine to the nearest one not yet struck (a jump to the other lane counts CHAIN.across farther)
-function chainBolt(){let cur=null;for(const e of enemies)if(e.hp>0&&!map.cover(e.lane,e.y)&&(!cur||e.y>cur.y))cur=e;let px=drone.x,py=drone.y;const hit=[];
+function chainBolt(){let cur=null;for(const e of enemies)if(exposed(e)&&(!cur||e.y>cur.y))cur=e;let px=drone.x,py=drone.y;const hit=[];
  for(let k=0;k<CHAIN.jumps&&cur;k++){hit.push(cur);const cx=cur.x,cy=cur.y,cl=cur.lane;damageEnemy(cur,CHAIN.dmg,px,py,'chain');px=cx;py=cy;let nx=null,bd=CHAIN.reach;
-  for(const q of enemies){if(q.hp<=0||hit.includes(q)||map.cover(q.lane,q.y))continue;const d=Math.abs(q.y-cy)+(q.lane!==cl?CHAIN.across:0);if(d<=bd){bd=d;nx=q;}}cur=nx;}
+  for(const q of enemies){if(!exposed(q)||hit.includes(q))continue;const d=Math.abs(q.y-cy)+(q.lane!==cl?CHAIN.across:0);if(d<=bd){bd=d;nx=q;}}cur=nx;}
  if(hit.length>1)showToast('연쇄 번개 · '+hit.length+'기',1300);}
 function itemLocked(id){return liveRun&&(!learned.item||(!!id&&!learned.items[id]));}   // in a real run the bag cannot be used before the item lesson, and an item not before its own lesson
 function useItem(i){if(i>=bag.length||phase!=='battle'||paused||holdState||drill||itemLocked(bag[i]))return;const id=bag[i];
- if(AIMED.includes(id)){aim=aim===i?-1:i;if(aim>=0)showToast(id==='magnet'?'끌어모을 곳을 터치하세요':'포격할 곳을 터치하세요',2600);updateControls();return;}   // aimed items wait for a place; pressing again puts them back
+ if(ITEMS[id].aim){aim=aim===i?-1:i;if(aim>=0)showToast(ITEMS[id].aim,2600);updateControls();return;}   // aimed items wait for a place; pressing again puts them back
  aim=-1;bag.splice(i,1);applyItem(id);showToast(ITEMS[id].name+' 사용',1500);updateControls();}
-function useAim(lane,y){if(aim<0)return;if(bag[aim]==='orbital')useOrbital(lane,y);else useMagnet(lane,y);}
+// the place was chosen: the item leaves its slot and acts there
+function useAim(lane,y){if(aim<0)return;const i=aim,id=bag[i];aim=-1;if(id&&ITEMS[id].aim){bag.splice(i,1);(id==='orbital'?aimOrbital:aimMagnet)(lane,y);}updateControls();}
 // orbital strike: after ORB.delay a shell lands on that place; machines of that lane within ORB.r take ORB.dmg (bosses too)
 let strikes=[];
-function useOrbital(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='orbital'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+10,Math.min(LEAK_Y-20,y));strikes.push({lane,y,t:ORB.delay});ev3({t:'item',id:'orbital',lane,y});sfx('boss_warn',0,1.4,.5);showToast('궤도 포격 · 낙하 중',1200);updateControls();}
-function strikeStep(dt){for(const k of strikes){k.t-=dt;if(k.t<=0){let n=0;ev3({t:'orbital',lane:k.lane,y:k.y});for(const e of enemies)if(e.hp>0&&e.lane===k.lane&&Math.abs(e.y-k.y)<=ORB.r&&!map.cover(e.lane,e.y)){n++;damageEnemy(e,ORB.dmg,LANES[k.lane],k.y,'orbital');}hitStop(.08);buzz([30,60,90]);sfx('kill_boss',0,1.15,.8);}}if(strikes.some(k=>k.t<=0))strikes=strikes.filter(k=>k.t>0);}
+function aimOrbital(lane,y){y=Math.max(LANE_TOP+10,Math.min(LEAK_Y-20,y));strikes.push({lane,y,t:ORB.delay});sfx('boss_warn',0,1.4,.5);showToast('궤도 포격 · 낙하 중',1200);}
+function strikeStep(dt){for(const k of strikes){k.t-=dt;if(k.t<=0){ev3({t:'orbital',lane:k.lane,y:k.y});eachNear(k.lane,k.y,ORB.r,e=>damageEnemy(e,ORB.dmg,LANES[k.lane],k.y,'orbital'));hitStop(.08);buzz([30,60,90]);sfx('kill_boss',0,1.15,.8);}}if(strikes.some(k=>k.t<=0))strikes=strikes.filter(k=>k.t>0);}
 // the magnet: machines of that lane within MAG.range of the place are dragged to it (large machines are too heavy)
-function useMagnet(lane,y){const i=aim;aim=-1;if(i<0||bag[i]!=='magnet'){updateControls();return;}bag.splice(i,1);y=Math.max(LANE_TOP+20,Math.min(LEAK_Y-60,y));let n=0;
- for(const e of enemies)if(e.hp>0&&e.lane===lane&&e.type!=='boss'&&Math.abs(e.y-y)<=MAG.range&&!map.cover(e.lane,e.y)){e.pull=y;e.pullT=MAG.time;n++;}
- aid.mag=MAG.time+.5;aid.magLane=lane;aid.magY=y;ev3({t:'item',id:'magnet',lane,y});sfx('item_use');showToast('자석 · '+n+'기를 끌어모았습니다',1500);updateControls();}
+function aimMagnet(lane,y){y=Math.max(LANE_TOP+20,Math.min(LEAK_Y-60,y));let n=0;eachNear(lane,y,MAG.range,e=>{if(e.type!=='boss'){e.pull=y;e.pullT=MAG.time;n++;}});
+ aid.mag=MAG.show;aid.magLane=lane;aid.magY=y;sfx('item_use');showToast('자석 · '+n+'기를 끌어모았습니다',1500);}
 // A machine that falls leaves one thing: one of the items on the field, or (just as likely as any one item) a field turret that stands at once.
 function dropItem(e){if(drill)return;const ids=Object.keys(ITEMS),k=Math.random()*(ids.length+1)|0;if(k===ids.length){placeField(e);return;}
- const d={id:Math.random(),item:ids[k],lane:e.lane,y:Math.max(LANE_TOP+25,Math.min(LEAK_Y-50,e.y)),life:DROP_LIFE};drops.push(d);ev3({t:'drop',d});sfx('item_get',0,1.5,.5);}
+ const d={id:Math.random(),item:ids[k],lane:e.lane,y:Math.max(LANE_TOP+25,Math.min(LEAK_Y-50,e.y)),life:DROP_LIFE};drops.push(d);sfx('item_get',0,1.5,.5);}
 // the player touched a drop: it goes into the bag if there is room
 function takeDrop(d){const i=drops.indexOf(d);if(i<0)return false;if(bag.length>=BAG_MAX){showToast('보관 칸이 가득 찼습니다',1200);return false;}
- drops.splice(i,1);bag.push(d.item);ev3({t:'take',d});showToast('아이템 획득 · '+ITEMS[d.item].name,1600);sfx('item_get');updateControls();return true;}
+ drops.splice(i,1);bag.push(d.item);showToast('아이템 획득 · '+ITEMS[d.item].name,1600);sfx('item_get');updateControls();return true;}
 function dropStep(dt){   // dt here is the player's time: update() gets game time and divides the speed back out
  for(const d of drops)d.life-=dt;if(drops.some(d=>d.life<=0))drops=drops.filter(d=>d.life>0);}
 // A chapter finished without a single breach pays one item straight into the bag (the field is gone by then).
@@ -693,12 +556,12 @@ function giftItem(){if(drill)return'';if(bag.length>=BAG_MAX)return'full';const 
 // It fires along its own lane for FIELD.life seconds. At most FIELD.max stand at a time: a new one replaces the oldest.
 const FIELD={life:12,dmg:11,rate:.5,range:120,max:2};let fieldTurrets=[];
 function placeField(e){const y=Math.max(LANE_TOP+30,Math.min(LEAK_Y-40,e.y));if(fieldTurrets.length>=FIELD.max)fieldTurrets.shift();
- const f={id:Math.random(),lane:e.lane,y,life:FIELD.life,cool:.35,flash:0};fieldTurrets.push(f);ev3({t:'field',f});showToast('현장 포탑 설치',1800);sfx('item_use');}
+ const f={id:Math.random(),lane:e.lane,y,life:FIELD.life,cool:.35,flash:0};fieldTurrets.push(f);showToast('현장 포탑 설치',1800);sfx('item_use');}
 function fieldStep(dt){for(const f of fieldTurrets){f.life-=dt;f.cool-=dt;f.flash=Math.max(0,f.flash-dt);if(f.cool<=0&&f.life>0){const e=pickTarget(f.lane,f.y,FIELD.range);if(e){f.cool=FIELD.rate;f.flash=.15;damageEnemy(e,FIELD.dmg,LANES[f.lane],f.y,'field');sfx('turret',0,1.35,.55);}}}
  if(fieldTurrets.some(f=>f.life<=0))fieldTurrets=fieldTurrets.filter(f=>f.life>0);}
 function aidStep(dt){if(aid.wall>0)aid.wall-=dt;if(aid.jam>0)aid.jam-=dt;if(aid.stim>0)aid.stim-=dt;if(aid.pierce>0)aid.pierce-=dt;if(aid.splash>0)aid.splash-=dt;if(aid.mag>0)aid.mag-=dt;
- if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,BAL.turretRange);if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'echo');shotSound('turret');}}}
- if(aid.clone>0){aid.clone-=dt;aid.cloneCool-=dt;if(aid.cloneCool<=0){const l=1-drone.lane,e=pickTarget(l,drone.y,effects.droneRange);if(e){aid.cloneCool=BAL.droneRate;damageEnemy(e,BAL.droneDmg,LANES[l],drone.y,'echo');shotSound('echo');}}}}
+ if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,BAL.turretRange);if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'echo');sfx('turret');}}}
+ if(aid.clone>0){aid.clone-=dt;aid.cloneCool-=dt;if(aid.cloneCool<=0){const l=1-drone.lane,e=pickTarget(l,drone.y,effects.droneRange);if(e){aid.cloneCool=BAL.droneRate;damageEnemy(e,BAL.droneDmg,LANES[l],drone.y,'echo');sfx('echo');}}}}
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
 // each operation asks for a different way of playing.
@@ -794,10 +657,11 @@ for(const k in stages){const add=[],every=k>1?2:3;let n=0;for(const ev of stages
 const HP_SCALE=.85,RARE_P=.015,OP_HP=[0,1,1,1.18,1.32,1.38,1.52,1.5,2.1,1.72,2.02,1.95,2.02];   // hull per chapter
 const BOSS_OPS=Object.keys(stages).map(Number).filter(k=>k<TOTAL_OPS&&stages[k].some(ev=>ev[2]==='boss'));   // chapters with a mid boss (named in the drill's last words)
 const WAVES={1:[17,34],2:[18,36],3:[22,44],4:[22,44],5:[22,44],6:[22,44],7:[22,44],8:[22,44],9:[22,44],10:[22,44],11:[22,44],12:[22,44]};
-const OP_NAMES=['','첫 대응','전선 집중','동시 포위','교차 압박','관문 돌파','낙하 지대','암흑 터널','샛길 공세','지뢰 지대','침수 구역','가속 구간','최후 방어'];
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
-function reset(){bag=[];drops=[];aim=-1;strikes=[];combo=comboT=bestCombo=multiN=multiT=score=0;stars=[];liveRun=false;stageHurt=false;stageGift='';aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];op=1;wave=0;stageTime=0;speed=prefs.speed;paused=false;core=100;facilities=[100,100];turrets=[];enemies=[];shots=[];particles=[];alerts=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};nextSpawn=0;kills=0;leaks=0;switches=0;stageReports=[];upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];logLines=[];addLog('방어 기지에 신호가 연결되었습니다.');}
-function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];stageHurt=false;strikes=[];combo=comboT=multiN=multiT=0;ruleCount=spawnCount=0;ventT=0;mines=[];if(map.mine)for(let l=0;l<2;l++)for(let i=0;i<MINE.n;i++)mines.push({lane:l,y:MINE.a+(i+.5)*(MINE.b-MINE.a)/MINE.n,arm:0});aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;op=index;wave=1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';paused=false;stopT=0;stopQ.length=0;sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);addLog(OP_NAMES[index]+' 작전 개시.');updateControls();updateUI();}
+// what a new run and a new chapter both start from: an empty field, both facilities whole
+function clearField(){stageHurt=false;strikes=[];combo=comboT=multiN=multiT=0;aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];paused=false;}
+function reset(){clearField();bag=[];bestCombo=score=0;stars=[];liveRun=false;stageGift='';op=1;wave=0;speed=prefs.speed;core=100;turrets=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};kills=0;leaks=0;switches=0;upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];}
+function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];clearField();ruleCount=spawnCount=0;ventT=0;mines=[];if(map.mine)for(let l=0;l<2;l++)for(const y of MINE.ys)mines.push({lane:l,y,arm:0});op=index;wave=1;core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';stopT=0;stopQ.length=0;sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);updateControls();updateUI();}
 function waveIndex(t){const b=WAVES[op];return t<b[0]?1:t<b[1]?2:3;}
 function spawn(lane,type){const m=TYPES[type];let hp=Math.round(m.hp*OP_HP[op]*(type==='boss'?1:HP_SCALE));let rare=false,final=false;
  if(!drill){if(type==='boss'){if(op===TOTAL_OPS){final=true;hp=Math.round(hp*1.5);}}else if(Math.random()<RARE_P){rare=true;hp=Math.round(hp*1.6);}}   // rare machines drop an item; the last boss changes lanes twice
@@ -806,28 +670,30 @@ function damageEnemy(e,damage,sx,sy,src){if(e.hp<=0)return;if(map.amp&&src!=='fa
  if(map.fallLow&&e.hp>0&&canFall(e)&&e.hp<e.maxHp*map.fallLow){knockOff(e);return;}
  if(e.final&&e.hops>0&&e.hp>0&&e.hp<=e.maxHp*e.hops/3){e.hops--;e.from=e.lane;e.crossT=CROSS_T;e.lane=1-e.lane;e.x=LANES[e.lane];e.y=Math.max(LANE_TOP,e.y-50);showToast('최종 병기가 전선을 넘었습니다',1900);sfx('kill_brute',0,.78);ev3({t:'spawn',e});}
  ev3({t:'hit',src,e,dmg:damage,sx,sy,kill:e.hp<=0});shots.push({x:sx,y:sy,x2:e.x,y2:e.y,life:.13,thick:damage>50?3:1.5});if(e.hp<=0){kills++;if(!drill)onKill(e);burst(e.x,e.y,e.type==='boss'?16:7,e.type==='runner'?'#efc17b':'#ee9478');sfxKill(e);if(e.type==='boss'){hitStop(.11,.5);buzz([40,420,160]);}if(e.rare||(e.type==='boss'&&!e.final))dropItem(e);}else sfxHit(src);}
-function addLog(txt){logLines.unshift(txt);logLines=logLines.slice(0,4);}
 /* ---------- sound (sfx.js): every sound is built once from layers while the title screen shows; playing only starts buffers ---------- */
-const SFX={raw:{},amb:null,ready:false,last:{},bus:null,cache:new Map(),killAt:-9,chain:0,ambOn:false};
-(function bake(i){const X=window.RELAY_SFX;if(!X)return;if(i<X.names.length){const nm=X.names[i];SFX.raw[nm]=X.bake([nm])[nm];setTimeout(()=>bake(i+1),0);}else{SFX.amb=X.ambience();SFX.ready=true;}})(0);
+const SFX={raw:{},amb:null,ready:false,last:{},bus:null,killAt:-9,chain:0,ambOn:false};
+function bakeSounds(i){const X=window.RELAY_SFX;if(!X)return;if(i<X.names.length){const nm=X.names[i];SFX.raw[nm]=X.bake([nm])[nm];setTimeout(()=>bakeSounds(i+1),0);}else{SFX.amb=X.ambience();SFX.ready=true;}}
+setTimeout(()=>bakeSounds(0),0);   // one sound per task; the first starts once the title screen is up, not before it
 // one compressor for everything; the frequent fire (bed) dips under the big sounds
-function sfxBus(){if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();
- if(!SFX.bus||SFX.bus.a!==audio){const a=audio,comp=a.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=8;comp.ratio.value=8;comp.attack.value=.003;comp.release.value=.16;const out=a.createGain();out.gain.value=.7*prefs.vol/100;comp.connect(out);out.connect(a.destination);
-  const bed=a.createGain(),amb=a.createGain();amb.gain.value=0;bed.connect(comp);amb.connect(comp);SFX.bus={a,comp,out,bed,amb,ambSrc:null};SFX.cache=new Map();}
+function audioCtx(){if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();return audio;}   // made on first use (a touch), then kept
+const sfxVolume=()=>.7*prefs.vol/100;
+function sfxBus(){const a=audioCtx();
+ if(!SFX.bus){const comp=a.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=8;comp.ratio.value=8;comp.attack.value=.003;comp.release.value=.16;const out=a.createGain();out.gain.value=sfxVolume();comp.connect(out);out.connect(a.destination);
+  const bed=a.createGain(),amb=a.createGain();amb.gain.value=0;bed.connect(comp);amb.connect(comp);SFX.bus={a,comp,out,bed,amb,ambSrc:null};}
  return SFX.bus;}
-function sfxBuf(x){let b=SFX.cache.get(x);if(!b){b=audio.createBuffer(1,x.length,RELAY_SFX.SR);b.getChannelData(0).set(x);SFX.cache.set(x,b);}return b;}
+// A baked sound is a sample array until it is first played; then the audio buffer made from it takes its place (the samples are not kept twice).
+function sfxBuf(list,i){let b=list[i];if(!(b instanceof AudioBuffer)){const x=b;b=audio.createBuffer(1,x.length,RELAY_SFX.SR);b.getChannelData(0).set(x);list[i]=b;}return b;}
 // name: a sound of sfx.js. delay in seconds, p multiplies the pitch. Frequent sounds have variants and a pitch spread, so no two shots are the same.
 function sfx(name,delay=0,p=1,gm=1){if(mute||prefs.vol<=0||!SFX.ready)return;try{const B=sfxBus(),X=RELAY_SFX,vs=SFX.raw[name];if(!vs)return;const m=X.META[name]||{},t=B.a.currentTime+delay;
  let v=Math.random()*vs.length|0;if(vs.length>1&&v===SFX.last[name])v=(v+1)%vs.length;SFX.last[name]=v;
- const s=B.a.createBufferSource(),g=B.a.createGain();s.buffer=sfxBuf(vs[v]);s.playbackRate.value=p*(1+(Math.random()*2-1)*(m.pitch||0));g.gain.value=X.VOL[name]*gm*(.85+Math.random()*.15);s.connect(g);g.connect(m.bus==='bed'?B.bed:B.comp);s.start(t);
+ const s=B.a.createBufferSource(),g=B.a.createGain();s.buffer=sfxBuf(vs,v);s.playbackRate.value=p*(1+(Math.random()*2-1)*(m.pitch||0));g.gain.value=X.VOL[name]*gm*(.85+Math.random()*.15);s.connect(g);g.connect(m.bus==='bed'?B.bed:B.comp);s.start(t);
  if(m.duck){B.bed.gain.setTargetAtTime(.35,t,.01);B.bed.gain.setTargetAtTime(1,t+m.duck*.5,.12);}}catch(e){}}
 // kills at the same moment ring out one after another, each a little higher (an overload that takes four machines sounds like four)
 function sfxKill(e){const now=performance.now()/1000;if(e.type==='boss'){sfx('kill_boss');return;}if(now-SFX.killAt<.06)SFX.chain=Math.min(SFX.chain+1,5);else SFX.chain=0;SFX.killAt=now;sfx('kill_'+e.type,SFX.chain*.04,Math.pow(1.06,SFX.chain));}
 // rounds landing on armour
 function sfxHit(src){if(src==='turret'||src==='pierce')sfx('hit_heavy',.04);else if(src==='drone'||src==='echo'||src==='field'||src==='splash')sfx('hit_light',.03);}
 // wind over the base and the hum of the relay while a battle runs
-function sfxAmb(on){if(SFX.ambOn===on)return;SFX.ambOn=on;if(mute||prefs.vol<=0||!SFX.ready)return;try{const B=sfxBus();if(on&&!B.ambSrc){const s=B.a.createBufferSource();s.buffer=sfxBuf(SFX.amb);s.loop=true;s.connect(B.amb);s.start();B.ambSrc=s;}B.amb.gain.setTargetAtTime(on?.1:0,B.a.currentTime,.5);}catch(e){}}
-function shotSound(kind){sfx(kind);}   // turret, drone, echo
+function sfxAmb(on){if(SFX.ambOn===on)return;SFX.ambOn=on;if(mute||prefs.vol<=0||!SFX.ready)return;try{const B=sfxBus();if(on&&!B.ambSrc){const s=B.a.createBufferSource();s.buffer=sfxBuf(SFX,'amb');s.loop=true;s.connect(B.amb);s.start();B.ambSrc=s;}B.amb.gain.setTargetAtTime(on?.1:0,B.a.currentTime,.5);}catch(e){}}
 // phone vibration (Android browsers only; iPhones do not support it)
 function buzz(p){if(!prefs.vib)return;   // its own setting, apart from the volume
  try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
@@ -837,40 +703,40 @@ function hitStop(sec,delay=0){if(drill)return;if(delay>0)stopQ.push([performance
 function stopTick(dt){const now=performance.now();for(let i=stopQ.length-1;i>=0;i--)if(now>=stopQ[i][0]){stopT=Math.max(stopT,stopQ[i][1]);stopQ.splice(i,1);}if(stopT>0){stopT-=dt;return true;}return false;}
 function burst(x,y,n,color){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=24+Math.random()*80;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:1+Math.random()*3,life:.25+Math.random()*.42,color});}if(particles.length>180)particles.splice(0,particles.length-180);}
 // a machine knocked off a bridge: it falls and is destroyed whatever its hull (the renderer drops it over the edge)
-function canFall(e){return e.type!=='boss'&&(map.fallHeavy||e.type!=='brute')&&map.fall(e.lane,e.y);}
+function canFall(e){return e.type!=='boss'&&e.type!=='brute'&&map.fall(e.lane,e.y);}
 function knockOff(e,src){e.fell=true;ruleMark(e);ev3({t:'fall',e});damageEnemy(e,e.hp,drone.x,drone.y,src||'fall');}
-function boosted(e){ruleMark(e);return MAPK.boost.k;}   // boost rails
+function boosted(e){ruleMark(e);return map.boostK;}   // boost rails
 // a mine goes off: machines of that lane nearby are hit, and armed mines within reach go off too (a chain)
-function mineBlast(m){m.arm=MINE.rearm;ev3({t:'mine',lane:m.lane,y:m.y});sfx('kill_grunt',0,.85);for(const q of enemies)if(q.hp>0&&q.lane===m.lane&&Math.abs(q.y-m.y)<=MINE.r){ruleMark(q);damageEnemy(q,MINE.dmg,LANES[m.lane],m.y,'mine');}for(const o of mines)if(o!==m&&o.lane===m.lane&&o.arm<=0&&Math.abs(o.y-m.y)<=MINE.r*1.35)mineBlast(o);}
-function slowed(e){ruleMark(e);return map.slowK||.6;}   // a detour
+function mineBlast(m){m.arm=MINE.rearm;ev3({t:'mine',lane:m.lane,y:m.y});sfx('kill_grunt',0,.85);eachNear(m.lane,m.y,MINE.r,q=>{ruleMark(q);damageEnemy(q,MINE.dmg,LANES[m.lane],m.y,'mine');});for(const o of mines)if(o!==m&&o.lane===m.lane&&o.arm<=0&&Math.abs(o.y-m.y)<=MINE.r*1.35)mineBlast(o);}
+function slowed(e){ruleMark(e);return map.slowK;}   // a detour
 // A shut gate: machines that had not passed it at the start of the frame queue up in front of it, each a body length behind the one ahead.
 function gateHold(){for(let l=0;l<2;l++){if(!gateShut(l))continue;const q=enemies.filter(e=>e.hp>0&&e.lane===l&&e.py<=GATE.y-TYPES[e.type].r+.01).sort((a,b)=>b.y-a.y);let lim=GATE.y,prev=null;
  for(const e of q){lim=prev?Math.min(lim,prev.y-(TYPES[prev.type].r+TYPES[e.type].r+3)):GATE.y-TYPES[e.type].r;if(e.y>lim){e.y=Math.max(lim,Math.min(e.py,e.y));ruleMark(e);}prev=e;}}}
 // The drone's target: its own lane, and where the lanes run side by side (map.shoot) also the other lane's machines in that stretch.
 function pickDrone(){let e=pickTarget(drone.lane,drone.y,effects.droneRange);if(map.shoot){const o=pickTarget(1-drone.lane,drone.y,effects.droneRange,null,true);if(o&&(!e||o.y+(o.type==='boss'?6:0)>e.y+(e.type==='boss'?6:0))){e=o;ruleMark(o);}}return e;}
 function pickTarget(lane,y,range,skip,nearOnly){let chosen=null,best=-Infinity,hid=null,hidP=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;if(nearOnly&&!map.near(e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(map.cover(e.lane,e.y)){if(priority>hidP){hid=e;hidP=priority;}continue;}if(priority>best){chosen=e;best=priority;}}if(hid&&hidP>best)ruleMark(hid);return chosen;}   // a hidden machine counts for the tunnel only when it would have been the target
-function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(phase==='battle'&&facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);if(phase==='battle')switches++;ev3({t:'move',from,to:lane,rubble:phase==='battle'&&!!effects.rubble});
- if(phase==='battle'&&effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');addLog((lane===0?'발전소':'정비소')+' 방어선으로 지원 기체 이동.');updateControls();}
-function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y))&&(map.coverPulse||!map.cover(e.lane,e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0&&phase==='battle')showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
- burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);addLog('과부하 방출. '+close.length+'개 목표에 타격.');updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;if(combo>=5)ev3({t:'comboEnd',n:combo,broken:true});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0){addLog((lane===0?'발전소':'정비소')+' 기능 정지! 방어선이 붕괴했습니다.');showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}else if(e.type==='boss')addLog('거대 병기가 방어선을 돌파했습니다.');}
-function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);addLog('제'+wave+'파 공격 감지.');}
+function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 장치 재충전 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=effects.moveBase*(facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);switches++;ev3({t:'move',from,to:lane,rubble:!!effects.rubble});
+ if(effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');updateControls();}
+function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;const close=enemies.filter(e=>e.hp>0&&Math.abs(e.y-drone.y)<effects.pulseRange&&(e.lane===drone.lane||map.near(e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<effects.pulseRange?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0)showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(canFall(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
+ burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:effects.pulseRange,hits:close.length});sfx('pulse');hitStop(.07);buzz(30);updateControls();}
+function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0)showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}
+function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sfx('surge_warn');}}
-  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);addLog('거대 병기 감지! '+(ev[1]===0?'발전소':'정비소')+' 방면입니다.');sfx('boss_warn');}}
+  while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);sfx('boss_warn');}}
   drone.moveCooldown=Math.max(0,drone.moveCooldown-dt);drone.pulseCooldown=Math.max(0,drone.pulseCooldown-dt);drone.shotCooldown-=dt;drone.x+=(LANES[drone.lane]-drone.x)*Math.min(1,dt*5.5);if(Math.abs(LANES[drone.lane]-drone.x)<20){drone.stay+=dt;drone.burst=Math.max(0,drone.burst-dt);}
   for(const e of enemies){if(e.hp<=0)continue;const y0=e.py=e.y;if(e.crossT>0)e.crossT-=dt;if(e.pullT>0){e.pullT-=dt;e.y+=(e.pull-e.y)*Math.min(1,dt*9);if(e.pullT<=0)e.stun=Math.max(e.stun,.35);}   // dragged by the magnet
    else e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?slowed(e):1)*(map.boost(e.lane,e.y)?boosted(e):1);
-   if(map.cross&&e.type!=='boss'&&(map.crossHeavy||e.type!=='brute')&&!e.crossed&&inZ(e.y,map.cross)&&(map.crossToward?e.lane!==drone.lane:e.lane===drone.lane)&&(map.crossWay<0||e.lane===map.crossWay)){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: toward the drone's lane (MAPK.cross.toward)
+   if(map.cross&&e.type!=='boss'&&e.type!=='brute'&&!e.crossed&&map.zone(e.lane,e.y)&&e.lane!==drone.lane){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: small and medium machines come over to the drone's lane, once
    if(map.mine)for(const m of mines)if(m.lane===e.lane&&m.arm<=0&&y0<m.y&&e.y>=m.y)mineBlast(m);   // stepped on a mine
    e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y&&e.hp>0){e.hp=-999;enemyLeak(e);}}
   if(map.mine)for(const m of mines)m.arm=Math.max(0,m.arm-dt);
-  if(map.vent&&ventPhase()===2){ventT+=dt;while(ventT>=.25-1e-6){ventT-=.25;for(const e of enemies)if(e.hp>0&&inZ(e.y,[VENT.a,VENT.b])){ruleMark(e);damageEnemy(e,VENT.dps*.25,LANES[e.lane],e.y,'vent');}}}else ventT=0;   // the vents burn in quarter-second ticks
+  if(map.vent&&ventPhase()===2){ventT+=dt;while(ventT>=.25-1e-6){ventT-=.25;for(const e of enemies)if(e.hp>0&&map.zone(e.lane,e.y)){ruleMark(e);damageEnemy(e,VENT.dps*.25,LANES[e.lane],e.y,'vent');}}}else ventT=0;   // the vents burn in quarter-second ticks
   if(map.gate)gateHold();
-  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}shotSound('turret');}}}
-  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickDrone();if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1)/(aid.stim>0?STIM.rate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');shotSound('drone');if(map.flood&&inZ(e.y,FLOOD)&&MAPK.flood.s>0)for(const q of enemies)if(q!==e&&q.hp>0&&q.lane===e.lane&&inZ(q.y,FLOOD)&&Math.abs(q.y-e.y)<=MAPK.flood.r){ruleMark(q);ruleMark(e);damageEnemy(q,BAL.droneDmg*MAPK.flood.s,e.x,e.y,'shock');}
-   if(aid.pierce>0){let last=e,seen=[e];for(let k=0;k<PIERCE.more;k++){let nx=null,best=-Infinity;for(const q of enemies){if(q.lane!==e.lane||q.hp<=0||seen.includes(q)||Math.abs(q.y-drone.y)>effects.droneRange||map.cover(q.lane,q.y))continue;if(q.y>best){best=q.y;nx=q;}}if(!nx)break;seen.push(nx);damageEnemy(nx,BAL.droneDmg*PIERCE.dmg,last.x,last.y,'pierce');last=nx;}}   // the round carries on through the machines behind
-   if(aid.splash>0){ev3({t:'splash',lane:e.lane,y:e.y});for(const q of enemies)if(q!==e&&q.hp>0&&q.lane===e.lane&&Math.abs(q.y-e.y)<=SPLASH.r&&!map.cover(q.lane,q.y))damageEnemy(q,BAL.droneDmg*SPLASH.dmg,e.x,e.y,'splash');}}}
-  if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y,'echo');shotSound('echo');}}}
+  for(const t of turrets){t.cool-=dt;t.flash=Math.max(0,t.flash-dt);if(t.cool<=0){let e=pickTarget(t.lane,t.y,BAL.turretRange);if(e){t.cool=BAL.turretRate*(facilities[1]<=0?BAL.shopDownTurret:1)/(1+focusBonus());t.flash=.15;damageEnemy(e,BAL.turretDmg,t.x,t.y,'turret');if(pierceOn()){const e2=pickTarget(t.lane,t.y,BAL.turretRange,e);if(e2)damageEnemy(e2,BAL.turretDmg*effects.pierce,e.x,e.y,'pierce');}sfx('turret');}}}
+  if(drone.shotCooldown<=0&&Math.abs(LANES[drone.lane]-drone.x)<20){let e=pickDrone();if(e){const split=echoOn()&&!!pickTarget(drone.echoLane,drone.y,effects.droneRange);drone.shotCooldown=BAL.droneRate/(drone.burst>0&&!split?effects.burstRate:1)/(aid.stim>0?STIM.rate:1);damageEnemy(e,BAL.droneDmg,drone.x,drone.y,'drone');sfx('drone');if(map.flood&&inZ(e.y,FLOOD))eachNear(e.lane,e.y,MAPK.flood.r,q=>{if(q!==e&&inZ(q.y,FLOOD)){ruleMark(q);ruleMark(e);damageEnemy(q,BAL.droneDmg*MAPK.flood.s,e.x,e.y,'shock');}});
+   if(aid.pierce>0){let last=e,seen=[e];for(let k=0;k<PIERCE.more;k++){let nx=null,best=-Infinity;eachNear(e.lane,drone.y,effects.droneRange,q=>{if(!seen.includes(q)&&q.y>best){best=q.y;nx=q;}});if(!nx)break;seen.push(nx);damageEnemy(nx,BAL.droneDmg*PIERCE.dmg,last.x,last.y,'pierce');last=nx;}}   // the round carries on through the machines behind
+   if(aid.splash>0){ev3({t:'splash',lane:e.lane,y:e.y});eachNear(e.lane,e.y,SPLASH.r,q=>{if(q!==e)damageEnemy(q,BAL.droneDmg*SPLASH.dmg,e.x,e.y,'splash');});}}}
+  if(echoOn()){drone.echoCool-=dt;if(drone.echoCool<=0){const e=pickTarget(drone.echoLane,drone.y,effects.droneRange);if(e){drone.echoCool=BAL.droneRate/(effects.burstRate-1);damageEnemy(e,BAL.droneDmg,LANES[drone.echoLane],drone.y,'echo');sfx('echo');}}}
   aidStep(dt);fieldStep(dt);dropStep(dt/speed);strikeStep(dt);feelStep(dt);
   enemies=enemies.filter(e=>e.hp>0);
   fxStep(dt);
@@ -893,10 +759,10 @@ function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?
 }
 function chapterStars(){const n=!stageHurt?3:facilities[0]>0&&facilities[1]>0?2:1;stars.push(n);score+=n*250;return n;}
 const UPG_ICON={stable:'M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4M12.5 8l-2.5 4h4l-2.5 4',precision:'M12 2v5M12 17v5M2 12h5M17 12h5M7 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M12 12h.01',emergency:'M3 8h15v8H3zM18 10.5h2.5v3H18M11 9.5l-2.5 3h4l-2.5 3',rubble:'M3 19h18M5 19l2.5-7h4l2 7M13.5 19l2.5-9h3.5l1.5 9M9 12l1-4h2.5'};
-const upgIcon=id=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+UPG_ICON[id]+'"/></svg>';
+const upgIcon=id=>svgIcon(UPG_ICON[id],2.4);
 const pips=r=>{const cap=rankCap();let h='';for(let k=0;k<cap;k++)h+='<i class="'+(k<r?'on':k===r?'new':'')+'"></i>';return h;};   // owned ranks, the one this card adds, the rest up to the cap
 const starHTML=n=>'<span class="stars">'+'★★★'.slice(0,n)+'<i>'+'★★★'.slice(n)+'</i></span>';
-function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();stageReports.push({op,facilities:[...facilities],core,stars:st});
+function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();
  const names=['발전소','정비소'],statuses=facilities.map((h,i)=>names[i]+' '+(h>0?'유지':'붕괴')+' ('+Math.round(h)+' / 100)');
  // Keep the two facility-dependent offers. Rotate one alternative so all four existing upgrades are reachable without destroying a facility.
  // A card stops at the cap (rankCap); a full card's place goes to the next open one.
@@ -910,8 +776,8 @@ function upgradeScreen(){phase='upgrade';sfxAmb(false);const st=chapterStars();s
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function choose(id){if(phase!=='upgrade'||!offeredUpgrades.includes(id)||!BAL.card[id]||upgradeRanks[id]>=rankCap())return;const n=++upgradeRanks[id];
  Object.assign(effects,BAL.card[id](n));if(id==='rubble')effects.rubble=1;
- upgradeHistory.push({op,id,rank:n});offeredUpgrades=[];sfx('upgrade');addLog('강화 기술 적용: '+CARD_NAMES[id]+' Lv.'+n);newStage(op+1);}
-function finish(victory){phase='finish';ev3({t:'finish',victory});const result=victory?'최종 방어 성공':'중앙 송신소 연결 끊김';addLog(result);sfxAmb(false);sfx(victory?'win':'lose');
+ upgradeHistory.push({op,id,rank:n});offeredUpgrades=[];sfx('upgrade');newStage(op+1);}
+function finish(victory){phase='finish';ev3({t:'finish',victory});sfxAmb(false);sfx(victory?'win':'lose');
  if(victory){chapterStars();score+=Math.round(core)*20;}const record=!drill&&score>best;if(record){best=score;try{localStorage.setItem('relayBest',String(best));}catch(e){}}const starSum=stars.reduce((a,v)=>a+v,0);
  const upgradeText=upgradeHistory.length?upgradeHistory.map(x=>CARD_NAMES[x.id]+' '+x.rank).join(' · '):'획득 전';
  const progress='WAVE '+op+'-'+wave+' · '+(victory?'전체 방어 성공':'도전 종료');
@@ -922,7 +788,7 @@ function countUp(el,to){if(!el)return;const t0=performance.now(),dur=1300;const 
 function fxStep(dt){for(const s of shots)s.life-=dt;shots=shots.filter(s=>s.life>0);
  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=50*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
  for(const a of alerts){a.life-=dt;a.r+=dt*650;}alerts=alerts.filter(a=>a.life>0);}
-function setCoach(title,main,hint,done){$('coachTitle').textContent=title;$('coachMain').textContent=main;$('coachHint').textContent=hint;const c=$('coach');c.classList.toggle('done',!!done);c.hidden=false;}
+function setCoach(title,main,hint){$('coachTitle').textContent=title;$('coachMain').textContent=main;$('coachHint').textContent=hint;$('coach').hidden=false;}
 function hideCoach(){$('coach').hidden=true;}
 function showOverlay(isVisible){$('overlay').hidden=!isVisible;}
 function fitDialog(){
@@ -938,7 +804,7 @@ function fitDialog(){
  for(const t of content.querySelectorAll('.choice .ctag')){t.style.marginRight='';if(!gr||!gr.width)continue;const r=t.getBoundingClientRect(),tf=getComputedStyle(t.closest('.choice')).transform,dy=tf&&tf!=='none'?new DOMMatrix(tf).m42*z:0,top=r.top-dy,bot=r.bottom-dy;   // the cards are still sliding in (cardIn): measure where they will stop
   if(gr.bottom>top&&gr.top<bot&&gr.left<r.right&&gr.right>r.left)t.style.marginRight=Math.ceil((r.right-gr.left+6)/z)+'px';}
 }
-function renderOverlay(content,screen='intro'){
+function renderOverlay(content,screen){
  const o=$('overlay');
  if(o.parentNode!==document.body)document.body.appendChild(o);
  o.classList.add('is-modal');
@@ -958,7 +824,7 @@ function filmEnd(){if(filmDone)return;filmDone=true;const v=$('titleVid');$('tit
  $('skipFilm').addEventListener('click',filmEnd);$('filmPlay').addEventListener('click',()=>{const pr=v.play();if(pr&&pr.catch)pr.catch(()=>filmEnd());});}
 function bgmVolume(){return .6*prefs.vol/100;}
 function bgmPlay(){if(!prefs.bgm||mute||prefs.vol<=0||phase!=='intro'||bgmSrc)return;
- try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const a=audio;
+ try{const a=audioCtx();
   if(!bgmBuf){if(bgmLoading)return;bgmLoading=true;fetch('media/intro.mp3?v='+BUILD).then(r=>r.arrayBuffer()).then(d=>new Promise((ok,no)=>a.decodeAudioData(d,ok,no))).then(buf=>{bgmBuf=buf;bgmLoading=false;bgmPlay();}).catch(()=>{bgmLoading=false;});return;}
   bgmGain=a.createGain();bgmGain.gain.setValueAtTime(0,a.currentTime);bgmGain.gain.linearRampToValueAtTime(bgmVolume(),a.currentTime+1.2);
   bgmSrc=a.createBufferSource();bgmSrc.buffer=bgmBuf;bgmSrc.loop=true;bgmSrc.loopStart=BGM_LOOP[0];bgmSrc.loopEnd=BGM_LOOP[1];bgmSrc.connect(bgmGain);bgmGain.connect(a.destination);bgmSrc.start();
@@ -1033,33 +899,33 @@ function lessonTick(dt){lessonQuiet+=dt;if(phase!=='battle'||lessonQuiet<LESSON_
    return;}
  }
  if(itemLocked()&&stageTime>1.5){const done=id=>()=>{lessonQuiet=0;learned.item=true;learned.items[id]=true;saveLearned();},how='주운 아이템은 왼쪽 아래 칸에 두 개까지 보관하고, 칸을 누르면 사용합니다.';
-  if(drops.length&&bag.length<BAG_MAX){hold('pick','아이템이 떨어졌습니다','부서진 적이 아이템을 남겼습니다. 5초가 지나면 사라집니다. 전장의 아이템을 터치해 주우세요.','아이템 터치',()=>{const id=bag[bag.length-1];hold('tap','아이템 획득 · '+ITEMS[id].name,ITEMS[id].desc+'. '+how,null,done(id));});return;}
-  else if(bag.length){hold('tap','아이템 획득 · '+ITEMS[bag[0]].name,ITEMS[bag[0]].desc+'. '+how+' 레어 적이나 중간 보스를 부수면 전장에 떨어지고, 5초 안에 터치해야 주울 수 있습니다.',null,done(bag[0]));return;}}
+  if(drops.length&&bag.length<BAG_MAX){hold('pick','아이템이 떨어졌습니다','부서진 적이 아이템을 남겼습니다. '+DROP_LIFE+'초가 지나면 사라집니다. 전장의 아이템을 터치해 주우세요.','아이템 터치',()=>{const id=bag[bag.length-1];hold('tap','아이템 획득 · '+ITEMS[id].name,ITEMS[id].desc+'. '+how,null,done(id));});return;}
+  else if(bag.length){hold('tap','아이템 획득 · '+ITEMS[bag[0]].name,ITEMS[bag[0]].desc+'. '+how+' 레어 적이나 중간 보스를 부수면 전장에 떨어지고, '+DROP_LIFE+'초 안에 터치해야 주울 수 있습니다.',null,done(bag[0]));return;}}
  // an item held for the first time (picked up or paid at a chapter end) is explained before it can be used
  if(liveRun&&learned.item){const id=bag.find(x=>!learned.items[x]);if(id){hold('tap','새 아이템 · '+ITEMS[id].name,ITEMS[id].desc+'.',null,()=>{lessonQuiet=0;learned.items[id]=true;saveLearned();});return;}}
  // the combo, at its first refund of the overload
- if(comboLesson){hold('tap','콤보','적을 '+COMBO.t+'초 안에 잇달아 부수면 콤보가 이어집니다. 콤보가 높을수록 격파 점수가 커지고(최대 3배), '+COMBO.every+'콤보마다 과부하 재충전이 '+COMBO.refund+'초 줄어듭니다. '+COMBO.t+'초 동안 부수지 못하거나 적이 방어선을 넘으면 끊깁니다.',null,()=>{lessonQuiet=0;comboLesson=false;learned.combo=true;saveLearned();});return;}
+ if(comboLesson){hold('tap','콤보','적을 '+COMBO.t+'초 안에 잇달아 부수면 콤보가 이어집니다. 콤보가 높을수록 격파 점수가 커지고(최대 3배), '+COMBO.every+'콤보마다 과부하 재충전이 '+COMBO.refund+'초 줄어듭니다. '+COMBO.t+'초 동안 부수지 못하거나 적이 방어선을 넘으면 끊깁니다.',null,()=>{lessonQuiet=0;comboLesson=false;learned.combo=true;saveLearned();});}
 }
 window.addEventListener('resize',fitDialog);
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',fitDialog);   // a web font that arrives after the overlay opened changes its height: fit it again
 window.addEventListener('orientationchange',()=>requestAnimationFrame(fitDialog));
-let toastTimer=0;function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
+function showToast(text,duration=1200){$('toast').textContent=text;$('toast').classList.add('show');toastExpiry=performance.now()+duration;}
 function updateControls(){const playing=phase==='battle';const pb=$('pulseBtn'),cd=drone.pulseCooldown,want=!!holdState&&holdState.need==='pulse',locked=!!drill||(pulseLock&&!want);
  pb.disabled=settingsOpen||(holdState?!want:(!playing||paused||cd>.01||locked));pb.classList.toggle('coach-target',want);pb.classList.toggle('locked',locked);$('drillSkip').hidden=!drill;
  for(let i=0;i<BAG_MAX;i++){const ib=$(i?'itemBtn2':'itemBtn'),id=bag[i]||'';ib.disabled=settingsOpen||!(id&&playing&&!paused&&!holdState&&!drill&&!itemLocked(id));
   if(ib.dataset.it!==id){ib.dataset.it=id;ib.innerHTML=id?iconSVG(id):'';ib.style.color=id?ITEMS[id].col:'';}ib.classList.toggle('has',!!id);ib.classList.toggle('aiming',aim===i);ib.setAttribute('aria-label',id?'아이템 사용: '+ITEMS[id].name:'빈 아이템 칸');}
  if(cd>.01){if(cd>pcMax)pcMax=cd;}else pcMax=0;pb.classList.toggle('cooling',cd>.01);pb.style.setProperty('--cd',cd>.01?(cd/pcMax).toFixed(3):'0');$('pulseDetail').textContent=cd>.01?Math.ceil(cd):'';}
 function updateUI(){setBar('hubBar',core,100);$('hubNum').textContent=Math.round(core);$('hubChip').style.visibility=phase==='battle'?'visible':'hidden';updateControls();}
-function noWave(){return phase==='intro';}
 function setBar(id,v,max){const el=$(id);el.style.width=Math.max(0,Math.min(100,v/max*100))+'%';el.classList.toggle('danger',v<max*.28);}
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
 function line(x,y,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();}
 function rounded(x,y,w,h,r,fill,stroke,width=1){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke();}}
 function text(t,x,y,size=12,color='#fff',align='left',bold=false){ctx.fillStyle=color;ctx.font=`${bold?800:500} ${size}px system-ui, -apple-system, sans-serif`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(t,x,y);}
 function circle(x,y,r,fill,stroke,width=1){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke();}}
-function drawBackdrop(now){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#16282e');g.addColorStop(.5,'#182b31');g.addColorStop(1,'#0f2128');rect(0,0,W,H,g);
+function ring(x,y,r,k,color,width){ctx.save();ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*k);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();ctx.restore();}   // a clock ring: the share k of a full turn, from the top
+function drawBackdrop(){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#16282e');g.addColorStop(.5,'#182b31');g.addColorStop(1,'#0f2128');rect(0,0,W,H,g);
  for(let x=20;x<W;x+=24)line(x,65,x,H-10,'rgba(118,155,148,.065)');for(let y=70;y<H;y+=24)line(0,y,W,y,'rgba(118,155,148,.06)');
- rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave),465,30,13,'#e3ece4','right',true);   // WAVE x-y, as in the 2.5D view and the compact 2D view
+ rect(0,0,480,61,'#0c1b21');line(0,61,480,61,'#637974',1);text(drill?'훈련':'WAVE '+op+'-'+(wave||1),465,30,13,'#e3ece4','right',true);   // WAVE x-y, as in the 2.5D view and the compact 2D view
  text(score.toLocaleString()+(combo>=3?'  ×'+combo:''),15,30,13,'#ffe1ae','left',true);
  for(let i=0;i<2;i++){const x=LANES[i];rounded(x-53,81,106,443+DY,11,'#273b41','#4e696e',1.3);rounded(x-44,90,88,423+DY,8,'#20343a','#304a4e',1);ctx.save();ctx.setLineDash([7,18]);line(x,121,x,484+DY,'rgba(174,195,184,.15)',2);ctx.restore();
  for(let n=0;n<5;n++){const cy=149+n*(282+DY)/4;rounded(x-63,cy,11,24,2,'#30464b','#3e595a');rounded(x+52,cy,11,24,2,'#30464b','#3e595a');}
@@ -1070,7 +936,7 @@ function drawBackdrop(now){let g=ctx.createLinearGradient(0,0,W,H);g.addColorSto
  rounded(185,554+DY,110,34,5,'#183238','#52756e');rounded(194,560+DY,92,22,3,'#284a4d');text('SIGNAL HUB',240,571+DY,11,'#e9e8cc','center',true);
  for(let y=0;y<H;y+=6){rect(0,y,480,1,'rgba(8,13,15,.028)');}
 }
-function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i],alive=hp>0;const gold=i===0;ctx.save();ctx.translate(x,534+DY);if(hp<=0){circle(0,0,29,'#372f2f','#75514b',1.8);line(-18,-13,20,15,'#9f6c5d',3);line(16,-15,-15,14,'#9f6c5d',3);text('OFFLINE',0,0,9,'#f4a18d','center',true);}else{
+function drawStations(){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i],alive=hp>0;const gold=i===0;ctx.save();ctx.translate(x,534+DY);if(hp<=0){circle(0,0,29,'#372f2f','#75514b',1.8);line(-18,-13,20,15,'#9f6c5d',3);line(16,-15,-15,14,'#9f6c5d',3);text('OFFLINE',0,0,9,'#f4a18d','center',true);}else{
  circle(0,0,28,gold?'#4b4a3b':'#2d5251',gold?'#d5b578':'#80c6b8',2);rounded(-20,-17,40,34,5,gold?'#65553e':'#37605d',gold?'#f0c57e':'#8bd4cb',1.4);
  if(gold){rounded(-7,-12,14,22,3,'#ecd294');text('ϟ',0,-1,23,'#403f33','center',true);}
  else{line(-10,-9,10,9,'#b0e6dd',4);line(10,-9,-10,9,'#b0e6dd',4);circle(0,0,6,'#38605a','#c7e6db',1.5);}
@@ -1080,9 +946,9 @@ function drawStations(now){for(let i=0;i<2;i++){const x=LANES[i],hp=facilities[i
 }
 const iconPaths={};function iconPath(id){return iconPaths[id]||(iconPaths[id]=new Path2D(ICON[id]));}
 // a drop on the 2D canvas: a dark token with the item's icon and a ring that empties in DROP_LIFE seconds
-function drawDrop2D(d,x,y,r){circle(x,y,r,'rgba(8,18,22,.85)','#3b4f54',1);ctx.save();ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,d.life/DROP_LIFE));ctx.strokeStyle=ITEMS[d.item].col;ctx.lineWidth=2;ctx.stroke();
- const k=r*1.25/24;ctx.translate(x-12*k,y-12*k);ctx.scale(k,k);ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke(iconPath(d.item));ctx.restore();}
-function drawTurrets(t){for(const d of drops)drawDrop2D(d,LANES[d.lane],d.y,16);for(const f of fieldTurrets){const x=LANES[f.lane],y=f.y,k=Math.min(1,f.life/FIELD.life);circle(x,y,15,'rgba(12,29,35,.75)','#d7c7a1',1.5);circle(x,y,7,f.flash>0?'#fff0bc':'#c3b58c','#354b4e',1.5);ctx.save();ctx.beginPath();ctx.arc(x,y,19,-Math.PI/2,-Math.PI/2+Math.PI*2*k);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2;ctx.stroke();ctx.restore();}for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,34,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=3;ctx.stroke();ctx.restore();}text(fb>0?'+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''):'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
+function drawDrop2D(d,x,y,r){const col=ITEMS[d.item].col;circle(x,y,r,'rgba(8,18,22,.85)','#3b4f54',1);ring(x,y,r,Math.max(0,d.life/DROP_LIFE),col,2);
+ const k=r*1.25/24;ctx.save();ctx.strokeStyle=col;ctx.translate(x-12*k,y-12*k);ctx.scale(k,k);ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke(iconPath(d.item));ctx.restore();}
+function drawTurrets(){for(const d of drops)drawDrop2D(d,LANES[d.lane],d.y,16);for(const f of fieldTurrets){const x=LANES[f.lane],y=f.y,k=Math.min(1,f.life/FIELD.life);circle(x,y,15,'rgba(12,29,35,.75)','#d7c7a1',1.5);circle(x,y,7,f.flash>0?'#fff0bc':'#c3b58c','#354b4e',1.5);ring(x,y,19,k,'#f0c47b',2);}for(const turret of turrets){const x=turret.x,y=turret.y;circle(x,y,30,'rgba(12,29,35,.7)','#446067',2);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);rounded(-7,-25,14,33,4,turret.flash>0?'#fff0bc':'#7ba9aa','#d7c7a1',1.5);rounded(-17,-14,34,31,7,'#3a5d65','#a0c5bb',2);circle(0,0,9,'#c3b58c','#354b4e',2);ctx.restore();const fb=focusBonus();if(fb>0)ring(x,y,34,fb/effects.focusCap,'#f0c47b',3);text(fb>0?'+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''):'AUTO',x,y+(fb>0?48:38),fb>0?11:9,fb>0?'#f0c47b':'#90b4b1','center',true);}}
 function drawDrone(now){const x=drone.x,y=drone.y,breath=Math.sin(now*.003)*2;circle(x,y,effects.droneRange,'rgba(106,202,186,.025)','rgba(112,202,185,.095)',1);circle(x,y,29+breath,'rgba(101,203,190,.09)','rgba(143,229,208,.33)',1);if(drone.burst>0)circle(x,y,40,null,'rgba(150,240,215,'+(.35+.5*Math.min(1,drone.burst))+')',3);if(echoOn()){const gx=LANES[drone.echoLane];ctx.save();ctx.globalAlpha=.3+.4*Math.min(1,drone.burst);ctx.setLineDash([5,5]);circle(gx,y,27,null,'#96f0d7',2);ctx.setLineDash([]);ctx.translate(gx,y);ctx.rotate(Math.PI/4);rounded(-14,-14,28,28,4,null,'#96f0d7',2);ctx.restore();}if(phase==='battle'&&!drill&&!pulseLock&&drone.pulseCooldown<=.01){ctx.save();ctx.setLineDash([6,8]);circle(x,y,effects.pulseRange,null,'rgba(240,196,123,.5)',1.5);ctx.restore();}ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);rounded(-18,-18,36,36,5,'#77b9ad','#d1e9d6',2);rounded(-11,-11,22,22,3,'#204249','#c1e9d5',1);ctx.restore();circle(x,y,7,'#f5d798','#c9e7cc',2);line(x-36,y,x-24,y,'#b3d6c7',2);line(x+24,y,x+36,y,'#b3d6c7',2);text('SUPPORT',x,y+46,10,'#d6e8d9','center',true);}
 function drawEnemy(e,now){let r=TYPES[e.type].r,x=e.x,y=e.y,c=e.flash>0?'#fff8d8':TYPES[e.type].color;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(now*.003+e.wiggle)*.07);circle(0,2,r+4,'rgba(0,0,0,.3)');if(e.type==='runner'){ctx.beginPath();ctx.moveTo(0,r);ctx.lineTo(-r,-r*.4);ctx.lineTo(-5,-r*.1);ctx.lineTo(0,-r);ctx.lineTo(5,-r*.1);ctx.lineTo(r,-r*.4);ctx.closePath();ctx.fillStyle=c;ctx.fill();line(-5,0,5,0,'#593d33',2);}else if(e.type==='grunt'){rounded(-r,-r,r*2,r*2,5,c,'#77483e',2);rounded(-r*.5,-r*.6,r,8,2,'#664a40');}else{rounded(-r,-r,r*2,r*2,7,'#6e4346','#dc9783',3);rounded(-r+4,-r+4,r*2-8,r*2-8,4,c,'#674844',1);line(-r+7,0,r-7,0,'#593f3d',4);if(e.type==='boss'){circle(0,0,9,'#ffd39a','#7a5550',2);circle(-r-4,0,4,'#e9bd8d');circle(r+4,0,4,'#e9bd8d');}}
  ctx.restore();if(e.slow>0){ctx.save();ctx.setLineDash([3,4]);circle(x,y,r+6,null,'rgba(214,170,124,.85)',2);ctx.restore();}rounded(x-r-4,y-r-13,r*2+8,4,2,'#142225');rect(x-r-3,y-r-12,(r*2+6)*Math.max(0,e.hp/e.maxHp),2,'#f1c37c');}
@@ -1098,26 +964,27 @@ function drawIncoming(){if(phase!=='battle')return;const soon=[[],[]];for(let i=
 // Only the camera/projection changes; no unit stats, wave timing or attack logic changes.
 // Map features in the 2D fallback, as plain shapes: gates, chasm and crossover under the machines, the tunnel roof over them.
 // pos(y) = canvas position along a lane, at(lane) = the lane's line across, hw = half the lane's width, span = the play area across.
+// Map marks on the 2D canvases, written in lane coordinates: p runs along the lanes, q across them. The classic view runs down
+// the canvas (vertical), the compact one across it; the helpers turn (p,q) into canvas x and y. over: the pass drawn above the machines.
 function mapMarks2D(pos,at,hw,span,vertical,over){
- const band=(a,b,c0,c1,i)=>{const p0=pos(a),p1=pos(b),q=at(i);if(vertical)rounded(q-hw-6,Math.min(p0,p1),2*hw+12,Math.abs(p1-p0),5,c0,c1,1.4);else rounded(Math.min(p0,p1),q-hw-6,Math.abs(p1-p0),2*hw+12,5,c0,c1,1.4);};
- if(over){if(map.id==='tunnel')for(let i=0;i<2;i++)band(TUNNEL[0],TUNNEL[1],'#2c2a27','#6a6257',i);
-  for(const k of strikes){const p=pos(k.y),q=at(k.lane),r=Math.abs(pos(k.y+ORB.r)-p)*(.25+.75*Math.max(0,k.t/ORB.delay));if(vertical)circle(q,p,r,'rgba(255,120,80,.16)','#ff7850',2);else circle(p,q,r,'rgba(255,120,80,.16)','#ff7850',2);}   // where the orbital shell will land
-  if(aim>=0&&ITEMS[bag[aim]]){const col=ITEMS[bag[aim]].col,p0=pos(LANE_TOP),p1=pos(LEAK_Y);ctx.globalAlpha=.45+.3*Math.sin(performance.now()*.008);for(let i=0;i<2;i++){const q=at(i);if(vertical)rounded(q-hw-6,Math.min(p0,p1),2*hw+12,Math.abs(p1-p0),5,null,col,2);else rounded(Math.min(p0,p1),q-hw-6,Math.abs(p1-p0),2*hw+12,5,null,col,2);}ctx.globalAlpha=1;}   // an aimed item waits for a place: both lanes are outlined in its colour
+ const R=(p,q,dp,dq,c)=>vertical?rect(q,p,dq,dp,c):rect(p,q,dp,dq,c),C=(p,q,r,c0,c1,w)=>vertical?circle(q,p,r,c0,c1,w):circle(p,q,r,c0,c1,w),L=(p0,q0,p1,q1,c,w)=>vertical?line(q0,p0,q1,p1,c,w):line(p0,q0,p1,q1,c,w),P=(p,q)=>vertical?[q,p]:[p,q];
+ const ends=z=>{const p0=pos(z[0]),p1=pos(z[1]);return [Math.min(p0,p1),Math.abs(p1-p0)];};   // where a stretch starts and how long it is
+ const band=(z,i,c0,c1,w=1.4)=>{const [p,d]=ends(z),q=at(i)-hw-6;if(vertical)rounded(q,p,2*hw+12,d,5,c0,c1,w);else rounded(p,q,d,2*hw+12,5,c0,c1,w);};   // an outlined box a little wider than the road
+ if(over){if(map.id==='tunnel')for(let i=0;i<2;i++)band(TUNNEL,i,'#2c2a27','#6a6257');
+  for(const k of strikes){const p=pos(k.y);C(p,at(k.lane),Math.abs(pos(k.y+ORB.r)-p)*(.25+.75*Math.max(0,k.t/ORB.delay)),'rgba(255,120,80,.16)','#ff7850',2);}   // where the orbital shell will land
+  if(aim>=0&&ITEMS[bag[aim]]){ctx.globalAlpha=.45+.3*Math.sin(performance.now()*.008);for(let i=0;i<2;i++)band([LANE_TOP,LEAK_Y],i,null,ITEMS[bag[aim]].col,2);ctx.globalAlpha=1;}   // an aimed item waits for a place: both lanes are outlined in its colour
   return;}
- const zoneBand=(i,z,c)=>{const p0=pos(z[0]),p1=pos(z[1]),q=at(i);if(vertical)rect(q-hw,Math.min(p0,p1),2*hw,Math.abs(p1-p0),c);else rect(Math.min(p0,p1),q-hw,Math.abs(p1-p0),2*hw,c);};
- if(map.id==='pylon')for(let i=0;i<2;i++)zoneBand(i,PYLON,'rgba(127,216,255,.16)');
- if(map.flood)for(let i=0;i<2;i++)zoneBand(i,FLOOD,'rgba(60,150,200,.32)');
- if(map.vent){const ph=ventPhase();for(let i=0;i<2;i++)zoneBand(i,[VENT.a,VENT.b],ph===2?'rgba(255,120,40,.55)':ph===1?'rgba(255,90,40,.28)':'rgba(120,80,60,.22)');}
- if(map.id==='boost')for(let i=0;i<2;i++)for(const z of MAPK.boost.z[i])zoneBand(i,z,'rgba(255,138,58,.22)');
- if(map.mine)for(const m of mines){const p=pos(m.y),q=at(m.lane);if(vertical)circle(q,p,6,m.arm>0?'#2a2a2a':'#e0503a','#111',1);else circle(p,q,5,m.arm>0?'#2a2a2a':'#e0503a','#111',1);}
- if(map.gate)for(let i=0;i<2;i++){const p=pos(GATE.y),q=at(i),c=gateShut(i)?'#e0503a':'#4fd18a';if(vertical)rect(q-hw,p-2,2*hw,4,c);else rect(p-2,q-hw,4,2*hw,c);}
- if(map.id==='bridge'){const p0=pos(BRIDGE[0]),p1=pos(BRIDGE[1]);if(vertical)rect(span[0],p0,span[1]-span[0],p1-p0,'rgba(3,5,7,.82)');else rect(p0,span[0],p1-p0,span[1]-span[0],'rgba(3,5,7,.82)');
-  for(let i=0;i<2;i++){const q=at(i);if(vertical)rect(q-hw,p0,2*hw,p1-p0,'#24383e');else rect(p0,q-hw,p1-p0,2*hw,'#30464c');for(const sd of [-1,1]){if(vertical)line(q+sd*(hw+2),p0,q+sd*(hw+2),p1,'#9fb3b4',2);else line(p0,q+sd*(hw+2),p1,q+sd*(hw+2),'#9fb3b4',2);}}}
- if(map.cross){const p=pos((CROSS[0]+CROSS[1])/2),a=at(0),b=at(1),lo=Math.min(a,b)+hw,hi=Math.max(a,b)-hw,to=at(drone.lane)>at(1-drone.lane)?1:-1,mid=(lo+hi)/2;
-  if(vertical){rect(lo,p-12,hi-lo,24,'#33474c');ctx.beginPath();ctx.moveTo(mid+to*12,p);ctx.lineTo(mid-to*6,p-8);ctx.lineTo(mid-to*6,p+8);ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}
-  else{rect(p-10,lo,20,hi-lo,'#33474c');ctx.beginPath();ctx.moveTo(p,mid+to*9);ctx.lineTo(p-7,mid-to*5);ctx.lineTo(p+7,mid-to*5);ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}}
+ // maps whose stretch shows as a tint on the road: high-voltage lines, water, fire vents (by their phase), boost rails
+ const ph=ventPhase(),tint=map.amp?'rgba(127,216,255,.16)':map.flood?'rgba(60,150,200,.32)':map.vent?(ph===2?'rgba(255,120,40,.55)':ph===1?'rgba(255,90,40,.28)':'rgba(120,80,60,.22)'):map.boostK?'rgba(255,138,58,.22)':'';
+ if(tint)for(let i=0;i<2;i++)for(const z of map.z[i]){const [p,d]=ends(z);R(p,at(i)-hw,d,2*hw,tint);}
+ if(map.mine)for(const m of mines)C(pos(m.y),at(m.lane),vertical?6:5,m.arm>0?'#2a2a2a':'#e0503a','#111',1);
+ if(map.gate)for(let i=0;i<2;i++)R(pos(GATE.y)-2,at(i)-hw,4,2*hw,gateShut(i)?'#e0503a':'#4fd18a');
+ if(map.id==='bridge'){const p0=pos(BRIDGE[0]),p1=pos(BRIDGE[1]);R(p0,span[0],p1-p0,span[1]-span[0],'rgba(3,5,7,.82)');   // the drop, then the two decks with their rails
+  for(let i=0;i<2;i++){const q=at(i);R(p0,q-hw,p1-p0,2*hw,vertical?'#24383e':'#30464c');for(const sd of [-1,1])L(p0,q+sd*(hw+2),p1,q+sd*(hw+2),'#9fb3b4',2);}}
+ if(map.cross){const p=pos((CROSS[0]+CROSS[1])/2),a=at(0),b=at(1),lo=Math.min(a,b)+hw,hi=Math.max(a,b)-hw,to=at(drone.lane)>at(1-drone.lane)?1:-1,mid=(lo+hi)/2,[len,tip,back,half]=vertical?[12,12,6,8]:[10,9,5,7];
+  R(p-len,lo,2*len,hi-lo,'#33474c');ctx.beginPath();ctx.moveTo(...P(p,mid+to*tip));ctx.lineTo(...P(p-half,mid-to*back));ctx.lineTo(...P(p+half,mid-to*back));ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}   // the deck between the lanes, with an arrow toward the drone's lane
 }
-function drawCompact(now){
+function drawCompact(){
  const dpr=compactRatio,w=compactW,h=compactH;
  ctx.setTransform(dpr,0,0,dpr,0,0);
  rect(0,0,w,h,'#12252b');
@@ -1136,7 +1003,7 @@ function drawCompact(now){
    rounded(xStart-5,y-13,run+10,26,6,'#30464c',gold?'#50706a':'#497778',1);
    ctx.save();ctx.setLineDash([4,10]);line(xStart,y,xEnd,y,'#89a9a3',1);ctx.restore();
    for(let tick=1;tick<5;tick++)line(xStart+run*tick/5,y-13,xStart+run*tick/5,y+13,'#415a5d',1);
-   const label=gold?'발전소':'정비소',hp=facilities[i];
+   const hp=facilities[i];
    const base=gold?'#e8b86d':'#8dd7d0';
    const progress=Math.max(0,hp/100);
    const b=13*scale;
@@ -1152,7 +1019,7 @@ function drawCompact(now){
  line(xEnd+15,ys[1],hubX-7,hubY,'#578b84',1.2);
  circle(hubX-4,hubY,7,core>0?'#477e72':'#7e4641','#a0cdb6',1.2);
  // Header is compact and stays out of the incoming enemies.
- text(drill?'훈련':'WAVE '+op+'-'+(noWave()?1:wave)+'   '+score.toLocaleString()+(combo>=3?'   ×'+combo+' 콤보':''),8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
+ text(drill?'훈련':'WAVE '+op+'-'+(wave||1)+'   '+score.toLocaleString()+(combo>=3?'   ×'+combo+' 콤보':''),8,13,Math.max(10,11*scale),'#e8ddd0','left',true);   // one line on the left: the gear button sits top right
  // Preview the next five seconds of arrivals in each lane without using tiny top-of-canvas icons.
  if(phase==='battle'){
   const warn=surges.some(s=>s.t-stageTime>=-.3&&s.t-stageTime<=3.5);
@@ -1193,7 +1060,7 @@ function drawCompact(now){
   rect(x-barWidth/2+1,y-unit-9*scale,(barWidth-2)*Math.max(0,e.hp/e.maxHp),2,'#f3cf90');
  }
  mapMarks2D(px,i=>ys[i],13,[header,h-footer],false,true);
- for(const f of fieldTurrets){const x=px(f.y),y=ys[f.lane];circle(x,y,9*scale,'#223b42','#d7c7a1',1.5);circle(x,y,3.5*scale,f.flash>0?'#fff2ad':'#e0caa3');ctx.save();ctx.beginPath();ctx.arc(x,y,12*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,f.life/FIELD.life));ctx.strokeStyle='#f0c47b';ctx.lineWidth=2;ctx.stroke();ctx.restore();}
+ for(const f of fieldTurrets){const x=px(f.y),y=ys[f.lane];circle(x,y,9*scale,'#223b42','#d7c7a1',1.5);circle(x,y,3.5*scale,f.flash>0?'#fff2ad':'#e0caa3');ring(x,y,12*scale,Math.min(1,f.life/FIELD.life),'#f0c47b',2);}
  for(const d of drops)drawDrop2D(d,px(d.y),ys[d.lane],12*scale);
  // The turrets keep their exact simulated positions but use much larger readable silhouettes.
  for(const turret of turrets){
@@ -1203,7 +1070,7 @@ function drawCompact(now){
   rounded(x-17*scale,y-3*scale,10*scale,6*scale,2,turret.flash>0?'#fff2ad':'#f2d7a4');
   circle(x,y,4*scale,'#e0caa3');
   const fb=focusBonus();
-  if(fb>0){ctx.save();ctx.beginPath();ctx.arc(x,y,18*scale,-Math.PI/2,-Math.PI/2+Math.PI*2*fb/effects.focusCap);ctx.strokeStyle='#f0c47b';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();text('+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''),x,y+(turret.lane===0?-28:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
+  if(fb>0){ring(x,y,18*scale,fb/effects.focusCap,'#f0c47b',2.5);text('+'+Math.round(fb*100)+'%'+(pierceOn()?' 관통':''),x,y+(turret.lane===0?-28:30)*scale,Math.max(10,11*scale),'#f0c47b','center',true);}
  }
  // The support drone moves between the two rows as the old horizontal movement interpolates.
  const droneX=px(drone.y),droneY=py(drone.x);
@@ -1229,23 +1096,26 @@ function drawCompact(now){
   rect(0,0,w,h,'rgba(8,18,22,.67)');text('일시정지',w/2,h/2,25,'#ffe1ae','center',true);
  }
 }
-function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact(now);return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop(now);mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,false);drawIncoming();drawStations(now);drawTurrets(now);for(const e of enemies)if(!map.cover(e.lane,e.y))drawEnemy(e,now);mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,true);drawDrone(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
-function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;frameTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(stopTick(dt)){}else if(drill)drillTick(dt);else{lessonTick(dt);update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
+function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact();return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop();mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,false);drawIncoming();drawStations();drawTurrets();for(const e of enemies)if(!map.cover(e.lane,e.y))drawEnemy(e,now);mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,true);drawDrone(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
+function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(stopTick(dt)){}else if(drill)drillTick(dt);else{lessonTick(dt);update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
 $('pulseBtn').addEventListener('click',pulse);$('itemBtn').addEventListener('click',()=>useItem(0));$('itemBtn2').addEventListener('click',()=>useItem(1));
-// where a touch lands on the field: lane and distance along it (the 2.5D view asks the renderer, the 2D canvases use their own layout)
-function tapSpot(ev){if(G3.active&&G3.renderer.fieldPos)return G3.renderer.fieldPos(ev.clientX,ev.clientY);const r=canvas.getBoundingClientRect();
- if(compactCanvas)return{lane:(ev.clientY-r.top)<r.height/2?0:1,y:LANE_TOP+((ev.clientX-r.left)-cmp.x0)/cmp.run*LANE_LEN};
- return{lane:(ev.clientX-r.left)/r.width*W<W/2?0:1,y:(ev.clientY-r.top)/r.height*H};}
-// the drop under the finger, if any: within DROP_REACH px of where its token is drawn
-const DROP_REACH=36;
-function dropUnder(ev){let best=null,bd=DROP_REACH;for(const d of drops){let x,y;const r=canvas.getBoundingClientRect();
-  if(G3.active&&G3.renderer.screenOf){const q=G3.renderer.screenOf(d.lane,d.y,2.4);x=q.x;y=q.y;}else if(compactCanvas){x=r.left+cmp.x0+(d.y-LANE_TOP)/LANE_LEN*cmp.run;y=r.top+cmp.ys[d.lane];}else{x=r.left+LANES[d.lane]/W*r.width;y=r.top+d.y/H*r.height;}
-  const k=Math.hypot(ev.clientX-x,ev.clientY-y);if(k<bd){bd=k;best=d;}}return best;}
+// Touches on the field. The 2D canvases answer the same three questions as the 2.5D renderer (r3d/core.js): which lane a touch means,
+// where on the field it lands (lane and distance along it), and where a point of a lane is drawn on the page.
+const view2D={
+ laneAt(cx,cy){const r=canvas.getBoundingClientRect();return compactCanvas?((cy-r.top)<r.height/2?0:1):((cx-r.left)/r.width*W<W/2?0:1);},
+ fieldPos(cx,cy){const r=canvas.getBoundingClientRect();return{lane:this.laneAt(cx,cy),y:compactCanvas?LANE_TOP+((cx-r.left)-cmp.x0)/cmp.run*LANE_LEN:(cy-r.top)/r.height*H};},
+ screenOf(lane,y){const r=canvas.getBoundingClientRect();return compactCanvas?{x:r.left+cmp.x0+(y-LANE_TOP)/LANE_LEN*cmp.run,y:r.top+cmp.ys[lane]}:{x:r.left+LANES[lane]/W*r.width,y:r.top+y/H*r.height};}
+};
+const view=()=>G3.active?G3.renderer:view2D;
+function tapSpot(ev){return view().fieldPos(ev.clientX,ev.clientY);}
+// the drop under the finger, if any: within DROP_REACH px of where its token is drawn (DROP_H above the road in 2.5D)
+const DROP_REACH=36,DROP_H=2.4;
+function dropUnder(ev){const v=view();let best=null,bd=DROP_REACH;for(const d of drops){const q=v.screenOf(d.lane,d.y,DROP_H),k=Math.hypot(ev.clientX-q.x,ev.clientY-q.y);if(k<bd){bd=k;best=d;}}return best;}
 function fieldTap(ev){if(settingsOpen){closeSettings();return;}if(holdState&&holdState.need==='tap'){if(performance.now()-holdState.t0>450)releaseHold();return;}
  if(holdState&&holdState.need==='pick'){const d=dropUnder(ev);if(d&&performance.now()-holdState.t0>350&&takeDrop(d))releaseHold();return;}
  if(phase!=='battle')return;
- if(!holdState&&!paused&&!drill){if(aim>=0){const q=tapSpot(ev);useAim(q.lane,q.y);return;}const d=dropUnder(ev);if(d){takeDrop(d);return;}}   // a magnet waiting for its place, then a drop under the finger, come before moving
- if(G3.active&&G3.renderer.laneAt){switchLane(G3.renderer.laneAt(ev.clientX,ev.clientY));return;}const rect=canvas.getBoundingClientRect();if(compactCanvas){switchLane((ev.clientY-rect.top)<rect.height/2?0:1);}else{const x=(ev.clientX-rect.left)/rect.width*W;switchLane(x<W/2?0:1);}}
+ if(!holdState&&!paused&&!drill){if(aim>=0){const q=tapSpot(ev);useAim(q.lane,q.y);return;}const d=dropUnder(ev);if(d){takeDrop(d);return;}}   // an aimed item waiting for its place, then a drop under the finger, come before moving
+ switchLane(view().laneAt(ev.clientX,ev.clientY));}
 canvas.addEventListener('pointerdown',fieldTap);
 /* Settings: opened with the gear, the P or Esc key, or the browser's back button. The game holds while it is open. */
 function applyPrefs(){speed=prefs.speed;const f=prefs.bright===100?'':'brightness('+(prefs.bright/100)+')';for(const id of ['game','game3d'])if($(id))$(id).style.filter=f;
@@ -1259,7 +1129,7 @@ $('setSpeed').addEventListener('click',ev=>{const v=+ev.target.dataset.v;if(v){p
 // vibration works on Android browsers only: where the phone cannot vibrate (iPhone), the row is not shown
 if(!('vibrate' in navigator))$('vibRow').hidden=true;
 $('setVib').addEventListener('click',ev=>{const d=ev.target.dataset.v;if(d===undefined)return;prefs.vib=d==='1';savePrefs();applyPrefs();if(prefs.vib)buzz(40);});
-$('setVol').addEventListener('input',ev=>{prefs.vol=+ev.target.value;savePrefs();if(bgmSrc)bgmGain.gain.value=bgmVolume();if(SFX.bus)SFX.bus.out.gain.value=.7*prefs.vol/100;if(prefs.vol<=0)bgmStop();else bgmPlay();});$('setVol').addEventListener('change',()=>sfx('move'));
+$('setVol').addEventListener('input',ev=>{prefs.vol=+ev.target.value;savePrefs();if(bgmSrc)bgmGain.gain.value=bgmVolume();if(SFX.bus)SFX.bus.out.gain.value=sfxVolume();if(prefs.vol<=0)bgmStop();else bgmPlay();});$('setVol').addEventListener('change',()=>sfx('move'));
 $('setBright').addEventListener('input',ev=>{prefs.bright=+ev.target.value;savePrefs();applyPrefs();});
 // Back button: one history entry is added on the first touch (browsers ignore entries added without one); going back opens or closes the settings instead of leaving.
 let backArmed=false;window.addEventListener('pointerdown',()=>{if(backArmed)return;backArmed=true;try{history.pushState({relay:1},'');}catch(e){}},{capture:true});
@@ -1268,8 +1138,8 @@ window.addEventListener('keydown',ev=>{const k0=ev.key.toLowerCase();if(k0==='es
 window.addEventListener('blur',()=>{if(phase==='battle'&&!paused){paused=true;updateControls();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='battle'&&!paused){paused=true;updateControls();}});
 // 2.5D view (r3d/): loaded only when WebGL exists. If a script or the renderer fails, the 2D canvas keeps working. ?2d=1 forces 2D.
-Object.assign(G3,{FIELD,ITEMS,ICON,DROP_LIFE,MAG,ORB,COMBO,MAPK,VENT,MINE,FLOOD,ventPhase,GATE,BRIDGE,CROSS,CROSS_T,TUNNEL,PYLON,TOTAL_OPS,gateShut,W,H,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,LANE_LEN,BAL,TYPES,COLORS,focusBonus,pierceOn,echoOn,noWave,compact:wantsCompactCanvas});
-Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},speed:{get:()=>speed},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},bag:{get:()=>bag},drops:{get:()=>drops},aim:{get:()=>aim},aid:{get:()=>aid},mapId:{get:()=>map.id},mapShape:{get:()=>map.shape},mapNear:{get:()=>map.near},mapSlow:{get:()=>map.slow},mapCover:{get:()=>map.cover},mapFall:{get:()=>map.fall},mapGate:{get:()=>map.gate},mapCross:{get:()=>map.cross},mines:{get:()=>mines},mapFlags:{get:()=>map},strikes:{get:()=>strikes},combo:{get:()=>combo},comboT:{get:()=>comboT},score:{get:()=>score},fieldTurrets:{get:()=>fieldTurrets},hold:{get:()=>holdState?holdState.need:''},ranks:{get:()=>upgradeRanks}});
+Object.assign(G3,{FIELD,ITEMS,iconPath,DROP_LIFE,DROP_H,MAG,ORB,COMBO,VENT,MINE,FLOOD,ventPhase,GATE,BRIDGE,CROSS,CROSS_T,TUNNEL,PYLON,gateShut,gatePhase,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,BAL,TYPES,focusBonus,pierceOn,echoOn,compact:wantsCompactCanvas});
+Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},bag:{get:()=>bag},drops:{get:()=>drops},aim:{get:()=>aim},aid:{get:()=>aid},map:{get:()=>map},mines:{get:()=>mines},strikes:{get:()=>strikes},combo:{get:()=>combo},comboT:{get:()=>comboT},score:{get:()=>score},fieldTurrets:{get:()=>fieldTurrets},hold:{get:()=>holdState?holdState.need:''}});
 window.__relay=G3;
 (function load3d(){if(/[?&]2d\b/.test(location.search)||!window.WebGLRenderingContext)return;
  const files=['three.min.js','core.js','env.js','maps.js','base.js','units.js','fx.js','hud.js'];let i=0;

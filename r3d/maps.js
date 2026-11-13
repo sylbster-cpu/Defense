@@ -1,16 +1,8 @@
 /* maps.js — 맵마다 붙는 지형물: 고압선, 관문, 다리, 터널, 샛길, 지뢰밭, 침수로, 가속로, 화염로. 게임 상태를 읽기만 한다. */
 (function(){'use strict';const R3D=window.R3D,THREE=window.THREE;
 R3D.register('maps',ctx=>{
-const {scene,util}=ctx,G=ctx.G,mat=util.mat,merge=util.merge,PI=Math.PI;
-const B=(P,w,h,d,x,y,z,c,ry,rx,rz)=>P.push({g:new THREE.BoxGeometry(w,h,d),m:mat(x,y,z,rx||0,ry||0,rz||0),c});
-const hash=(x,y)=>{const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);};
-// lumpy boulder: a dodecahedron with every corner pushed in or out (as in env.js)
-function rock(P,x,y,z,sx,sy,sz,c,seed){
- const g=new THREE.DodecahedronGeometry(1,0),p=g.attributes.position;
- for(let i=0;i<p.count;i++){const X=p.getX(i),Y=p.getY(i),Z=p.getZ(i),k=.7+.55*hash(seed+Math.round(X*40)+Math.round(Y*90)*3.1,Math.round(Z*50)*1.7+seed*.37);p.setXYZ(i,X*k,Y*k,Z*k);}
- g.computeVertexNormals();P.push({g,m:mat(x,y,z,hash(seed,1)*.5,hash(seed,2)*6.28,hash(seed,3)*.5,sx,sy,sz),c});
-}
-const propMat=new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.92,metalness:.04});
+const {scene,util}=ctx,G=ctx.G,{mat,merge,box:B,hash,rock}=util,PI=Math.PI;
+const propMat=util.stdMat();
 // merged mesh with per-facet tone jitter and a darker foot (the hand-painted look of env.js)
 function solid(P,seed,jit,foot){const g=merge(P),p=g.attributes.position.array,c=g.attributes.color.array;let r=seed*7919+17;const R=()=>(r=(r*16807)%2147483647)/2147483647;
  for(let i=0;i<p.length;i+=9){const k=1+(R()-.5)*(jit||.16);for(let j=0;j<9;j+=3){const f=foot===0?1:.62+.38*Math.min(1,Math.max(0,p[i+j+1]/(foot||1.1)));c[i+j]*=k*f;c[i+j+1]*=k*f;c[i+j+2]*=k*f;}}
@@ -19,7 +11,8 @@ function clear(g){for(let i=g.children.length-1;i>=0;i--){const o=g.children[i];
 const root={gate:new THREE.Group(),bridge:new THREE.Group(),tunnel:new THREE.Group(),cross:new THREE.Group(),pylon:new THREE.Group(),mine:new THREE.Group(),flood:new THREE.Group(),boost:new THREE.Group(),vent:new THREE.Group()},built={};
 // an additive strip lying on the road (glows, arrows), scrolled by its texture offset
 const stripMat=(tex,col,op)=>new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,color:col,opacity:op,fog:false});
-function strip(g,mat,x0,x1,z,w,y){const m=new THREE.Mesh(new THREE.PlaneGeometry(Math.abs(x1-x0),w),mat);m.rotation.x=-PI/2;m.position.set((x0+x1)/2,y||.07,z);m.renderOrder=2;g.add(m);return m;}
+function flat(g,mat,w,d,x,y,z,order){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-PI/2;m.position.set(x,y,z);m.renderOrder=order;g.add(m);return m;}   // a sheet lying on the ground, w along the lanes and d across
+function strip(g,mat,x0,x1,z,w,y){return flat(g,mat,Math.abs(x1-x0),w,(x0+x1)/2,y||.07,z,2);}
 for(const k in root){root[k].visible=false;scene.add(root[k]);}
 
 /* ---------- 관문: a gate on each lane. The arm drops while the gate is shut; the lamps are red, blinking in its last second. ---------- */
@@ -45,7 +38,7 @@ function buildGate(L){
 }
 function updGate(dt,t){
  const C=G.GATE.cycle,S=G.GATE.shut,live=G.phase==='battle';
- for(let i=0;i<gates.length;i++){const q=gates[i],shut=live&&G.gateShut(i),ph=((+G.stageTime||0)+(i?C/2:0))%C,rem=shut?S-ph:C-ph;
+ for(let i=0;i<gates.length;i++){const q=gates[i],shut=live&&G.gateShut(i),ph=G.gatePhase(i),rem=shut?S-ph:C-ph;
   q.ang=util.damp(q.ang,shut?0:1.3,shut?9:5,dt);q.piv.rotation.x=q.sg*q.ang;
   const blink=live&&rem<1&&Math.sin(t*26)>0;q.lm.color.setHex(shut?(blink?DARK:RED):(blink?AMBER:GREEN));}   // open: amber blinks in the last second before it shuts
 }
@@ -53,9 +46,9 @@ function updGate(dt,t){
 /* ---------- 다리: a chasm across the field; each lane crosses it on a railed deck ---------- */
 const pitMat=new THREE.MeshBasicMaterial({transparent:true,depthWrite:false,map:util.canvasTex(256,8,(c,w,h)=>{
  const g=c.createLinearGradient(0,0,w,0);g.addColorStop(0,'rgba(3,4,5,0)');g.addColorStop(.09,'rgba(3,4,5,.88)');g.addColorStop(.2,'rgba(2,3,4,.97)');g.addColorStop(.8,'rgba(2,3,4,.97)');g.addColorStop(.91,'rgba(3,4,5,.88)');g.addColorStop(1,'rgba(3,4,5,0)');c.fillStyle=g;c.fillRect(0,0,w,h);})});
-function buildBridge(L){
+function buildBridge(){
  const g=root.bridge;clear(g);const x0=ctx.wx(G.BRIDGE[1]),x1=ctx.wx(G.BRIDGE[0]),xc=(x0+x1)/2,len=x1-x0,zs=[ctx.laneZAt(0,xc),ctx.laneZAt(1,xc)];
- const pit=new THREE.Mesh(new THREE.PlaneGeometry(len+1.8,96),pitMat);pit.rotation.x=-PI/2;pit.position.set(xc,.014,0);pit.renderOrder=1;g.add(pit);
+ flat(g,pitMat,len+1.8,96,xc,.014,0,1);
  const P=[],onRoad=z=>zs.some(lz=>Math.abs(z-lz)<4.7);
  for(const ex of [x0,x1])for(let z=-36;z<36;z+=1.15){if(onRoad(z))continue;const k=hash(ex*3.1,z*1.7),sd=ex===x0?-1:1;
   rock(P,ex+sd*(.35+(k-.5)*.3),.1,z,.6+k*.35,.28+k*.3,.55+hash(z,ex)*.3,k>.5?0x4b4741:0x3c3a37,Math.round(z*10+ex*7));}
@@ -70,7 +63,7 @@ function buildBridge(L){
 /* ---------- 터널: a rock mass over both lanes; machines inside are hidden (units.js and hud.js skip them) ---------- */
 const darkMat=new THREE.MeshBasicMaterial({color:0x040405}),H=3.1;
 function buildTunnel(L){
- const g=root.tunnel;clear(g);const xa=ctx.wx(G.TUNNEL[1]),xb=ctx.wx(G.TUNNEL[0]),xc=(xa+xb)/2,len=xb-xa,zs=[L.laneZ[0],L.laneZ[1]],zo=L.LZ+6.8,P=[];
+ const g=root.tunnel;clear(g);const xa=ctx.wx(G.TUNNEL[1]),xb=ctx.wx(G.TUNNEL[0]),xc=(xa+xb)/2,len=xb-xa,zs=[L.laneZ[0],L.laneZ[1]],P=[];
  for(const lz of zs){
   for(const s of [-1,1])B(P,len,H,.9,xc,H/2,lz+s*4.55,0x596060);                               // tube walls
   B(P,len,.55,10.2,xc,H+.27,lz,0x6a706c);                                                        // roof slab
@@ -95,14 +88,14 @@ const chevTex=util.canvasTex(64,128,(c,w,h)=>{c.clearRect(0,0,w,h);c.strokeStyle
 chevTex.wrapT=THREE.RepeatWrapping;
 const chevMat=new THREE.MeshBasicMaterial({map:chevTex,transparent:true,depthWrite:false,color:0xffd48a,opacity:.85,fog:false});
 let chev=null,cz=[0,0],flash=0;
-function buildCross(L){
+function buildCross(){
  const g=root.cross;clear(g);const xa=ctx.wx(G.CROSS[1]-14),xb=ctx.wx(G.CROSS[0]+14),x=(xa+xb)/2,dx=xb-xa,z0=ctx.laneZAt(0,x),z1=ctx.laneZAt(1,x),sg=Math.sign(z1-z0)||1;
  const a=z0+sg*3.6,b=z1-sg*3.6,len=Math.abs(b-a),zc=(a+b)/2,P=[];cz=[z0,z1];
  B(P,dx,.08,len,x,.04,zc,0x4a5153);
  for(const s of [-1,1]){B(P,.28,.3,len-1.2,x+s*(dx/2-.15),.15,zc,0x646660);for(const e of [a,b])B(P,.4,.5,.4,x+s*(dx/2-.15),.25,e+(e===a?sg:-sg)*.6,0x33393b);}
  for(let k=1;k<4;k++)B(P,.12,.09,len-.4,xa+k*dx/4,.085,zc,0x5e6563);
  g.add(solid(P,91,.1,.4));
- chev=new THREE.Mesh(new THREE.PlaneGeometry(dx-1.2,Math.max(1.2,len-.6)),chevMat);chev.rotation.set(-PI/2,0,0);chev.position.set(x,.1,zc);chev.renderOrder=2;g.add(chev);
+ chev=flat(g,chevMat,dx-1.2,Math.max(1.2,len-.6),x,.1,zc,2);
  chevTex.repeat.set(Math.max(1,Math.round((dx-1.2)/3.2)),Math.max(1,(len-.6)/2.6));
 }
 function updCross(dt,t){
@@ -118,43 +111,42 @@ function buildPylon(L){
  const g=root.pylon;clear(g);const x0=ctx.wx(G.PYLON[1]),x1=ctx.wx(G.PYLON[0]),P=[];
  for(const lz of [L.laneZ[0],L.laneZ[1]]){const sg=Math.sign(lz)||1,zo=lz+sg*6.2;
   for(const x of [x0,x1]){B(P,1.0,.4,1.0,x,.2,zo,0x3c4a4e);for(const dz of [-.32,.32])B(P,.12,6.2,.12,x,3.3,zo+dz,0x8fa6a8);for(let h=1.2;h<6;h+=1.2)B(P,.1,.1,.76,x,h,zo,0x6d8790);B(P,.2,.14,10.6,x,6.1,lz,0x6d8790);}
-  for(const dz of [-3.2,0,3.2]){const P2=[];/* cables sag between the two pylons */for(let k=0;k<10;k++){const u0=k/10,u1=(k+1)/10,xa=x0+(x1-x0)*u0,xb=x0+(x1-x0)*u1,ya=5.95-2.2*4*u0*(1-u0),yb=5.95-2.2*4*u1*(1-u1),l=Math.hypot(xb-xa,yb-ya);P.push({g:new THREE.BoxGeometry(l,.07,.07),m:mat((xa+xb)/2,(ya+yb)/2,lz+dz,0,0,Math.atan2(yb-ya,xb-xa)),c:0x2a2f31});}}
+  for(const dz of [-3.2,0,3.2]){/* cables sag between the two pylons */for(let k=0;k<10;k++){const u0=k/10,u1=(k+1)/10,xa=x0+(x1-x0)*u0,xb=x0+(x1-x0)*u1,ya=5.95-2.2*4*u0*(1-u0),yb=5.95-2.2*4*u1*(1-u1),l=Math.hypot(xb-xa,yb-ya);P.push({g:new THREE.BoxGeometry(l,.07,.07),m:mat((xa+xb)/2,(ya+yb)/2,lz+dz,0,0,Math.atan2(yb-ya,xb-xa)),c:0x2a2f31});}}
   strip(g,zapMat,x0,x1,lz,7.6,.07);}
  g.add(solid(P,121,.08,1.2));
 }
-/* ---------- 지뢰밭: mines on both lanes (from G.mines): a red lamp blinks while armed; a spent mine leaves a dark crater ---------- */
+/* ---------- 지뢰밭: mines on both lanes, at G.MINE.ys (G.mines holds them lane by lane in that order): a red lamp blinks while armed; a spent mine leaves a dark crater ---------- */
 const mineGeo=new THREE.CylinderGeometry(.62,.72,.18,10),mineMat=new THREE.MeshStandardMaterial({color:0x3a3f40,roughness:.7,metalness:.3}),lampG=new THREE.SphereGeometry(.2,8,6);mineGeo.userData.keep=lampG.userData.keep=true;
 const craterTex=util.canvasTex(64,64,(c,w)=>{const gr=c.createRadialGradient(w/2,w/2,0,w/2,w/2,w/2);gr.addColorStop(0,'rgba(0,0,0,.85)');gr.addColorStop(.6,'rgba(0,0,0,.5)');gr.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gr;c.fillRect(0,0,w,w);});
 const craterMat=new THREE.MeshBasicMaterial({map:craterTex,transparent:true,depthWrite:false});
 let mineObjs=[];
 function buildMine(L){
  const g=root.mine;clear(g);mineObjs=[];const M=G.MINE;
- for(let l=0;l<2;l++)for(let i=0;i<M.n;i++){const y=M.a+(i+.5)*(M.b-M.a)/M.n,x=ctx.wx(y),z=ctx.laneZAt(l,x);
+ for(let l=0;l<2;l++)for(let i=0;i<M.n;i++){const y=M.ys[i],x=ctx.wx(y),z=ctx.laneZAt(l,x);
   const body=new THREE.Mesh(mineGeo,mineMat);body.position.set(x,.1,z);body.castShadow=true;g.add(body);
   const lm=new THREE.MeshBasicMaterial({color:0xff3020,fog:false}),lamp=new THREE.Mesh(lampG,lm);lm.userData.own=true;lamp.position.set(x,.26,z);g.add(lamp);
-  const cr=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),craterMat);cr.rotation.x=-PI/2;cr.position.set(x,.06,z);cr.renderOrder=1;g.add(cr);
-  mineObjs.push({l,y,body,lamp,lm,cr});}
+  mineObjs.push({k:l*M.n+i,y,body,lamp,cr:flat(g,craterMat,2.6,2.6,x,.06,z,1)});}
  const P=[];for(const lz of [L.laneZ[0],L.laneZ[1]])for(const s of [-1,1])for(const x of [ctx.wx(M.a),ctx.wx(M.b)]){B(P,.14,.9,.14,x,.45,lz+s*4.9,0x6d8790);B(P,.5,.32,.06,x,.8,lz+s*4.9,0xf0b54e);}   // warning signs at both ends
  g.add(solid(P,131,.08,.8));
 }
-function updMine(dt,t){const ms=G.mines||[];
- for(const o of mineObjs){const m=ms.find(q=>q.lane===o.l&&Math.abs(q.y-o.y)<.5),armed=!m||m.arm<=0;o.body.visible=armed;o.lamp.visible=armed&&Math.sin(t*7+o.y)>-.2;o.cr.visible=!armed;}}
+function updMine(dt,t){const ms=G.mines;
+ for(const o of mineObjs){const m=ms[o.k],armed=!m||m.arm<=0;o.body.visible=armed;o.lamp.visible=armed&&Math.sin(t*7+o.y)>-.2;o.cr.visible=!armed;}}
 /* ---------- 침수로: a sheet of water across both lanes; it flashes when the overload electrifies it ---------- */
 const waterTex=util.canvasTex(128,128,(c,w,h)=>{c.fillStyle='rgba(40,110,140,1)';c.fillRect(0,0,w,h);c.strokeStyle='rgba(170,230,255,.55)';c.lineWidth=1.5;for(let k=0;k<14;k++){const y=(k+.5)*h/14;c.beginPath();for(let x=0;x<=w;x+=4)c.lineTo(x,y+Math.sin(x*.12+k*1.7)*2.5);c.stroke();}},{repeat:[3,6]});
 const waterMat=new THREE.MeshStandardMaterial({map:waterTex,transparent:true,opacity:.62,roughness:.15,metalness:.2,depthWrite:false,emissive:0x0a2a3a});
 let water=null,wFlash=0;
 function buildFlood(L){
  const g=root.flood;clear(g);const x0=ctx.wx(G.FLOOD[1]),x1=ctx.wx(G.FLOOD[0]),w=2*(L.LZ+5.4),P=[];
- water=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,w),waterMat);water.rotation.x=-PI/2;water.position.set((x0+x1)/2,.09,0);water.renderOrder=1;g.add(water);
+ water=flat(g,waterMat,x1-x0,w,(x0+x1)/2,.09,0,1);
  for(const s of [-1,1])for(let z=-w/2;z<w/2;z+=1.1){B(P,.9,.42,.95,x0-.35,.21,z+.5,s>0?0x6b6450:0x5d5747);B(P,.9,.42,.95,x1+.35,.21,z+.5,s>0?0x5d5747:0x6b6450);}   // sandbags along both edges
  g.add(solid(P,141,.12,.5));
 }
-function updFlood(dt,t){if(!water)return;waterTex.offset.x=(waterTex.offset.x+dt*.05)%1;waterTex.offset.y=(waterTex.offset.y+dt*.03)%1;wFlash=Math.max(0,wFlash-dt*2.2);waterMat.emissive.setRGB(.04+.5*wFlash,.16+.75*wFlash,.23+.9*wFlash);}
+function updFlood(dt){if(!water)return;waterTex.offset.x=(waterTex.offset.x+dt*.05)%1;waterTex.offset.y=(waterTex.offset.y+dt*.03)%1;wFlash=Math.max(0,wFlash-dt*2.2);waterMat.emissive.setRGB(.04+.5*wFlash,.16+.75*wFlash,.23+.9*wFlash);}
 /* ---------- 가속로: glowing arrow rails on the workshop lane that push machines on ---------- */
 const boostTex=util.canvasTex(64,64,(c,w,h)=>{c.clearRect(0,0,w,h);c.strokeStyle='rgba(255,255,255,1)';c.lineWidth=9;c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(w*.75,8);c.lineTo(w*.3,h/2);c.lineTo(w*.75,h-8);c.stroke();},{repeat:[1,1]});
 boostTex.wrapS=THREE.RepeatWrapping;const boostMat=stripMat(boostTex,0xff8a3a,.75);
-function buildBoost(L){
- const g=root.boost;clear(g);const Z=G.MAPK.boost.z,P=[];
+function buildBoost(){
+ const g=root.boost;clear(g);const Z=G.map.z,P=[];   // built when the boost map is laid out: its stretch
  for(let l=0;l<2;l++)for(const z of Z[l]){const x0=ctx.wx(z[1]),x1=ctx.wx(z[0]),lz=ctx.laneZAt(l,(x0+x1)/2);
   for(const dz of [-2.3,2.3])strip(g,boostMat,x0,x1,lz+dz,1.6,.075);
   for(const s of [-1,1])B(P,x1-x0,.16,.3,(x0+x1)/2,.1,lz+s*3.9,0x8a4a2a);}
@@ -164,12 +156,12 @@ function buildBoost(L){
 function updBoost(dt){boostTex.offset.x=(boostTex.offset.x+dt*2.2)%1;}
 /* ---------- 화염로: vent grates on both lanes; they glow before they fire (fx.js draws the flames) ---------- */
 const grateMat=new THREE.MeshStandardMaterial({color:0x2c2f30,emissive:0x000000,roughness:.6,metalness:.4});
-function buildVent(L){
- const g=root.vent;clear(g);const V=G.VENT,P=[];
- for(let l=0;l<2;l++)for(let i=0;i<4;i++){const x=ctx.wx(V.a+(i+.5)*(V.b-V.a)/4),z=ctx.laneZAt(l,x);for(let k=-2;k<=2;k++)B(P,1.7,.12,.22,x,.07,z+k*1.2,0xffffff);B(P,1.9,.08,6.4,x,.03,z,0x9a9a9a);}
+function buildVent(){
+ const g=root.vent;clear(g);const P=[];
+ for(let l=0;l<2;l++)for(let i=0;i<ctx.GRATES;i++){const x=ctx.wx(ctx.grateY(i)),z=ctx.laneZAt(l,x);for(let k=-2;k<=2;k++)B(P,1.7,.12,.22,x,.07,z+k*1.2,0xffffff);B(P,1.9,.08,6.4,x,.03,z,0x9a9a9a);}
  const m=new THREE.Mesh(merge(P),grateMat);m.receiveShadow=true;g.add(m);
 }
-function updVent(dt,t){const ph=G.ventPhase?G.ventPhase():0;const k=ph===2?1:ph===1?.35+.3*Math.sin(t*18):0;grateMat.emissive.setRGB(1*k,.32*k,.05*k);}
+function updVent(dt,t){const ph=G.ventPhase(),k=ph===2?1:ph===1?.35+.3*Math.sin(t*18):0;grateMat.emissive.setRGB(1*k,.32*k,.05*k);}
 
 const BUILD={gate:buildGate,bridge:buildBridge,tunnel:buildTunnel,cross:buildCross,pylon:buildPylon,mine:buildMine,flood:buildFlood,boost:buildBoost,vent:buildVent};
 return{
@@ -182,7 +174,7 @@ return{
   if(root.cross.visible)updCross(dt,t);
   if(root.pylon.visible)zapTex.offset.x=(zapTex.offset.x+dt*(1.5+Math.random()))%1,zapMat.opacity=.32+.3*Math.random();
   if(root.mine.visible)updMine(dt,t);
-  if(root.flood.visible)updFlood(dt,t);
+  if(root.flood.visible)updFlood(dt);
   if(root.boost.visible)updBoost(dt);
   if(root.vent.visible)updVent(dt,t);
  },

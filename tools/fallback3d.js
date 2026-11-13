@@ -1,8 +1,7 @@
 // 2.5D 화면이 실패했을 때 2D 화면으로 넘어가는지 확인. node fallback3d.js <게임 폴더> <출력 폴더>
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');
+const { chromium } = require('playwright');const {hooked}=require('./lib.js');const path=require('path'),fs=require('fs');
 const [dir,out]=process.argv.slice(2);
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-const f=path.join(dir,'_fb_'+process.pid+'.html');fs.writeFileSync(f,s);fs.mkdirSync(out,{recursive:true});
+const f=hooked(dir,'fb');fs.mkdirSync(out,{recursive:true});
 const state=p=>p.evaluate(()=>({active:window.__relay.active,cls:document.getElementById('field').className,gameVis:getComputedStyle(document.getElementById('game')).visibility,
   g3:document.getElementById('game3d')?getComputedStyle(document.getElementById('game3d')).display:'none',hud:document.getElementById('hud3d')?getComputedStyle(document.getElementById('hud3d')).display:'none'}));
 (async()=>{const b=await chromium.launch();let bad=0;
@@ -20,4 +19,4 @@ const state=p=>p.evaluate(()=>({active:window.__relay.active,cls:document.getEle
    await p.screenshot({path:path.join(out,`fb_${name}_${w}x${h}.png`)});
    const ok=before.active&&before.g3==='block'&&before.hud==='block'&&!after.active&&after.gameVis==='visible'&&after.g3==='none'&&after.hud==='none'&&l1!==l0&&!errs.length;if(!ok)bad++;
    console.log(name,w+'x'+h,ok?'OK':'PROBLEM',JSON.stringify({before,after,tap:[l0,l1],errs}));await c.close();}}
- await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();
+ await b.close();console.log(bad?`FAIL (${bad})`:'PASS');})();

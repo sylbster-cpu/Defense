@@ -318,12 +318,9 @@ function updField(dt,t,G){const list=G.fieldTurrets||[],R=G.FIELD?G.FIELD.range:
   const x=ctx.wx(f.y),z=ctx.laneZAt(f.lane,x);F.pop=Math.min(1,F.pop+dt*4);const end=Math.min(1,f.life/.4),b=F.pop<1?1+.25*Math.sin(F.pop*Math.PI):1;
   F.g.visible=true;F.g.position.set(x,FPIV,z);F.g.scale.setScalar(FS*Math.max(.05,Math.min(F.pop,end))*b);
   let e=null,best=-1e9;for(let j=0;j<en.length;j++){const q=en[j];if(q.hp<=0||q.lane!==f.lane||Math.abs(q.y-f.y)>R)continue;const pr=q.y+(q.type==='boss'?6:0);if(pr>best){best=pr;e=q;}}
-  let yawT=(ctx.L.laneZ[f.lane]>0?-.46:.46)+Math.sin(t*.6+f.id*9)*.5,pitT=.06;
-  if(e){ctx.enemyPos(e,v);const dx=v.x-x,dy=v.y-FPIV,dz=v.z-z;yawT=Math.atan2(-dz,dx);pitT=clamp(Math.atan2(dy,Math.sqrt(dx*dx+dz*dz)),-.5,.4);}
-  F.yaw=damp(F.yaw,yawT,e?13:2.5,dt);F.pit=damp(F.pit,pitT,10,dt);
-  if(f.flash>F.lastFlash+.05){F.kick=1;F.flash=1;}F.lastFlash=f.flash;
-  F.kick=Math.max(0,F.kick-dt*6.5);F.flash=Math.max(0,F.flash-dt*10);
-  F.g.rotation.y=F.yaw;F.gun.rotation.z=F.pit;F.gun.position.x=-.7*F.kick*F.kick;
+  aimHead(F,e,x,FPIV,z,(ctx.L.laneZ[f.lane]>0?-.46:.46)+Math.sin(t*.6+f.id*9)*.5,dt);
+  if(f.flash>F.lastFlash+.05)fire(F);F.lastFlash=f.flash;
+  recoil(F,dt);
   const blink=f.life<3?(Math.sin(t*18)>0?1:.2):1;                                         // the last three seconds it blinks
   setG(F.mat,0,cW,blink);setG(F.mat,1,cHot,3.5*F.flash);setG(F.mat,2,cA,1.2*blink);
   if(F.flash>0){const cy=Math.cos(F.yaw),sy=Math.sin(F.yaw),cp=Math.cos(F.pit),m=FMUZ;spr(glowB,x+cy*cp*m,FPIV+Math.sin(F.pit)*m,z-sy*cp*m,1.2+2*F.flash,cHot,F.flash);}
@@ -437,14 +434,11 @@ function updTurrets(dt,t,G){
  // bunker: status lamps follow the workshop, the rings show the 협동 조준 charge
  setG(bunkMat,0,cW,shopDown?(Math.sin(t*19)*Math.sin(t*6.3)>0?.4:.1):1);
  if(pierce){setG(bunkMat,1,cHot,1.7+.4*Math.sin(t*11));bunkMat.userData.lvl.y=1.1;}else{setG(bunkMat,1,cA,1.2);bunkMat.userData.lvl.y=frac;}
- for(let i=0;i<2;i++){const T=tur[i],e=tgt[i];let gt=G.turrets[i],yawT,pitT;if(gt&&gt.lane!==i)gt=G.turrets[1-i];
-  if(e){ctx.enemyPos(e,v);const dx=v.x-T.x,dy=v.y-T.y,dz=v.z-T.z;yawT=Math.atan2(-dz,dx);pitT=clamp(Math.atan2(dy,Math.sqrt(dx*dx+dz*dz)),-.5,.4);}
-  else{yawT=T.home+Math.sin(t*.42+i*2.1)*.6;pitT=.06;}                       // idle sweep
-  T.yaw=damp(T.yaw,yawT,e?13:2.5,dt);T.pit=damp(T.pit,pitT,10,dt);
+ for(let i=0;i<2;i++){const T=tur[i],e=tgt[i];let gt=G.turrets[i];if(gt&&gt.lane!==i)gt=G.turrets[1-i];
+  aimHead(T,e,T.x,T.y,T.z,T.home+Math.sin(t*.42+i*2.1)*.6,dt);                                     // at its target, or the idle sweep
   // the bridge also exposes flash (>0 right after a shot): use it as a backup for the hit event
   const gf=gt?gt.flash:0;if(gf>T.lastFlash+.05)fire(T);T.lastFlash=gf;
-  T.kick=Math.max(0,T.kick-dt*6.5);T.flash=Math.max(0,T.flash-dt*10);T.zap=Math.max(0,T.zap-dt*8);
-  T.g.rotation.y=T.yaw;T.gun.rotation.z=T.pit;T.gun.position.x=-.7*T.kick*T.kick;
+  recoil(T,dt);T.zap=Math.max(0,T.zap-dt*8);
   const dim=shopDown?(Math.sin(t*23+i*3)*Math.sin(t*7.1)>0?.55:.14):1;
   setG(T.mat,0,cW,1.0*dim);
   setG(T.mat,1,cHot,3.5*T.flash+(pierce?1.3+.3*Math.sin(t*11+i):0));
@@ -459,6 +453,12 @@ function updTurrets(dt,t,G){
  }
 }
 function fire(T){T.kick=1;T.flash=1;}
+// A turret head (the two turrets and the field turrets): it turns to its target e from its pivot (x,y,z), or to the idle yaw when it has none;
+// then the kick of a shot and its flash die away and the model takes the pose.
+function aimHead(T,e,x,y,z,idle,dt){let yawT=idle,pitT=.06;
+ if(e){ctx.enemyPos(e,v);const dx=v.x-x,dy=v.y-y,dz=v.z-z;yawT=Math.atan2(-dz,dx);pitT=clamp(Math.atan2(dy,Math.sqrt(dx*dx+dz*dz)),-.5,.4);}
+ T.yaw=damp(T.yaw,yawT,e?13:2.5,dt);T.pit=damp(T.pit,pitT,10,dt);}
+function recoil(T,dt){T.kick=Math.max(0,T.kick-dt*6.5);T.flash=Math.max(0,T.flash-dt*10);T.g.rotation.y=T.yaw;T.gun.rotation.z=T.pit;T.gun.position.x=-.7*T.kick*T.kick;}
 
 /* ================= 7. part interface ================= */
 return{
@@ -484,7 +484,7 @@ return{
   updHub(dt,t,G);updTurrets(dt,t,G);updField(dt,t,G);
   updParticles(dt);flush(glowB);flush(smokeB);flush(poolB);
  },
- event(ev,G){
+ event(ev){
   if(ev.t==='hit'){if(ev.src==='turret'&&ev.e){const T=tur[ev.e.lane];if(T)fire(T);}}
   else if(ev.t==='leak'){const F=fac[ev.lane],g=gate[ev.lane];if(!F)return;
    g.fl=1;F.jt=0;F.ja=ev.down?.6:.28;

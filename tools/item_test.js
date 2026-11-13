@@ -1,17 +1,16 @@
 // 아이템 확인: 전장에 떨어짐, 5초, 터치로 줍기, 두 칸 보관, 열 가지 효과, 자석의 위치 지정, 현장 포탑 확률, 장 끝 보상, 줍기 안내, 최종 보스.
 // node tools/item_test.js <게임 폴더 절대 경로>
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir=path.resolve(process.argv[2]);
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-if(!s.includes('__t'))throw new Error('hook line not found in index.html');const f=path.join(dir,'_it_'+process.pid+'.html');fs.writeFileSync(f,s);
-(async()=>{const b=await chromium.launch();let bad=0;const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
+const { chromium } = require('playwright');const {hooked,checks,inGame}=require('./lib.js');const path=require('path');const dir=path.resolve(process.argv[2]);
+const f=hooked(dir,'it');
+(async()=>{const b=await chromium.launch();const {ck,end}=checks();
  for(const [w,h,mode] of [[844,390,''],[390,844,''],[844,390,'2d'],[390,844,'2d']]){
   const c=await b.newContext({viewport:{width:w,height:h},hasTouch:true});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
-  const T=x=>p.evaluate(x=>window.__t(x),x),tag=w+'x'+h+(mode?' 2D':'');
+  const T=inGame(p),tag=w+'x'+h+(mode?' 2D':'');
   await p.goto('file://'+f+(mode?'?2d=1':'?q=0'));if(!mode)await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});else await p.waitForTimeout(600);
   // helpers inside the game: a fixed drop, where a drop is on the screen, a held clock
   await T(`$('title').hidden=true;$('titleVid').pause();mute=true;learned.item=learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=1;for(const k in ITEMS)learned.items[k]=1;beginRun();map=MAPS[0];pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];paused=true;
    window.__drop=(item,lane,y)=>{const d={id:Math.random(),item,lane,y,life:DROP_LIFE};drops.push(d);return d;};
-   window.__at=(d,h=2.4)=>{const r=canvas.getBoundingClientRect();if(G3.active)return G3.renderer.screenOf(d.lane,d.y,h);if(compactCanvas)return{x:r.left+cmp.x0+(d.y-LANE_TOP)/LANE_LEN*cmp.run,y:r.top+cmp.ys[d.lane]};return{x:r.left+LANES[d.lane]/W*r.width,y:r.top+d.y/H*r.height};};
+   window.__at=(d,h=DROP_H)=>view().screenOf(d.lane,d.y,h);
    window.__run=(sec)=>{for(let i=0;i<Math.round(sec*60);i++)update(1/60);};0`);
   await p.waitForTimeout(300);
   const tapDrop=async i=>{const q=await T(`JSON.stringify(__at(drops[${i}]))`).then(JSON.parse);await p.touchscreen.tap(q.x,q.y);await p.waitForTimeout(120);};
@@ -82,4 +81,4 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   await T("paused=true;enemies=[];op=TOTAL_OPS;spawn(0,'boss');0");const fb=await T('JSON.stringify({final:enemies[0].final,hops:enemies[0].hops})');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.4,0,0,"drone");');const l1=await T('enemies[0].lane');await T('const e=enemies[0];damageEnemy(e,e.maxHp*.3,0,0,"drone");');const l2=await T('enemies[0].lane');
   ck('final boss changes lanes at 2/3 and 1/3 hull',l1===1&&l2===0,{fb,l1,l2});
   const sc=await p.evaluate(()=>document.documentElement.scrollWidth+'x'+document.documentElement.scrollHeight);ck('no scroll',sc===w+'x'+h,sc);ck('no errors',!errs.length,errs.slice(0,3));await c.close();}
- await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();
+ await b.close();end();})();

@@ -1,27 +1,18 @@
 /* env.js — 전장의 배경과 분위기: 지형·두 전선 도로·돌파구·중앙 분리대·주변 지물·해질녘 조명·안개·먼지·빛줄기 */
 (function(){'use strict';const R3D=window.R3D,THREE=window.THREE;
 R3D.register('env',ctx=>{
- const {scene,camera,renderer,pal,util}=ctx,{lerp,mat,merge,canvasTex}=util;
+ const {scene,camera,renderer,pal,util}=ctx,{lerp,mat,merge,canvasTex,hash,box:B,rock,stdMat}=util;
  const PI=Math.PI,sm=t=>t*t*(3-2*t),sat=v=>v<0?0:v>1?1:v;
 
  /* ================= helpers ================= */
  // deterministic random stream (mulberry32) for everything built once
  function RNG(s){let a=(s*2654435761)>>>0||1;return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
- const hash=(x,y)=>{const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);};
  function vnoise(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=sm(x-xi),yf=sm(y-yi),a=hash(xi,yi),b=hash(xi+1,yi),c=hash(xi,yi+1),d=hash(xi+1,yi+1);return a+(b-a)*xf+(c-a)*yf+(a-b-c+d)*xf*yf;}
  const fbm=(x,y)=>vnoise(x,y)*.55+vnoise(x*2.1+7.3,y*2.1+1.7)*.3+vnoise(x*4.3+3.1,y*4.3+9.2)*.15;
  const css=(h,a)=>'rgba('+(h>>16&255)+','+(h>>8&255)+','+(h&255)+','+(a===undefined?1:a)+')';
  const mixHex=(a,b,t)=>new THREE.Color(a).lerp(new THREE.Color(b),t).getHex();
- // primitive -> part list for util.merge
- const B=(P,w,h,d,x,y,z,c,ry,rx,rz)=>P.push({g:new THREE.BoxGeometry(w,h,d),m:mat(x,y,z,rx||0,ry||0,rz||0),c});
+ // primitive -> part list for util.merge (boxes and boulders come from util: B and rock)
  const CY=(P,rt,rb,h,seg,x,y,z,c,ry,rx,rz)=>P.push({g:new THREE.CylinderGeometry(rt,rb,h,seg),m:mat(x,y,z,rx||0,ry||0,rz||0),c});
- // lumpy boulder: a dodecahedron with every corner pushed in or out
- function rock(P,x,y,z,sx,sy,sz,c,seed){
-  const g=new THREE.DodecahedronGeometry(1,0),p=g.attributes.position;
-  for(let i=0;i<p.count;i++){const X=p.getX(i),Y=p.getY(i),Z=p.getZ(i),k=.7+.55*hash(seed+Math.round(X*40)+Math.round(Y*90)*3.1,Math.round(Z*50)*1.7+seed*.37);p.setXYZ(i,X*k,Y*k,Z*k);}
-  g.computeVertexNormals();
-  P.push({g,m:mat(x,y,z,hash(seed,1)*.5,hash(seed,2)*6.28,hash(seed,3)*.5,sx,sy,sz),c});
- }
  // sagging cable made of short straight boxes
  function cable(P,x0,y0,z0,x1,y1,z1,sag,n,th,c){
   let px=x0,py=y0,pz=z0;
@@ -35,7 +26,6 @@ R3D.register('env',ctx=>{
    for(let j=0;j<9;j+=3){const y=p[i+j+1],f=foot?lerp(.62,1,sat(y/foot)):1;c[i+j]*=k*f;c[i+j+1]*=k*f;c[i+j+2]*=k*f;}}
   return g;
  }
- const stdMat=()=>new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.92,metalness:.04});
  function solid(parts,seed,opt){const o=opt||{},m=new THREE.Mesh(paintFacets(merge(parts),o.jitter===undefined?.16:o.jitter,seed,o.foot===undefined?1.1:o.foot),o.mat||propMat);m.castShadow=o.cast!==false;m.receiveShadow=true;return m;}
  const propMat=stdMat();
 
@@ -508,7 +498,7 @@ R3D.register('env',ctx=>{
    // Everything below depends only on the layout mode (the camera never turns inside a mode), so a plain resize skips it.
    if(key!==laidKey){laidKey=key;
     for(let i=0;i<2;i++)lanes[i].position.z=L.laneZ[i];
-    bendLanes();median.visible=!L.map||['straight','gate','tunnel','mine','boost','vent','pylon'].includes(L.map);   // bent lanes and the bridge's chasm cross the median strip, so it is cleared on those maps
+    bendLanes();median.visible=ctx.G.map.median;   // bent lanes, the bridge's chasm and the water cross the median strip: the map says whether it is drawn
     sideSet.visible=side;behindSet.visible=!side;
     cliff.position.set(side?-16:0,0,side?CLIFF_SIDE:CLIFF_BEHIND);   // in 'side' the low end of the ridge is slid off screen
     cliffK=side?1:.8;toneCliff();

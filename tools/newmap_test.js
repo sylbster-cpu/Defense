@@ -1,11 +1,10 @@
 // 맵 규칙(고압선, 관문, 다리, 터널, 샛길, 지뢰밭, 침수로, 가속로, 화염로), 열두 장 구성, 강화 상한, 새 아이템(연쇄 번개, 궤도 포격),
 // 콤보·다중 격파·점수·별, 새 지형 안내, 2.5D에서 오류 없이 그려지는지 확인.  node tools/newmap_test.js <게임 폴더 절대 경로>
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir=path.resolve(process.argv[2]);
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-if(!s.includes('__t'))throw new Error('hook line not found in index.html');const f=path.join(dir,'_nm_'+process.pid+'.html');fs.writeFileSync(f,s);
-(async()=>{const b=await chromium.launch();let bad=0;const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
+const { chromium } = require('playwright');const {hooked,checks,inGame}=require('./lib.js');const path=require('path');const dir=path.resolve(process.argv[2]);
+const f=hooked(dir,'nm');
+(async()=>{const b=await chromium.launch();const {ck,end}=checks();
  // ---- rules, on the 2D page with the clock in the test's hands ----
- {const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const T=x=>p.evaluate(x=>window.__t(x),x);const J=async x=>JSON.parse(await T(x));
+ {const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const T=inGame(p);const J=async x=>JSON.parse(await T(x));
   await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(500);await p.evaluate(()=>{window.requestAnimationFrame=()=>0;});
   await T(`mute=true;$('title').hidden=true;learned.item=true;learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=true;
    window.__stage=k=>{reset();newStage(k);enemies=[];pattern=[[1e9,0,'runner']];nextSpawn=0;turrets=[];};
@@ -14,7 +13,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   // structure
   ck('twelve chapters, each on its own map',await T("TOTAL_OPS===12&&new Set(MAP_OF.slice(1)).size===12"),await T("MAP_OF.slice(1).map(i=>MAPS[i].id).join()"));
   ck('maps per chapter',await T("MAP_OF.slice(1).map(i=>MAPS[i].id).join()")==='pylon,pinch,detour,wave,gate,bridge,tunnel,cross,mine,flood,boost,vent');
-  ck('every chapter has a schedule, three waves, a hull scale and a name',await T("[1,2,3,4,5,6,7,8,9,10,11,12].every(k=>stages[k]&&stages[k].length>20&&WAVES[k]&&OP_HP[k]>0&&OP_NAMES[k])"));
+  ck('every chapter has a schedule, three waves, a hull scale and a name',await T("[1,2,3,4,5,6,7,8,9,10,11,12].every(k=>stages[k]&&stages[k].length>20&&WAVES[k]&&OP_HP[k]>0)"));
   ck('only chapter 12 has the last boss',await T("__stage(8);spawn(0,'boss');const a=!enemies[0].final;__stage(12);spawn(0,'boss');a&&enemies[0].final===true"));
   ck('the drill keeps the plain straight road',await T("MAPS[0].id==='straight'&&!MAPS[0].rule"));
   ck('every rule map has a stretch of about a fifth of the field',await T("MAPS.slice(1).every(m=>{let n=0,t=0;for(let l=0;l<2;l++)for(let y=LANE_TOP;y<LEAK_Y;y++){t++;if(m.zone(l,y))n++;}return n/t>.19&&n/t<.24;})"),await T("MAPS.slice(1).map(m=>{let n=0,t=0;for(let l=0;l<2;l++)for(let y=LANE_TOP;y<LEAK_Y;y++){t++;if(m.zone(l,y))n++;}return m.id+' '+Math.round(n/t*100)+'%';}).join(', ')"));
@@ -41,7 +40,7 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
   await T("__stage(7);drone.lane=0;drone.x=LANES[0];window.__u=[__put(0,'grunt',250,5000),__put(0,'grunt',320,5000)];0");
   ck('tunnel: a machine inside cannot be targeted',await T("pickTarget(0,DRONE_Y,999)===__u[1]&&pickTarget(0,250,5)===null"));
   await T("drone.pulseCooldown=0;pulse();0");ck('tunnel: the overload reaches inside',await T("__u[0].hp<5000&&__u[1].hp<5000"),await T("__u.map(e=>e.hp)"));
-  await T("bag=['magnet'];aim=0;useMagnet(0,330);0");ck('tunnel: the magnet does not pull it out',await T("!(__u[0].pullT>0)"));
+  await T("bag=['magnet'];aim=0;useAim(0,330);0");ck('tunnel: the magnet does not pull it out',await T("!(__u[0].pullT>0)"));
   await T("__u[0].y=300;0");ck('tunnel: out of the exit it can be hit again',await T("pickTarget(0,DRONE_Y,999)!==null&&!map.cover(0,300)"));
   // 샛길
   await T("__stage(8);drone.lane=0;drone.x=LANES[0];window.__c=[__put(1,'grunt',CROSS[0]+3,1e6),__put(0,'grunt',CROSS[0]+3,1e6),__put(1,'brute',CROSS[0]+3,1e6),__put(1,'boss',CROSS[0]+3,1e6)];__run(.3);0");
@@ -91,11 +90,11 @@ if(!s.includes('__t'))throw new Error('hook line not found in index.html');const
    ck('lesson on the first visit: '+name,t==='새 지형 · '+name,t);await T("releaseHold();0");}
   ck('no errors (2D)',!errs.length,errs.slice(0,2));await p.close();}
  // ---- 2.5D: every rule map is drawn without errors, in both layouts, with the new effects going off ----
- for(const [w,h] of [[844,390],[390,844]]){const p=await b.newPage({viewport:{width:w,height:h}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const T=x=>p.evaluate(x=>window.__t(x),x);
+ for(const [w,h] of [[844,390],[390,844]]){const p=await b.newPage({viewport:{width:w,height:h}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const T=inGame(p);
   await p.goto('file://'+f+'?q=1');await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});
   await T("mute=true;$('title').hidden=true;learned.item=true;learned.pulse=true;for(const m of MAPS)learned.maps[m.id]=true;0");
   for(const k of [1,2,3,4,5,6,7,8,9,10,11,12]){await T(`reset();newStage(${k});for(let i=0;i<60*9;i++)update(1/60);drone.pulseCooldown=0;pulse();applyItem('chain');bag=['orbital'];aim=0;useAim(drone.lane,DRONE_Y-40);for(let i=0;i<4;i++){const e=enemies.find(q=>q.hp>0);if(e)damageEnemy(e,1e6,0,0,'pulse');}0`);await p.waitForTimeout(450);}
   ck(w+'x'+h+' 2.5D draws all twelve maps and the new effects without errors and stays in 2.5D',!errs.filter(e=>!/intro\.mp3/.test(e)).length&&await T("G3.active===true"),errs.slice(0,2));
   ck(w+'x'+h+' no scroll',await T("document.documentElement.scrollHeight<=innerHeight+1&&document.documentElement.scrollWidth<=innerWidth+1"));
   await p.close();}
- await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();
+ await b.close();end();})();

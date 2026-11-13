@@ -251,15 +251,13 @@ void main(){float s=vK.x,v=vK.y,a;vec3 c;
  m.frustumCulled=false;m.matrixAutoUpdate=false;m.raycast=noRay;m.renderOrder=11;scene.add(m);return m;
 })();
 const wU=wave.material.uniforms,waveTime=r=>.24+r*.006;   // seconds the front needs to cover the range
-let wOn=false,wT=0,wR=0,wDur=.3,wX=0,wZ=0,wAcc=0,wEnd=false;
+let wOn=false,wT=0,wR=0,wDur=.3,wX=0,wAcc=0,wEnd=false;
 const wC=wU.uZc.value,wH=wU.uZh.value,wA=new Uint8Array(WN);
 // The struck band of an overload fired from `lane` with reach r (world units) around x: per sample the centre and half width.
-// Outer edge = the drone lane's outer side; inner edge = its median side, or the far side of the other lane where G.mapNear says the overload reaches across.
+// Outer edge = the drone lane's outer side; inner edge = its median side, or the far side of the other lane where the overload reaches across (ctx.reach).
 function waveBand(lane,x,r){
- const G=ctx.G,near=G.mapNear,hw=A.laneW/2-.08,sg=Math.sign(L.laneZ[lane])||1,dx=2*r/(WN-1);
- wU.uX0.value=x-r;wU.uDX.value=dx;
- for(let i=0;i<WN;i++)wA[i]=near&&near(G.LEAK_Y-(x-r+i*dx)/U)?1:0;
- for(let i=0,j;i<WN;i=j){for(j=i;j<WN&&wA[j]===wA[i];j++);if(wA[i]&&(j-i)*dx<1)wA.fill(0,i,j);}   // a sliver at the end of the range, as in the frame
+ const hw=A.laneW/2-.08,sg=Math.sign(L.laneZ[lane])||1,dx=2*r/(WN-1);
+ wU.uX0.value=x-r;wU.uDX.value=dx;ctx.reach(wA,WN,x-r,dx);
  for(let i=0;i<WN;i++){const xi=x-r+i*dx,zo=ctx.laneZAt(lane,xi)+sg*hw,zi=wA[i]?ctx.laneZAt(1-lane,xi)-sg*hw:ctx.laneZAt(lane,xi)-sg*hw;wC[i]=(zo+zi)/2;wH[i]=Math.abs(zo-zi)/2;}
 }
 function bandAt(x,out){const t=Math.max(0,Math.min(WN-1.001,(x-wU.uX0.value)/wU.uDX.value)),i=t|0,f=t-i;out[0]=wC[i]+(wC[i+1]-wC[i])*f;out[1]=wH[i]+(wH[i+1]-wH[i])*f;return out;}
@@ -411,13 +409,11 @@ function onHit(ev){
   if(src==='turret')ctx.turretPos(e.lane,vS);
   else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.3;life=.14;}
   else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
-  else if(src==='field'&&ev.sy===ev.sy){const fx=ctx.wx(ev.sy);vS.set(fx,1.75,ctx.laneZAt(e.lane,fx));w=1.35;life=.14;}   // a field turret (base.js); the tracer leaves from its muzzle below
-  else if(src==='pierce'&&ev.sy===ev.sy){vS.set(ctx.wx(ev.sy),d.cy,ctx.laneZAt(e.lane,ctx.wx(ev.sy)));c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
-  else if(src==='chain'&&ev.sy===ev.sy){const G=ctx.G,sl=Math.abs(ev.sx-G.LANES[1])<Math.abs(ev.sx-G.LANES[0])?1:0,sx=ctx.wx(ev.sy);vS.set(sx,ev.sy===G.DRONE_Y&&Math.abs(ev.sx-G.drone.x)<1?A.droneH:1.3,ctx.laneZAt(sl,sx));c=C.zap;w=1.7;life=.3;hot=1.8;emit(P.glow,vE.x,vE.y,vE.z,0,0,0,3,C.white,C.zap);}   // chain lightning: a jump from the last machine struck
-  else if(src==='orbital'){if(ev.kill)kill(e);return;}
-  else if(src==='shock'&&ev.sy===ev.sy){const sx=ctx.wx(ev.sy);vS.set(sx,.7,ctx.laneZAt(e.lane,sx));c=C.zap;w=1.05;life=.2;hot=1.4;}   // electricity running through the water
-  else if(src==='mine'||src==='vent'){if(src==='vent'&&Q>0)emit(P.fire,vE.x+(rnd()-.5)*d.r,GY+.3,vE.z+(rnd()-.5)*d.r,(rnd()-.5)*1.5,3+rnd()*3,(rnd()-.5)*1.5,.8,C.fire0,C.fire1);if(ev.kill)kill(e);return;}
-  else{if(ev.kill)kill(e);return;}   // unknown source: no tracer
+  else if(src==='field'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,1.75,vS);w=1.35;life=.14;}   // a field turret (base.js); the tracer leaves from its muzzle below
+  else if(src==='pierce'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,d.cy,vS);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
+  else if(src==='chain'&&ev.sy===ev.sy){const G=ctx.G,sl=Math.abs(ev.sx-G.LANES[1])<Math.abs(ev.sx-G.LANES[0])?1:0;ctx.lanePos(sl,ev.sy,ev.sy===G.DRONE_Y&&Math.abs(ev.sx-G.drone.x)<1?A.droneH:1.3,vS);c=C.zap;w=1.7;life=.3;hot=1.8;emit(P.glow,vE.x,vE.y,vE.z,0,0,0,3,C.white,C.zap);}   // chain lightning: a jump from the last machine struck
+  else if(src==='shock'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,.7,vS);c=C.zap;w=1.05;life=.2;hot=1.4;}   // electricity running through the water
+  else{if(src==='vent'&&Q>0)emit(P.fire,vE.x+(rnd()-.5)*d.r,GY+.3,vE.z+(rnd()-.5)*d.r,(rnd()-.5)*1.5,3+rnd()*3,(rnd()-.5)*1.5,.8,C.fire0,C.fire1);if(ev.kill)kill(e);return;}   // mines, vents (a lick of flame), the orbital shell and anything unknown: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
   // stop at the hull on the side of the shooter, nudged towards the camera so the flash is not buried in the model
   const hr=Math.min(d.r*.7,l*.5);let hx=vE.x-dx*hr,hy=vE.y-dy*hr,hz=vE.z-dz*hr;
@@ -438,7 +434,7 @@ function onHit(ev){
 function onPulse(ev){
  if(!isLane(ev.lane))return;
  const z=ctx.laneZAt(ev.lane,A.droneX),x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
- wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wZ=z;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);waveBand(ev.lane,x,wR);
+ wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);waveBand(ev.lane,x,wR);
  ribbon(S_COLUMN,x,y+8,z,x,GY,z,4.2,.26,C.amber,1.3,1.25);          // vertical flash through the drone
  emit(P.flash,x,y,z,0,0,0,5.2,C.white,C.amber);emit(P.glow,x,y,z,0,0,0,7,C.amber);
  decal(D_RING,x,z,2,A.laneW*1.25,2,A.laneW*1.25,0,.36,C.amberHot,.9,0,0,.2);
@@ -537,9 +533,9 @@ function stepWave(dt,t){
 // fire vents (화염로): flames roar out of the grates on both lanes while the vents burn
 let ventAcc=0;
 function stepVents(dt,G){
- const M=G.mapFlags;if(!M||!M.vent||G.phase!=='battle'||!G.VENT){ventAcc=0;return;}const ph=G.ventPhase();if(ph!==2){ventAcc=0;return;}
- ventAcc+=dt*(Q?90:40);let n=ventAcc|0;ventAcc-=n;n=Math.min(n,12);const V=G.VENT;
- for(let i=0;i<n;i++){const l=i&1,k=(Math.floor(rnd()*4)+.5)/4,x=ctx.wx(V.a+k*(V.b-V.a))+(rnd()-.5)*1.2,z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.8;
+ if(G.phase!=='battle'||G.ventPhase()!==2){ventAcc=0;return;}   // ventPhase is 2 only while the vents of a vent map burn
+ ventAcc+=dt*(Q?90:40);let n=ventAcc|0;ventAcc-=n;n=Math.min(n,12);
+ for(let i=0;i<n;i++){const l=i&1,x=ctx.wx(ctx.grateY(Math.floor(rnd()*ctx.GRATES)))+(rnd()-.5)*1.2,z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.8;
   emit(P.fire,x,GY+.2,z,(rnd()-.5)*1.2,7+rnd()*6,(rnd()-.5)*1.2,1.5+rnd()*.8,C.fire0,C.fire1);if(i%3===0)emit(P.ember,x,GY+.5,z,(rnd()-.5)*3,4+rnd()*4,(rnd()-.5)*3,1,C.fire0,C.fire1);}
 }
 function findSun(o){if(o.isDirectionalLight)vS.copy(o.position).sub(o.target.position);}

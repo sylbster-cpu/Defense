@@ -22,7 +22,7 @@ R3D.pal={
 R3D.ENEMY={runner:{r:.95,h:1.5,cy:.85},grunt:{r:1.3,h:2.3,cy:1.2},brute:{r:1.75,h:3.1,cy:1.6},boss:{r:2.4,h:4.6,cy:2.3}};
 
 /* ---------- utilities for the parts ---------- */
-const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3();
+const _q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3();
 R3D.util={
  clamp,lerp,
  // frame-rate independent approach: v += (target-v) * (1-exp(-rate*dt))
@@ -42,7 +42,16 @@ R3D.util={
  // Canvas-drawn texture. draw(ctx2d,w,h). opts: {repeat:[x,y], srgb:true}
  canvasTex(w,h,draw,opts={}){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);if(opts.srgb!==false)t.colorSpace=THREE.SRGBColorSpace;if(opts.repeat){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(opts.repeat[0],opts.repeat[1]);}t.anisotropy=4;return t;},
  // Deterministic pseudo random in [0,1) from an integer seed (use instead of Math.random for static scenery).
- rand(seed){let x=Math.sin(seed*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+ rand(seed){let x=Math.sin(seed*127.1+311.7)*43758.5453;return x-Math.floor(x);},
+ // the same from two numbers (scenery that depends on a place)
+ hash(x,y){const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);},
+ // Builders that add to a part list for merge(): a box, and a lumpy boulder (a dodecahedron with every corner pushed in or out).
+ box(P,w,h,d,x,y,z,c,ry,rx,rz){P.push({g:new THREE.BoxGeometry(w,h,d),m:R3D.util.mat(x,y,z,rx||0,ry||0,rz||0),c});},
+ rock(P,x,y,z,sx,sy,sz,c,seed){const hash=R3D.util.hash,g=new THREE.DodecahedronGeometry(1,0),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const X=p.getX(i),Y=p.getY(i),Z=p.getZ(i),k=.7+.55*hash(seed+Math.round(X*40)+Math.round(Y*90)*3.1,Math.round(Z*50)*1.7+seed*.37);p.setXYZ(i,X*k,Y*k,Z*k);}
+  g.computeVertexNormals();P.push({g,m:R3D.util.mat(x,y,z,hash(seed,1)*.5,hash(seed,2)*6.28,hash(seed,3)*.5,sx,sy,sz),c});},
+ // the matt, flat-shaded material of the scenery (vertex colours)
+ stdMat(){return new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.92,metalness:.04});}
 };
 
 /* ---------- boot: called once by index.html with the game bridge ---------- */
@@ -74,9 +83,17 @@ R3D.boot=function(G,field){
   lz(lane){return L.laneZ[lane];},
   // game x (used by the drone while it slides between lanes) -> world z
   // Maps bend a lane toward the median in stretches: off() is the sideways shift of a lane at world x, laneZAt() its centre line there.
-  off(lane,x){const f=G.mapShape;if(!f)return 0;const k=f(lane,G.LEAK_Y-x/U);return k?-Math.sign(L.laneZ[lane])*(L.mode==='side'?2.7:2.05)*k:0;},
+  off(lane,x){const k=G.map.shape(lane,G.LEAK_Y-x/U);return k?-Math.sign(L.laneZ[lane])*(L.mode==='side'?2.7:2.05)*k:0;},
   laneZAt(lane,x){return L.laneZ[lane]+ctx.off(lane,x);},
   gz(x){return lerp(ctx.laneZAt(0,A.droneX),ctx.laneZAt(1,A.droneX),(x-G.LANES[0])/(G.LANES[1]-G.LANES[0]));},
+  // a point of a lane: y along it (game units), h above the road
+  lanePos(lane,y,h,out){const x=ctx.wx(y);return out.set(x,h,ctx.laneZAt(lane,x));},
+  // Where the overload reaches across to the other lane (G.map.near), sampled along its range: out[i] is 1 for the samples at world x0+i*step, i<count.
+  // A stretch shorter than one unit at an end of the range is dropped: it is not worth a spike across the other lane.
+  reach(out,count,x0,step){const near=G.map.near;for(let i=0;i<count;i++)out[i]=near(G.LEAK_Y-(x0+i*step)/U)?1:0;
+   for(let i=0,j;i<count;i=j){for(j=i;j<count&&out[j]===out[i];j++);if(out[i]&&(j-i)*step<1)out.fill(0,i,j);}},
+  // the fire vents' grates: GRATES of them along the vent stretch on each lane (maps.js draws them, fx.js lights them)
+  GRATES:4,grateY(i){const V=G.VENT;return V.a+(i+.5)*(V.b-V.a)/ctx.GRATES;},
   // world position of the support drone body / an enemy centre / a turret muzzle pivot
   dronePos(out){return out.set(A.droneX,A.droneH,ctx.gz(G.drone.x));},
   enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;const x=ctx.wx(e.y);let z=ctx.laneZAt(e.lane,x);
@@ -145,15 +162,14 @@ R3D.boot=function(G,field){
 
  /* ---------- frame ---------- */
  const SHAKE_PX=(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?5:14;
- let last=0,trauma=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,tooSlow=0,modeSeen='',mapSeen='';
- const shakeOff=new THREE.Vector3();
+ let last=0,trauma=0,frameNo=0,slowAcc=0,slowN=0,settle=.8,modeSeen='',mapSeen='';
  function frame(now){
   const raw=Math.min(1,Math.max(0,(now-last)/1000||0)),dt=Math.min(.1,raw);last=now;frameNo++;
   const mode=G.compact()?'side':'behind';
-  if(G.mapId!==mapSeen){mapSeen=G.mapId;L.map=mapSeen;needLayout=true;}   // a new map: every part lays itself out again
+  if(G.map.id!==mapSeen){mapSeen=G.map.id;L.map=mapSeen;needLayout=true;}   // a new map: every part lays itself out again
   if(needLayout||mode!==modeSeen){modeSeen=mode;layout();settle=.6;slowAcc=0;slowN=0;}
   // dialogs cover the field: keep the scene alive but cheap
-  const covered=G.phase!=='battle'&&G.phase!=='practice';
+  const covered=G.phase!=='battle';
   const evs=G.events;
   if(evs.length){for(let i=0;i<evs.length;i++){const ev=evs[i];for(const p of inst)if(p.event)p.event(ev,G);}evs.length=0;}
   ctx.time+=dt;ctx.dt=dt;
@@ -184,7 +200,7 @@ R3D.boot=function(G,field){
  function fieldPos(cx,cy){const b=field.getBoundingClientRect(),nx=(cx-b.left)/b.width*2-1,ny=1-(cy-b.top)/b.height*2;tapV.set(nx,ny,-1).unproject(camera);const ax=tapV.x,ay=tapV.y,az=tapV.z;tapV.set(nx,ny,1).unproject(camera);
   const k=ay/((ay-tapV.y)||1e-9),x=ax+(tapV.x-ax)*k,z=az+(tapV.z-az)*k;return{lane:Math.abs(z-ctx.laneZAt(0,x))<=Math.abs(z-ctx.laneZAt(1,x))?0:1,y:G.LEAK_Y-x/U};}
  // where a point of a lane is drawn, in page pixels (lane, distance along it, height above the road)
- function screenOf(lane,y,h){const x=ctx.wx(y);tapV.set(x,h||0,ctx.laneZAt(lane,x));ctx.project(tapV,tapP);const b=field.getBoundingClientRect();return{x:b.left+tapP.x,y:b.top+tapP.y};}
+ function screenOf(lane,y,h){ctx.lanePos(lane,y,h||0,tapV);ctx.project(tapV,tapP);const b=field.getBoundingClientRect();return{x:b.left+tapP.x,y:b.top+tapP.y};}
  R3D.api={frame,setQuality,laneAt,fieldPos,screenOf,get quality(){return ctx.quality;},info:()=>({q:ctx.quality,mode:L.mode,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geoms:renderer.info.memory.geometries,tex:renderer.info.memory.textures,pr:renderer.getPixelRatio()}),hudCanvas:hudc};
  return R3D.api;
 };

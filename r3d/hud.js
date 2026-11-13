@@ -12,7 +12,7 @@ let Q=ctx.quality;
 const INK='rgba(5,13,16,.9)',BACK='rgba(7,16,20,.86)',PANEL='rgba(8,19,23,.76)';
 const AMBER='#f1c37c',FLASH='#fff6d8',RED='#f17c6f',WARN='#ff5a48',CREAM='#e8ddd0',HOT='#ffe1ae',WAVE_HI='#ffc45e',TRACK='rgba(150,176,172,.3)';
 const LANE_COL=['#f0c47b','#8dd7d0'],LANE_EDGE=['rgba(240,196,123,.42)','rgba(141,215,208,.42)'];
-const FAC_FILL=['#f3c67d','#8bd9cb'],FAC_NAME=['발전소','정비소'],FAC_OFF='기능 정지',OFF_COL='#f0998c';
+const FAC_FILL=['#f3c67d','#8bd9cb'],FAC_NAME=['발전소','정비소'],FAC_OFF='기능 정지';
 const FAM='system-ui,-apple-system,sans-serif';
 
 /* ---------- metrics: rebuilt on layout, never per frame ---------- */
@@ -21,7 +21,7 @@ let fNum='',fSmall='',fPause='',fCombo='',fComboS='',fBanner='',fDmg='',fDmgB=''
 let wFac=[34,34],wOff=46;
 let CW=16,IH=13,TP=4,TBW=11,TBH=3,IR=4.5,GW=44,gradSide=null,gradTop=null;
 // cached strings and their measured widths (rebuilt only when the number they show changes)
-let opKey=-1,opA='',opB='',opC='',opD='',opW=140,opBottom=18,fbKey=-1,fbStr='',fbStrP='',fbW=30;
+let opKey=-1,opD='',opW=140,opBottom=18,fbKey=-1,fbStr='',fbStrP='',fbW=30;
 function metrics(){
  s=L.hudScale>0?L.hudScale:1;
  ui=clamp(Math.sqrt(Math.min(L.w,L.h)/300),1,1.4);
@@ -65,7 +65,7 @@ function enemyBars(G,side){
  for(let i=0;i<n;i++){
   const e=list[i];if(!e||!(e.hp>0))continue;
   const ln=e.lane;if(ln!==0&&ln!==1)continue;
-  if(G.mapCover&&G.mapCover(ln,e.y))continue;                       // inside a tunnel: no bar
+  if(G.map.cover(ln,e.y))continue;                                  // inside a tunnel: no bar
   const d=ENEMY[e.type]||ENEMY.grunt;
   ctx.enemyPos(e,v);v.y=d.h+.5;ctx.project(v,p);
   if(!(p.z>-1&&p.z<1))continue;                                   // behind the camera or not a number
@@ -176,16 +176,17 @@ function surgeGlow(side,pu){
 
 /* ---------- 4. operation and wave text ---------- */
 let waveFx=0;
-function opText(G,side){
- const op=G.op|0,wv=G.noWave()?-1:(G.wave|0),key=op*64+wv+1;
- if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opA='작전 '+o+' / 05';opB='공격 '+w+' / 03';opC='OP '+o+' / 05 · WAVE '+w+' / 03';opD='WAVE '+op+'-'+(wv<0?1:wv);if(curFont!==fNum){c.font=fNum;curFont=fNum;}opW=c.measureText(opC).width;}
+function opText(G){
+ const op=G.op|0,wv=G.phase==='intro'?-1:(G.wave|0),key=op*64+wv+1;
+ if(key!==opKey){opKey=key;const o=(op<10?'0':'')+op,w=wv<0?'—':''+wv;opD='WAVE '+op+'-'+(wv<0?1:wv);if(curFont!==fNum){c.font=fNum;curFont=fNum;}
+  opW=c.measureText('OP '+o+' / 05 · WAVE '+w+' / 03').width;}   // opW: the width of the line that once stood top right. Bars at the far end still keep clear of that corner (enemyBars), where the gear button now sits.
  const y=M+2+FS*.5,col=waveFx>0?WAVE_HI:CREAM;opBottom=M+FS+5;
  text(G.drill?'훈련':opD,M+5,y,fNum,col,'left');   // one line on the left: the gear button owns the top-right corner
 }
 
 /* ---------- 5. facility labels ---------- */
 const facFx=[0,0];
-function facility(G,ln,side,practice){
+function facility(G,ln,side){
  const f=G.facilities,hp=f?+f[ln]||0:0,alive=hp>0;
  const lz=L.laneZ[ln],sg=lz<0?-1:1;
  const bw=Math.round(36*ui),bh=3,tw=alive?wFac[ln]:wOff,wide=Math.max(bw,tw),blockH=FS+3+bh;
@@ -203,11 +204,6 @@ function facility(G,ln,side,practice){
  }
  if(!(p.z>-1&&p.z<1))return;
  y=clamp(y,M+FS+4,L.h-M-blockH);
- // the tutorial coach box owns the bottom centre of the box while practising
- if(practice&&y+blockH>L.h-(50+30*ui)){
-  const half=side?158:Math.min(L.w*.47,170),x0=align==='center'?x-wide*.5:align==='right'?x-wide:x;
-  if(x0<L.w*.5+half&&x0+wide>L.w*.5-half)return;
- }
  x=snap(x);y=snap(y);
  // no name text: the tutorial explains the bars
  const bx=snap(align==='center'?x-bw*.5:align==='right'?x-bw:x),by=snap(y+FS+3);
@@ -248,7 +244,7 @@ function pauseVeil(){
 /* rare machines: a gold diamond over the machine (its body also glows in units.js) */
 function rareMarks(G,t){
  const list=G.enemies;if(!list)return;
- for(let i=0;i<list.length;i++){const e=list[i];if(!e||!e.rare||!(e.hp>0)||(G.mapCover&&G.mapCover(e.lane,e.y)))continue;
+ for(let i=0;i<list.length;i++){const e=list[i];if(!e||!e.rare||!(e.hp>0)||G.map.cover(e.lane,e.y))continue;
   const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,v);v.y=d.h+1.5;ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const r=(4.5+1.2*Math.sin(t*6))*ui,x=p.x,y=p.y-3*ui;
   c.globalAlpha=1;c.fillStyle='rgba(5,13,16,.75)';c.beginPath();c.moveTo(x,y-r-1.5);c.lineTo(x+r+1.5,y);c.lineTo(x,y+r+1.5);c.lineTo(x-r-1.5,y);c.closePath();c.fill();
@@ -256,12 +252,11 @@ function rareMarks(G,t){
 }
 const BUFFS=['stim','pierce','splash'];
 /* item effects in play: the wall across a lane, the temporary turret, the second drone, the jammer */
-// an item's icon (the path data of the game, G.ICON) drawn `size` pixels wide around x,y
-const icoP={};
-function drawIcon(G,id,x,y,size,col){if(!G.ICON||!G.ICON[id])return;const P=icoP[id]||(icoP[id]=new Path2D(G.ICON[id])),k=size/24;c.save();c.translate(x-size/2,y-size/2);c.scale(k,k);c.strokeStyle=col;c.lineWidth=2;c.lineCap='round';c.lineJoin='round';c.stroke(P);c.restore();}
+// an item's icon (the game's own path, G.iconPath) drawn `size` pixels wide around x,y
+function drawIcon(G,id,x,y,size,col){const P=G.iconPath(id),k=size/24;c.save();c.translate(x-size/2,y-size/2);c.scale(k,k);c.strokeStyle=col;c.lineWidth=2;c.lineCap='round';c.lineJoin='round';c.stroke(P);c.restore();}
 /* items lying on the field: a token with the item's icon and a ring that empties in the seconds it stays; it bobs, and blinks at the end */
-function dropMarks(G,t){const list=G.drops;if(!list||!list.length||!G.ITEMS)return;const life=G.DROP_LIFE||5;
- for(let i=0;i<list.length;i++){const d=list[i],x=ctx.wx(d.y);v.set(x,2.4,ctx.laneZAt(d.lane,x));ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+function dropMarks(G,t){const list=G.drops;if(!list||!list.length)return;const life=G.DROP_LIFE;
+ for(let i=0;i<list.length;i++){const d=list[i];ctx.lanePos(d.lane,d.y,G.DROP_H,v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const col=G.ITEMS[d.item].col,r=15*ui,y=p.y+Math.sin(t*4+d.id*9)*2*ui,bl=d.life<1.5?(Math.sin(t*20)>0?1:.35):1,h=(t*1.2+d.id)%1;
   c.globalAlpha=.35*(1-h)*bl;c.lineWidth=1.5*ui;c.strokeStyle=col;c.beginPath();c.arc(p.x,y,r+10*ui*h,0,6.2832);c.stroke();          // a halo running outward draws the eye
   c.globalAlpha=.92*bl;c.fillStyle='rgba(8,18,22,.9)';c.beginPath();c.arc(p.x,y,r,0,6.2832);c.fill();
@@ -275,25 +270,25 @@ function aidRing(G,x,y,k,id,col){
  c.lineWidth=2.6*ui;c.strokeStyle=col;c.beginPath();c.arc(x,y,r,-1.5708,-1.5708+6.2832*clamp(k,0,1));c.stroke();
  drawIcon(G,id,x,y,16*ui,col);c.lineCap='butt';
 }
-function aidMarks(G,t,side){
- const a=G.aid;if(!a)return;
+function aidMarks(G,t){
+ const a=G.aid,IT=G.ITEMS;if(!a)return;   // the rings empty over each item's own time (IT[id].time)
  if(a.wall>0){   // a bright bar across the stopped lane, just ahead of its leading machine
-  const lz=L.laneZ[a.wallLane],list=G.enemies;let lead=-1e9;for(let i=0;i<list.length;i++){const e=list[i];if(e&&e.hp>0&&e.lane===a.wallLane&&e.y>lead)lead=e.y;}
+  const list=G.enemies;let lead=-1e9;for(let i=0;i<list.length;i++){const e=list[i];if(e&&e.hp>0&&e.lane===a.wallLane&&e.y>lead)lead=e.y;}
   const x=ctx.wx(lead>-1e8?Math.min(lead+26,G.LEAK_Y-8):G.DRONE_Y),hw=A.laneW*.5,lzx=ctx.laneZAt(a.wallLane,x);
   v.set(x,.6,lzx-hw);ctx.project(v,p);v.set(x,.6,lzx+hw);ctx.project(v,p2);
   if(p.z>-1&&p.z<1){const pu=.7+.3*Math.sin(t*14);c.lineCap='round';c.globalAlpha=.35*pu;c.strokeStyle='#f0c47b';c.lineWidth=11*ui;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();
    c.globalAlpha=pu;c.lineWidth=3.5*ui;c.strokeStyle='#ffe9b8';c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();c.globalAlpha=1;c.lineCap='butt';
-   aidRing(G,(p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/4,'wall','#f0c47b');}
+   aidRing(G,(p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/IT.wall.time,'wall','#f0c47b');}
  }
- if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.turret/8,'turret','#f0c47b');}
- const fl=G.fieldTurrets;if(fl&&G.FIELD)for(let i=0;i<fl.length;i++){const f=fl[i],x=ctx.wx(f.y);v.set(x,4.4,ctx.laneZAt(f.lane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const r=6*ui,k=clamp(f.life/G.FIELD.life,0,1);c.globalAlpha=1;c.lineWidth=3.6*ui;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(p.x,p.y,r,0,6.2832);c.stroke();c.lineWidth=2*ui;c.strokeStyle='#f0c47b';c.beginPath();c.arc(p.x,p.y,r,-1.5708,-1.5708+6.2832*k);c.stroke();}}   // field turrets: a small ring above the model that empties as its time runs out
- if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.clone/6,'clone','#8dd7d0');}
+ if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.turret/IT.turret.time,'turret','#f0c47b');}
+ const fl=G.fieldTurrets;for(let i=0;i<fl.length;i++){const f=fl[i];ctx.lanePos(f.lane,f.y,4.4,v);ctx.project(v,p);if(p.z>-1&&p.z<1){c.globalAlpha=1;timerRing(p.x,p.y,6*ui,clamp(f.life/G.FIELD.life,0,1),3.6*ui,2*ui);}}   // field turrets: a small ring above the model that empties as its time runs out
+ if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.clone/IT.clone.time,'clone','#8dd7d0');}
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
  // stimpack, pierce, splash: rings above the drone that empty as the effect runs out
- if(G.drone&&G.ITEMS){let n=0,m=0;for(const id of BUFFS)if(a[id]>0)m++;if(m){ctx.dronePos(v);v.y+=3.4;ctx.project(v,p);if(p.z>-1&&p.z<1)for(const id of BUFFS)if(a[id]>0){aidRing(G,p.x+(n-(m-1)/2)*29*ui,p.y-6*ui,a[id]/8,id,G.ITEMS[id].col);n++;}}}
+ if(G.drone){let n=0,m=0;for(const id of BUFFS)if(a[id]>0)m++;if(m){ctx.dronePos(v);v.y+=3.4;ctx.project(v,p);if(p.z>-1&&p.z<1)for(const id of BUFFS)if(a[id]>0){aidRing(G,p.x+(n-(m-1)/2)*29*ui,p.y-6*ui,a[id]/IT[id].time,id,IT[id].col);n++;}}}
  // the magnet: rings closing on the place while the machines are dragged; and while an aimed item (magnet, orbital) waits for its place, a frame in its colour
- if(a.mag>0&&G.MAG){const x=ctx.wx(a.magY);v.set(x,.6,ctx.laneZAt(a.magLane,x));ctx.project(v,p);if(p.z>-1&&p.z<1){const k=clamp(a.mag/(G.MAG.time+.5),0,1);c.strokeStyle='#c9a5f0';for(let i=0;i<2;i++){const q=(k+i*.5)%1;c.globalAlpha=.75*(1-q*.6);c.lineWidth=2.4*ui;c.beginPath();c.arc(p.x,p.y,(8+46*q)*ui,0,6.2832);c.stroke();}c.globalAlpha=1;drawIcon(G,'magnet',p.x,p.y,15*ui,'#c9a5f0');c.lineCap='butt';}}
- if(G.aim>=0){const it=G.ITEMS&&G.bag&&G.ITEMS[G.bag[G.aim]];c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle=it&&it.col||'#c9a5f0';c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
+ if(a.mag>0){ctx.lanePos(a.magLane,a.magY,.6,v);ctx.project(v,p);if(p.z>-1&&p.z<1){const k=clamp(a.mag/G.MAG.show,0,1);c.strokeStyle=IT.magnet.col;for(let i=0;i<2;i++){const q=(k+i*.5)%1;c.globalAlpha=.75*(1-q*.6);c.lineWidth=2.4*ui;c.beginPath();c.arc(p.x,p.y,(8+46*q)*ui,0,6.2832);c.stroke();}c.globalAlpha=1;drawIcon(G,'magnet',p.x,p.y,15*ui,IT.magnet.col);c.lineCap='butt';}}
+ if(G.aim>=0){const it=IT[G.bag[G.aim]];c.globalAlpha=.4+.3*Math.sin(t*8);c.strokeStyle=(it||IT.magnet).col;c.lineWidth=3;c.setLineDash([10,8]);c.strokeRect(9,9,L.w-18,L.h-18);c.setLineDash([]);c.globalAlpha=1;}
 }
 /* move cooldown: a ring around the drone that empties until it can move again */
 function moveRing(G){
@@ -301,13 +296,14 @@ function moveRing(G){
  const ef=G.effects,f=G.facilities,max=(ef&&ef.moveBase>0?ef.moveBase:2.2)*(f&&f[0]<=0?G.BAL.powerDownMove:1);
  ctx.dronePos(v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
  const r=16*ui,k=clamp(cd/max,0,1);
- c.lineCap='butt';c.globalAlpha=1;c.lineWidth=4.5*ui;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(p.x,p.y,r,0,6.2832);c.stroke();
- c.lineWidth=2.4*ui;c.strokeStyle='#f0c47b';c.beginPath();c.arc(p.x,p.y,r,-1.5708,-1.5708+6.2832*k);c.stroke();
+ c.lineCap='butt';c.globalAlpha=1;timerRing(p.x,p.y,r,k,4.5*ui,2.4*ui);
 }
+// a clock ring: a dark full ring (w0 wide) under an amber arc (w1 wide) that covers the share k, from the top
+function timerRing(x,y,r,k,w0,w1){c.lineWidth=w0;c.strokeStyle='rgba(5,13,16,.65)';c.beginPath();c.arc(x,y,r,0,6.2832);c.stroke();c.lineWidth=w1;c.strokeStyle='#f0c47b';c.beginPath();c.arc(x,y,r,-1.5708,-1.5708+6.2832*k);c.stroke();}
 function practiceHint(G,t){
- // shown for the old practice mode and for holds that wait for a move or for the overload
- const pr=G.practice,hd=G.hold||'';let task=null,to=1;
- if(hd==='pulse')task='pulse';else if(hd==='move0'||hd==='move1'){task='move';to=+hd.slice(4);}else if(pr&&!pr.done&&pr.task)task=pr.task;
+ // shown while the game holds for a move or for the overload (the drill and the lessons)
+ const hd=G.hold||'';let task=null,to=1;
+ if(hd==='pulse')task='pulse';else if(hd==='move0'||hd==='move1'){task='move';to=+hd.slice(4);}
  if(!task)return;
  ctx.dronePos(v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
  const ph=t-Math.floor(t);
@@ -338,13 +334,13 @@ function practiceHint(G,t){
 }
 
 /* ---------- 9. feel: score, combo, multi-kill banner, damage numbers, orbital strike reticles ---------- */
-let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0,cbKey='',cbW=0,cbW2=0,hubKey='',hubB=0;
+let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0,cbKey='',cbW=0,cbW2=0,hubW=0,hubH=0,hubB=0,scKey=-1,scStr='';
 // bottom of the DOM hub chip in HUD coordinates (it sits lower on narrow screens): the combo goes under it. Measured once per layout, while the chip is shown.
-function hubBottom(){const k=L.w+'x'+L.h;if(k!==hubKey){const hb=document.querySelector('.hubchip');if(hb&&hb.offsetParent){const r=hb.getBoundingClientRect(),cr=c.canvas.getBoundingClientRect();hubB=cr.width>0?(r.bottom-cr.top)*L.w/cr.width:0;hubKey=k;}}return hubB;}const NUMS=[],NUM_MAX=28;
-const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52',fall:'#ffe1ae'};
+function hubBottom(){if(L.w!==hubW||L.h!==hubH){const hb=document.querySelector('.hubchip');if(hb&&hb.offsetParent){const r=hb.getBoundingClientRect(),cr=c.canvas.getBoundingClientRect();hubB=cr.width>0?(r.bottom-cr.top)*L.w/cr.width:0;hubW=L.w;hubH=L.h;}}return hubB;}const NUMS=[],NUM_MAX=28;
+const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52'};
 function addNum(e,txt,col,big){if(!e)return;ctx.enemyPos(e,v);let n=NUMS.length<NUM_MAX?{}:NUMS.shift();n.x=v.x;n.y=v.y+(ENEMY[e.type]||ENEMY.grunt).h;n.z=v.z;n.t=0;n.txt=txt;n.col=col;n.big=big;n.dx=(Math.random()-.5)*14;NUMS.push(n);}
 function feel(dt,t,G){
- const sc=G.score|0;text(sc.toLocaleString(),M+5,opBottom+FSS*.75,fSmall,HOT,'left');
+ const sc=G.score|0;if(sc!==scKey){scKey=sc;scStr=sc.toLocaleString();}text(scStr,M+5,opBottom+FSS*.75,fSmall,HOT,'left');   // the string is rebuilt only when the score changes
  const cb=G.combo|0;comboFx=Math.max(0,comboFx-dt*4);
  const cx=L.w/2,cy=Math.max(M+40*ui,hubBottom()+16*ui);   // under the hub chip, clear of the incoming trays in the corners
  if(cb>=3&&!G.hold){const k=1+.3*comboFx,key=cb+'|'+fCombo+'|'+fComboS;if(key!==cbKey){cbKey=key;c.font=fCombo;cbW=c.measureText('×'+cb).width;c.font=fComboS;cbW2=c.measureText(' 콤보').width;curFont='';}const w=cbW,w2=cbW2,x0=cx-(w*k+w2)/2;
@@ -357,7 +353,7 @@ function feel(dt,t,G){
  c.globalAlpha=1;
  if(bannerT>0){bannerT-=dt;const a=Math.min(1,bannerT*2.5),k=bannerT>1.05?1+3*(bannerT-1.05):1,x=L.w/2,y=L.h*.3;c.globalAlpha=a;c.save();c.translate(x,y);c.scale(k,k);
   text(banner,0,0,fBanner,bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT,'center');text(bannerN+'기 동시 격파',0,20*ui,fSmall,CREAM,'center');c.restore();curFont='';c.globalAlpha=1;}
- const S=G.strikes;if(S&&S.length&&G.ORB)for(const k of S){const x=ctx.wx(k.y);v.set(x,0,ctx.laneZAt(k.lane,x));ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+ const S=G.strikes;for(const k of S){ctx.lanePos(k.lane,k.y,0,v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const f=Math.max(0,k.t/G.ORB.delay),r=(10+40*f)*ui;c.strokeStyle='rgba(255,120,80,.95)';c.lineWidth=2.5;c.setLineDash([6,5]);c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();c.setLineDash([]);
   c.beginPath();c.moveTo(p.x-r-6,p.y);c.lineTo(p.x-r+6,p.y);c.moveTo(p.x+r-6,p.y);c.lineTo(p.x+r+6,p.y);c.moveTo(p.x,p.y-r-6);c.lineTo(p.x,p.y-r+6);c.moveTo(p.x,p.y+r-6);c.lineTo(p.x,p.y+r+6);c.stroke();}
 }
@@ -366,25 +362,25 @@ function frame(dt,t,G){
  c.setTransform(s,0,0,s,0,0);c.clearRect(0,0,L.w+1,L.h+1);
  // the context state is set again every frame: a resized or restored canvas forgets it
  c.globalAlpha=1;c.textBaseline='middle';c.lineJoin='round';c.lineCap='butt';curFont='';
- const phase=G.phase,battle=phase==='battle',practice=phase==='practice',side=L.mode==='side';
+ const battle=G.phase==='battle',side=L.mode==='side';
  if(facFx[0]>0)facFx[0]-=dt*2.5;if(facFx[1]>0)facFx[1]-=dt*2.5;if(waveFx>0)waveFx-=dt;
  let warn=false,pu=0;
  if(battle){scanIncoming(G);warn=surgeNow(G);if(warn){pu=.5+.5*Math.sin(t*9.5);surgeGlow(side,pu);}}
- facility(G,0,side,practice);facility(G,1,side,practice);
+ facility(G,0,side);facility(G,1,side);
  enemyBars(G,side);
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
- opText(G,side);
- if(practice||G.hold)practiceHint(G,t);
- if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t,side);dropMarks(G,t);if(!G.drill)feel(dt,t,G);}
+ opText(G);
+ if(G.hold)practiceHint(G,t);
+ if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t);dropMarks(G,t);if(!G.drill)feel(dt,t,G);}
  screenFx(dt);
  if(battle&&G.paused)pauseVeil();
 }
 // full-screen flashes: white for the overload and the largest blasts, red at the edges when the line is broken
-let edgeKey='',edgeG=null;
+let edgeW=0,edgeH=0,edgeG=null;
 function screenFx(dt){const F=ctx.fxScreen;if(!F)return;
  if(F.white>0){c.globalAlpha=.24*Math.min(1,F.white);c.fillStyle=FLASH;c.fillRect(0,0,L.w,L.h);c.globalAlpha=1;F.white-=dt*8;}
- if(F.red>0){const w=L.w,h=L.h,d=Math.min(w,h)*.18,key=w+'x'+h;
-  if(key!==edgeKey){edgeKey=key;const mk=(x0,y0,x1,y1)=>{const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(255,70,52,.6)');g.addColorStop(1,'rgba(255,70,52,0)');return g;};edgeG=[mk(0,0,d,0),mk(w,0,w-d,0),mk(0,0,0,d),mk(0,h,0,h-d)];}
+ if(F.red>0){const w=L.w,h=L.h,d=Math.min(w,h)*.18;
+  if(w!==edgeW||h!==edgeH){edgeW=w;edgeH=h;const mk=(x0,y0,x1,y1)=>{const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(255,70,52,.6)');g.addColorStop(1,'rgba(255,70,52,0)');return g;};edgeG=[mk(0,0,d,0),mk(w,0,w-d,0),mk(0,0,0,d),mk(0,h,0,h-d)];}
   c.globalAlpha=Math.min(1,F.red);c.fillStyle=edgeG[0];c.fillRect(0,0,d,h);c.fillStyle=edgeG[1];c.fillRect(w-d,0,d,h);c.fillStyle=edgeG[2];c.fillRect(0,0,w,d);c.fillStyle=edgeG[3];c.fillRect(0,h-d,w,d);c.globalAlpha=1;F.red-=dt*3.2;}
 }
 
@@ -398,7 +394,7 @@ return{
   else if(ev.t==='wave')waveFx=1.6;
   else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;bannerT=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
   else if(ev.t==='combo')comboFx=1;
-  else if(ev.t==='comboEnd'){if(ev.broken)brokeT=1.2;}
+  else if(ev.t==='comboEnd')brokeT=1.2;   // a breach broke the combo
   else if(ev.t==='multi'){banner=ev.name||'';bannerN=ev.n|0;bannerT=1.3;}
   else if(ev.t==='fall')addNum(ev.e,'추락!','#ffe1ae',true);
   else if(ev.t==='hit'&&ev.e&&ev.dmg>=30&&ev.src!=='fall'&&!ev.e.fell)addNum(ev.e,''+Math.round(ev.dmg),NUM_COL[ev.src]||CREAM,ev.dmg>=100||ev.kill);

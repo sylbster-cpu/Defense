@@ -1,9 +1,8 @@
 // 2.5D 장시간 점검: 봇이 실제 전투를 빠르게 진행시키면서 오류, 자원 누수(geometries/textures), 그리기 부하의 최대값을 본다.
 // 사용: node soak3d.js <게임 폴더> [WxH] [초(실시간), 기본 40]
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');
+const { chromium } = require('playwright');const {hooked}=require('./lib.js');
 const [dir,vp='700x318',secs='40']=process.argv.slice(2);const [w,h]=vp.split('x').map(Number);
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-const f=path.join(dir,'_soak_'+process.pid+'.html');fs.writeFileSync(f,s);
+const f=hooked(dir,'soak');
 // 프레임마다 게임을 여러 단계 진행시키고 간단한 봇으로 이동·과부하·강화 선택을 수행한다.
 const BOT=`$('title').hidden=true;mute=true;reset();newStage(1);window.__soak={steps:0,ops:0,maxCalls:0,maxTris:0,frames:0,evs:0};
 const _f=G3.renderer.frame;G3.renderer.frame=function(now){
@@ -24,4 +23,4 @@ const _f=G3.renderer.frame;G3.renderer.frame=function(now){
  const z=await snap();
  console.log(`RESULT active=${z.active} gameSeconds=${Math.round(z.steps/60)} ops=${z.ops} frames=${z.frames} maxCalls=${z.maxCalls} maxTris=${z.maxTris} geoms ${a.geoms}->${z.geoms} tex ${a.tex}->${z.tex} sceneObjs ${a.sceneObjs}->${z.sceneObjs} heapMB ${a.heap}->${z.heap}`);
  for(const e of errs.slice(0,10))console.log('  '+e);console.log(errs.length||!z.active?'FAIL':'PASS');
- await b.close();fs.unlinkSync(f);})();
+ await b.close();})();

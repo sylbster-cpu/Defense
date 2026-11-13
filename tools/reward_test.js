@@ -1,12 +1,9 @@
 // 장 단위 아이템 보상 판정과 안내 간격 확인. node reward_test.js <게임 폴더>
 // 화면을 그리지 않고 규칙만 돌린다(2D 비상 화면, 시계는 시험이 직접 돌림).
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir=path.resolve(process.argv[2]||'.');
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-if(!s.includes('__t'))throw new Error('hook line not found in index.html');
-const f=path.join(dir,'_rw_'+process.pid+'.html');fs.writeFileSync(f,s);
-(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));let bad=0;
- const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
- const T=x=>p.evaluate(x=>window.__t(x),x);
+const { chromium } = require('playwright');const {hooked,checks,inGame}=require('./lib.js');const path=require('path');const dir=path.resolve(process.argv[2]||'.');
+const f=hooked(dir,'rw');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const {ck,end}=checks();
+ const T=inGame(p);
  await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(500);await p.evaluate(()=>{window.requestAnimationFrame=()=>0;});
  // 난수를 고정해 레어 적이 나오지 않게 한다. 지급을 센다. play(sec): 실제 진행처럼 안내와 규칙을 번갈아 돌린다.
  await T(`mute=true;$('title').hidden=true;$('titleVid').pause();Math.random=()=>.5;window.__g=[];const g0=giftItem;giftItem=function(){const r=g0();window.__g.push([op,wave,+stageTime.toFixed(2),r]);return r;};
@@ -51,4 +48,4 @@ const f=path.join(dir,'_rw_'+process.pid+'.html');fs.writeFileSync(f,s);
  await T('__play(1)');
  ck('간격 뒤에 아이템 안내',await T('!!holdState&&$("coachTitle").textContent.startsWith("아이템 획득")'),await T('$("coachTitle").textContent'));
  ck('no errors',!errs.length,errs.slice(0,2));
- await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();
+ await b.close();end();})();

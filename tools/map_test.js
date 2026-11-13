@@ -1,9 +1,8 @@
 // 맵 규칙과 새 지형 안내 확인. node map_test.js <게임 폴더>
-const { chromium } = require('playwright');const path=require('path'),fs=require('fs');const dir=process.argv[2];
-let s=fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(/^reset\(\);intro\(\);updateUI\(\);requestAnimationFrame\(loop\);$/m,'window.__t=(code)=>eval(code);\nreset();intro();updateUI();requestAnimationFrame(loop);');
-const f=path.join(dir,'_map_'+process.pid+'.html');fs.writeFileSync(f,s);
-(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(e.message));let bad=0;const ck=(n,ok,x)=>{console.log((ok?'ok  ':'BAD ')+n+(x!==undefined?' '+JSON.stringify(x):''));if(!ok)bad++;};
- const T=x=>p.evaluate(x=>window.__t(x),x);await p.goto('file://'+f+'?q=0');await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});
+const { chromium } = require('playwright');const {hooked,checks,inGame}=require('./lib.js');const dir=process.argv[2];
+const f=hooked(dir,'map');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(e.message));const {ck,end}=checks();
+ const T=inGame(p);await p.goto('file://'+f+'?q=0');await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay.active,null,{timeout:20000});
  await T("$('title').hidden=true;mute=true;learned.item=true;learned.pulse=true;beginRun();newStage(2);liveRun=true;");
  await p.waitForFunction(()=>window.__relay.hold==='tap',null,{timeout:15000});ck('first visit explains the map',(await T("$('coachTitle').textContent"))==='새 지형 · 협곡',await T("$('coachMain').textContent"));
  await p.waitForTimeout(600);await p.touchscreen?0:0;await T('releaseHold()');ck('explained once',await T('learned.maps.pinch===true'));
@@ -16,4 +15,4 @@ const f=path.join(dir,'_map_'+process.pid+'.html');fs.writeFileSync(f,s);
  const a=await T('const y=[enemies[0].y,enemies[1].y];for(let i=0;i<30;i++)update(1/60);JSON.stringify([enemies[0].y-y[0],enemies[1].y-y[1]])');const d=JSON.parse(a);
  ck('detour: 30% slower inside the stretch (power-plant lane)',Math.abs(d[0]/d[1]-.7)<.03,d);
  ck('maps per chapter',await T('[1,2,3,4,5,6,7,8,9,10,11,12].map(i=>MAPS[MAP_OF[i]].id).join()')==='pylon,pinch,detour,wave,gate,bridge,tunnel,cross,mine,flood,boost,vent');ck('no errors',!errs.length,errs.slice(0,2));
- await b.close();fs.unlinkSync(f);console.log(bad?`FAIL (${bad})`:'PASS');})();
+ await b.close();end();})();
