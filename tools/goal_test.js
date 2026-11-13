@@ -17,7 +17,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   // chapter 8 numbers
   const c8=JSON.parse(await T("(()=>{const w=[0,0,0];let hp=0;for(const ev of stages[8]){w[waveIndex.call(null,ev[0])-1]||0;}const b=WAVES[8];for(const ev of stages[8])w[ev[0]<b[0]?0:ev[0]<b[1]?1:2]++;for(const ev of stages[8])hp+=Math.round(TYPES[ev[2]].hp*OP_HP[8]*(ev[2]==='boss'?1:HP_SCALE));return JSON.stringify({hp8:OP_HP[8],n:stages[8].length,w,hp,boss:stages[8].filter(e=>e[2]==='boss').length,others:OP_HP.filter((v,i)=>i!==8).join(',')});})()"));
   ck('chapter 8: hull 1.85, 84 machines in 22/30/32, one boss',c8.hp8===1.85&&c8.n===84&&c8.w.join('/')==='22/30/32'&&c8.boss===1,c8);
-  ck('other chapters keep their hull',c8.others==='0,1,1,1.18,1.32,1.38,1.52,1.5,1.72,2.02,1.95,2.02',c8.others);
+  ck('other chapters keep their hull (chapter 10 is 1.85 since build 2026.11.13-6)',c8.others==='0,1,1,1.18,1.32,1.38,1.52,1.5,1.72,1.85,1.95,2.02',c8.others);
   // leaving the page opens the settings; closing them resumes
   await T("mute=true;"+START(3)+"0");
   const t0=+await T('stageTime');await p.waitForTimeout(300);const t1=+await T('stageTime');

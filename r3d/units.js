@@ -325,6 +325,7 @@ function addState(e,popIn){
 function freeState(i){const S=act[i];states.delete(S.e);S.e=null;spare.push(S);act[i]=act[act.length-1];act.pop();}
 function clearStates(){for(let i=act.length-1;i>=0;i--)freeState(i);pp.fill(0);}
 
+const cShield=new THREE.Color(0x9fd4ff),cSplit=new THREE.Color(0xffb36b),cMedic=new THREE.Color(0x9be38f);   // variant machines (G.FOE)
 const cEye=new THREE.Color(pal.enemyEye),cHot=new THREE.Color(EYE),cDust=new THREE.Color(0xd9a468),cTeal=new THREE.Color(pal.teal),cLit=new THREE.Color(TEAL_LIT),cAmber=new THREE.Color(pal.amber);
 const _p=new THREE.Vector3(),_s=new THREE.Vector3(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_m=new THREE.Matrix4(),_v=new THREE.Vector3();
 // The boss (4.6 tall) and the brute are taller than the drone's belly at A.droneH, and they walk right under it.
@@ -386,6 +387,16 @@ function drawEnemy(S,dt,t){
   decal(x,DY,z,5.2,5.2,0,0,cEye.r*.2*k,cEye.g*.2*k,cEye.b*.2*k,0,1,1);
   decal(x,DY,z,3.7*sc,3.7*sc,0,2,cEye.r*.24*k,cEye.g*.24*k,cEye.b*.24*k,0,1,1);   // thin threat ring: the siege machine is marked out at any size
   sprite(x,y+3.95*sy,z,3.4*cp,0,0,cEye.r*.42*k,cEye.g*.42*k,cEye.b*.42*k,0);}
+ // variant machines (G.FOE): a shield of light in front of a shield machine, a turning broken ring and sparks round a split machine,
+ // a medic's cross over it and the reach of its repairs on the road; a machine being repaired glows green
+ if(!dead){const kd=e.kind;
+  if(kd==='shield'){const k=ek*(.75+.25*Math.sin(t*4+wig));sprite(x-d.r*1.1*sxz,y+d.h*.55*sy,z,d.r*2.6*sc,0,0,cShield.r*.7*k,cShield.g*.7*k,cShield.b*.7*k,0);sprite(x-d.r*1.1*sxz,y+d.h*.55*sy,z,d.r*1.2*sc,0,0,cShield.r*.5*k,cShield.g*.5*k,cShield.b*.5*k,0);decal(x,DY,z,(d.r+.6)*sc,(d.r+.6)*sc,0,2,cShield.r*.5*k,cShield.g*.5*k,cShield.b*.5*k,0,1,1);}
+  else if(kd==='split'){const k=ek*(.7+.3*Math.sin(t*9+wig));decal(x,DY,z,(d.r+.8)*sc,(d.r+.8)*sc,t*1.3+wig,1,cSplit.r*.7*k,cSplit.g*.7*k,cSplit.b*.7*k,0,1,1);
+   if(run&&Math.random()<.25)sprite(x+(Math.random()-.5)*d.r,y+d.h*(.3+Math.random()*.6),z+(Math.random()-.5)*d.r,d.r*.8,1,Math.random()*TAU,cSplit.r*.7,cSplit.g*.7,cSplit.b*.7,0);}
+  else if(kd==='medic'){const k=ek*(.75+.25*Math.sin(t*5+wig)),R=(ctx.G.FOE?ctx.G.FOE.medic.r:70)*A.U;sprite(x,y+d.h*1.25*sy+.7,z,2.6,1,0,cMedic.r*1.2*k,cMedic.g*1.2*k,cMedic.b*1.2*k,0);sprite(x,y+d.h*1.25*sy+.7,z,1.6,0,0,cMedic.r*.4*k,cMedic.g*.4*k,cMedic.b*.4*k,0);
+   decal(x,DY,z,R,A.laneW*.5,0,2,cMedic.r*.2*k,cMedic.g*.2*k,cMedic.b*.2*k,0,1,1);}
+  if(e.healT>0){const k=Math.min(1,e.healT/.3);sprite(x,y+d.h*.5*sy,z,d.r*2.2*sc,0,0,cMedic.r*.32*k,cMedic.g*.32*k,cMedic.b*.32*k,0);}
+ }
 
  if(!dead){
   // dust: a puff under each foot as it lands, or a trail behind wheels and scuttlers
