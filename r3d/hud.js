@@ -334,11 +334,13 @@ function practiceHint(G,t){
 }
 
 /* ---------- 9. feel: score, combo, multi-kill banner, damage numbers, orbital strike reticles ---------- */
-let comboFx=0,banner='',bannerN=0,bannerT=0,brokeT=0,cbKey='',cbW=0,cbW2=0,hubW=0,hubH=0,hubB=0,scKey=-1,scStr='';
+// banner: a multi-kill, a lure kill or a met special goal. sub/col replace the "n기 동시 격파" line and the colour by count. One that arrives while another shows waits its turn (bq).
+let comboFx=0,banner='',bannerN=0,bannerT=0,bannerSub=null,bannerCol=null,bq=[],brokeT=0,cbKey='',cbW=0,cbW2=0,hubW=0,hubH=0,hubB=0,scKey=-1,scStr='';
 // bottom of the DOM hub chip in HUD coordinates (it sits lower on narrow screens): the combo goes under it. Measured once per layout, while the chip is shown.
 function hubBottom(){if(L.w!==hubW||L.h!==hubH){const hb=document.querySelector('.hubchip');if(hb&&hb.offsetParent){const r=hb.getBoundingClientRect(),cr=c.canvas.getBoundingClientRect();hubB=cr.width>0?(r.bottom-cr.top)*L.w/cr.width:0;hubW=L.w;hubH=L.h;}}return hubB;}const NUMS=[],NUM_MAX=28;
 const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52'};
 function addNum(e,txt,col,big){if(!e)return;ctx.enemyPos(e,v);let n=NUMS.length<NUM_MAX?{}:NUMS.shift();n.x=v.x;n.y=v.y+(ENEMY[e.type]||ENEMY.grunt).h;n.z=v.z;n.t=0;n.txt=txt;n.col=col;n.big=big;n.dx=(Math.random()-.5)*14;NUMS.push(n);}
+function showBanner(ev){banner=ev.name||'';bannerN=ev.n|0;bannerSub=ev.sub!=null?ev.sub:null;bannerCol=ev.col||null;bannerT=1.3;}
 function feel(dt,t,G){
  const sc=G.score|0;if(sc!==scKey){scKey=sc;scStr=sc.toLocaleString();}text(scStr,M+5,opBottom+FSS*.75,fSmall,HOT,'left');   // the string is rebuilt only when the score changes
  const cb=G.combo|0;comboFx=Math.max(0,comboFx-dt*4);
@@ -351,8 +353,9 @@ function feel(dt,t,G){
  for(let i=NUMS.length-1;i>=0;i--){const n=NUMS[i];n.t+=dt;if(n.t>.9){NUMS.splice(i,1);continue;}v.set(n.x,n.y,n.z);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const k=n.t/.9,pop=n.t<.12?1+1.2*(1-n.t/.12):1;c.globalAlpha=k<.6?1:1-(k-.6)/.4;c.save();c.translate(p.x+n.dx*k,p.y-28*ui*k);c.scale(pop,pop);text(n.txt,0,0,n.big?fDmgB:fDmg,n.col,'center');c.restore();curFont='';}
  c.globalAlpha=1;
+ if(bannerT<=0&&bq.length)showBanner(bq.shift());
  if(bannerT>0){bannerT-=dt;const a=Math.min(1,bannerT*2.5),k=bannerT>1.05?1+3*(bannerT-1.05):1,x=L.w/2,y=L.h*.3;c.globalAlpha=a;c.save();c.translate(x,y);c.scale(k,k);
-  text(banner,0,0,fBanner,bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT,'center');text(bannerN+'기 동시 격파',0,20*ui,fSmall,CREAM,'center');c.restore();curFont='';c.globalAlpha=1;}
+  text(banner,0,0,fBanner,bannerCol||(bannerN>=8?'#ff7a5a':bannerN>=5?'#ffd866':HOT),'center');text(bannerSub!=null?bannerSub:bannerN+'기 동시 격파',0,20*ui,fSmall,CREAM,'center');c.restore();curFont='';c.globalAlpha=1;}
  const S=G.strikes;for(const k of S){ctx.lanePos(k.lane,k.y,0,v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
   const f=Math.max(0,k.t/G.ORB.delay),r=(10+40*f)*ui;c.strokeStyle='rgba(255,120,80,.95)';c.lineWidth=2.5;c.setLineDash([6,5]);c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();c.setLineDash([]);
   c.beginPath();c.moveTo(p.x-r-6,p.y);c.lineTo(p.x-r+6,p.y);c.moveTo(p.x+r-6,p.y);c.lineTo(p.x+r+6,p.y);c.moveTo(p.x,p.y-r-6);c.lineTo(p.x,p.y-r+6);c.moveTo(p.x,p.y+r-6);c.lineTo(p.x,p.y+r+6);c.stroke();}
@@ -392,10 +395,10 @@ return{
   if(!ev)return;
   if(ev.t==='leak'){if(ev.lane===0||ev.lane===1)facFx[ev.lane]=1;}
   else if(ev.t==='wave')waveFx=1.6;
-  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;bannerT=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
+  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;bannerT=0;bq.length=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
   else if(ev.t==='combo')comboFx=1;
   else if(ev.t==='comboEnd')brokeT=1.2;   // a breach broke the combo
-  else if(ev.t==='multi'){banner=ev.name||'';bannerN=ev.n|0;bannerT=1.3;}
+  else if(ev.t==='multi'){if(bannerT>.3&&bq.length<3)bq.push(ev);else showBanner(ev);}
   else if(ev.t==='fall')addNum(ev.e,'추락!','#ffe1ae',true);
   else if(ev.t==='hit'&&ev.e&&ev.dmg>=30&&ev.src!=='fall'&&!ev.e.fell)addNum(ev.e,''+Math.round(ev.dmg),NUM_COL[ev.src]||CREAM,ev.dmg>=100||ev.kill);
  },
