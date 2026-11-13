@@ -188,7 +188,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 @media(orientation:landscape){
  .title-body{align-self:center;justify-self:start;text-align:left;width:min(52%,460px);padding:0 0 0 calc(30px + env(safe-area-inset-left,0px));gap:7px}
  .title-shade{background:linear-gradient(90deg,rgba(8,14,18,.94) 0,rgba(8,14,18,.72) 34%,rgba(8,14,18,.1) 66%,rgba(8,14,18,.3) 100%)}
- .title h1{font-size:clamp(34px,13dvh,64px)}.title-tag{margin:0 0 2px}.title-tag br{display:none}
+ .title h1{font-size:clamp(34px,13dvh,64px)}.title-tag{margin:0 0 2px}
  .title-actions{grid-template-columns:1.25fr 1fr}.tbtn{min-height:44px;font-size:14px}
 }
 @media(orientation:landscape) and (max-height:330px){.title-tag{font-size:12px}.tbtn{min-height:38px}}
@@ -292,11 +292,16 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 .title h1{font-family:var(--td)!important;font-weight:400!important;font-size:clamp(54px,17vh,98px)!important;color:#f4eee3!important;letter-spacing:.04em!important;padding-bottom:0!important;background:none!important;text-shadow:0 -1px 0 rgba(255,255,255,.35),0 3px 0 #000,0 0 26px rgba(255,140,42,.55),0 0 2px #000!important}
 .title h1 span{font-family:var(--tm)!important;color:#140d05!important;background:var(--amb)!important;letter-spacing:.06em!important;text-indent:0!important;display:inline-block!important;width:auto!important;padding:1px 9px!important;margin-top:8px!important;font-size:.24em!important;box-shadow:0 0 14px rgba(255,177,42,.35)}
 .title-tag{font-family:var(--tm)!important;color:#e6be72!important;font-weight:400!important;text-shadow:0 1px 0 #000!important}
-.title-tag::before{content:'> 송신소 연결 ........ 정상\A> ';white-space:pre;color:var(--amb2)}
-.title-tag::after{content:'▌';color:var(--amb);animation:tblink 1s steps(1) infinite;margin-left:3px}
+/* the boot lines: one terminal line per sentence, each with its prompt, so a narrow screen never leaves one word on a line of its own */
+.title-tag::before{content:'> 송신소 연결 ........ 정상';display:block;color:var(--amb2)}
+.title-tag span{display:block}.title-tag span::before{content:'> ';color:var(--amb2)}
+.title-tag span:last-child::after{content:'▌';color:var(--amb);animation:tblink 1s steps(1) infinite;margin-left:3px}
 .title .tbtn{font-family:var(--td)!important;font-weight:400!important;border:1px solid #000!important;border-radius:4px!important;color:#f3ede2!important;background:var(--brush),linear-gradient(180deg,#4a5054,#2a2f31)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.4),0 3px 0 #0b0c0d!important;text-shadow:0 -1px 0 #000;backdrop-filter:none!important;position:relative}
 .title .tbtn.primary{padding-left:36px!important;font-size:clamp(20px,5.4vw,25px)!important}
-.title .tbtn.primary::before{content:'';position:absolute;left:15px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--lamp);box-shadow:0 0 12px var(--lamp),0 0 2px #fff inset;animation:tlamp 1.6s ease-in-out infinite}
+.title .tbtn small[hidden]{display:none!important}
+.tbtn{word-break:keep-all}
+.title .tbtn.primary{justify-content:center!important}
+.tbtn.primary::before{content:'';position:absolute;left:15px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--lamp);box-shadow:0 0 12px var(--lamp),0 0 2px #fff inset;animation:tlamp 1.6s ease-in-out infinite}
 .title .tbtn small{font-family:var(--tm);color:var(--amb);font-weight:400;opacity:1}
 .title .tbtn:not(.primary){color:#c9c2b5!important;background:var(--brush),linear-gradient(180deg,#33383b,#1f2325)!important;border-bottom:1px solid #000!important}
 .title .tbtn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 0 #0b0c0d!important}
@@ -340,7 +345,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
   <button type="button" class="title-skip" id="skipFilm">SKIP »</button>
   <div class="title-body">
     <h1>중계선<span>최후의 방어</span></h1>
-    <p class="title-tag">전선은 둘, 지원 기체는 하나. <br>중앙 송신소가 끊기기 전에 막아라.</p>
+    <p class="title-tag"><span>전선은 둘, 지원 기체는 하나.</span><span>중앙 송신소가 끊기기 전에 막아라.</span></p>
     <div class="title-actions"><button type="button" class="tbtn primary" id="tutorialBtn"><span>출격</span><small>훈련부터 시작</small></button><button type="button" class="tbtn" id="skipBtn">훈련 없이 출격</button></div>
     <div class="title-foot"><button type="button" id="bgmBtn" aria-pressed="false" aria-label="음악 켜기">♪ 음악 켜기</button><span id="titleBuild"></span></div>
   </div>
@@ -411,7 +416,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.13-4';
+const BUILD='2026.11.13-5';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={active:false,renderer:null,events:[]};
@@ -596,7 +601,7 @@ function placeField(e){const y=Math.max(LANE_TOP+30,Math.min(LEAK_Y-40,e.y));if(
 function fieldStep(dt){for(const f of fieldTurrets){f.life-=dt;f.cool-=dt;f.flash=Math.max(0,f.flash-dt);if(f.cool<=0&&f.life>0){const e=pickTarget(f.lane,f.y,FIELD.range);if(e){f.cool=FIELD.rate;f.flash=.15;damageEnemy(e,FIELD.dmg,LANES[f.lane],f.y,'field');sfx('turret',0,1.35,.55);}}}
  if(fieldTurrets.some(f=>f.life<=0))fieldTurrets=fieldTurrets.filter(f=>f.life>0);}
 function aidStep(dt){if(aid.wall>0)aid.wall-=dt;if(aid.jam>0)aid.jam-=dt;if(aid.stim>0)aid.stim-=dt;if(aid.pierce>0)aid.pierce-=dt;if(aid.splash>0)aid.splash-=dt;if(aid.mag>0)aid.mag-=dt;
- if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,BAL.turretRange);if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'echo');sfx('turret');}}}
+ if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,BAL.turretRange);if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'temp');sfx('turret');}}}
  if(aid.clone>0){aid.clone-=dt;aid.cloneCool-=dt;if(aid.cloneCool<=0){const l=1-drone.lane,e=pickTarget(l,drone.y,effects.droneRange);if(e){aid.cloneCool=BAL.droneRate;damageEnemy(e,BAL.droneDmg,LANES[l],drone.y,'echo');sfx('echo');}}}}
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
@@ -738,7 +743,7 @@ function sfx(name,delay=0,p=1,gm=1){if(mute||prefs.vol<=0||!SFX.ready)return;try
 // kills at the same moment ring out one after another, each a little higher (an overload that takes four machines sounds like four)
 function sfxKill(e){const now=performance.now()/1000;if(e.type==='boss'){sfx('kill_boss');return;}if(now-SFX.killAt<.06)SFX.chain=Math.min(SFX.chain+1,5);else SFX.chain=0;SFX.killAt=now;sfx('kill_'+e.type,SFX.chain*.04,Math.pow(1.06,SFX.chain));}
 // rounds landing on armour
-function sfxHit(src){if(src==='turret'||src==='pierce')sfx('hit_heavy',.04);else if(src==='drone'||src==='echo'||src==='field'||src==='splash')sfx('hit_light',.03);}
+function sfxHit(src){if(src==='turret'||src==='pierce')sfx('hit_heavy',.04);else if(src==='drone'||src==='echo'||src==='temp'||src==='field'||src==='splash')sfx('hit_light',.03);}   // temp: the temporary turret item (it was tagged 'echo' until build 2026.11.13-4)
 // wind over the base and the hum of the relay while a battle runs
 // SFX.ambOn is what the game wants; ambSync makes the sound follow it whenever it can (sounds baked, volume up), so a want that came too early is not lost.
 function sfxAmb(on){if(SFX.ambOn===on)return;SFX.ambOn=on;ambSync();}

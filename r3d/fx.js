@@ -409,7 +409,8 @@ function onHit(ev){
   if(src==='turret')ctx.turretPos(e.lane,vS);
   else if(src==='drone'){ctx.dronePos(vS);c=C.teal;w=1.3;life=.14;}
   else if(src==='echo'){vS.set(A.droneX,A.droneH,ctx.laneZAt(e.lane,A.droneX));c=C.ghost;w=1.2;life=.19;hot=.45;alpha=.62;}
-  else if(src==='field'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,1.75,vS);w=1.35;life=.14;}   // a field turret (base.js); the tracer leaves from its muzzle below
+  else if(src==='field'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,1.75,vS);w=1.35;life=.14;}
+  else if(src==='temp'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,1.75,vS);if(ctx.tmpSide)vS.z+=ctx.tmpSide(e.lane);w=1.5;life=.15;}   // the temporary turret item (base.js, on the road's edge), from its muzzle   // a field turret (base.js); the tracer leaves from its muzzle below
   else if(src==='pierce'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,d.cy,vS);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
   else if(src==='chain'&&ev.sy===ev.sy){const G=ctx.G,sl=Math.abs(ev.sx-G.LANES[1])<Math.abs(ev.sx-G.LANES[0])?1:0;ctx.lanePos(sl,ev.sy,ev.sy===G.DRONE_Y&&Math.abs(ev.sx-G.drone.x)<1?A.droneH:1.3,vS);c=C.zap;w=1.7;life=.3;hot=1.8;emit(P.glow,vE.x,vE.y,vE.z,0,0,0,3,C.white,C.zap);}   // chain lightning: a jump from the last machine struck
   else if(src==='shock'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,.7,vS);c=C.zap;w=1.05;life=.2;hot=1.4;}   // electricity running through the water
@@ -420,7 +421,7 @@ function onHit(ev){
   vT.copy(L.camPos).sub(vE).normalize();hx+=vT.x*d.r*.45;hy+=vT.y*d.r*.45;hz+=vT.z*d.r*.45;
   // base.js draws the muzzle flash; the tracer only has to leave from the muzzle (never from behind the hull it hits)
   if(src==='turret'){const mz=Math.max(0,Math.min(MUZZLE,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
-  else if(src==='field'){const mz=Math.max(0,Math.min(2.56,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
+  else if(src==='field'||src==='temp'){const mz=Math.max(0,Math.min(src==='temp'?2.87:2.56,l-hr-.4));vS.x+=dx*mz;vS.y+=dy*mz;vS.z+=dz*mz;}
   else if(src==='echo')emit(P.glow,vS.x,vS.y,vS.z,0,0,0,2.2,c);
   if(style===S_LANCE){
    // the lance carries on through the second target

@@ -280,9 +280,9 @@ function aidMarks(G,t){
    c.globalAlpha=pu;c.lineWidth=3.5*ui;c.strokeStyle='#ffe9b8';c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p2.x,p2.y);c.stroke();c.globalAlpha=1;c.lineCap='butt';
    aidRing(G,(p.x+p2.x)*.5,(p.y+p2.y)*.5,a.wall/IT.wall.time,'wall','#f0c47b');}
  }
- if(a.turret>0){v.set(A.droneX,1.4,ctx.laneZAt(a.turretLane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.turret/IT.turret.time,'turret','#f0c47b');}
+ if(a.turret>0){v.set(A.droneX,4.2,ctx.laneZAt(a.turretLane,A.droneX)+(ctx.tmpSide?ctx.tmpSide(a.turretLane):0));ctx.project(v,p);if(p.z>-1&&p.z<1){c.globalAlpha=1;timerRing(p.x,p.y,6.5*ui,clamp(a.turret/IT.turret.time,0,1),3.8*ui,2.2*ui);}}   // the turret itself stands there (base.js); a time ring over it
  const fl=G.fieldTurrets;for(let i=0;i<fl.length;i++){const f=fl[i];ctx.lanePos(f.lane,f.y,4.4,v);ctx.project(v,p);if(p.z>-1&&p.z<1){c.globalAlpha=1;timerRing(p.x,p.y,6*ui,clamp(f.life/G.FIELD.life,0,1),3.6*ui,2*ui);}}   // field turrets: a small ring above the model that empties as its time runs out
- if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1)aidRing(G,p.x,p.y,a.clone/IT.clone.time,'clone','#8dd7d0');}
+ if(a.clone>0&&G.drone){v.set(A.droneX,A.droneH+2.6,ctx.laneZAt(1-G.drone.lane,A.droneX));ctx.project(v,p);if(p.z>-1&&p.z<1){c.globalAlpha=1;timerRing(p.x,p.y,6.5*ui,clamp(a.clone/IT.clone.time,0,1),3.8*ui,2.2*ui);}}   // the clone itself stands there (units.js)
  if(a.jam>0){c.globalAlpha=.35+.25*Math.sin(t*9);c.strokeStyle='#8dd7d0';c.lineWidth=4;c.strokeRect(3,3,L.w-6,L.h-6);c.globalAlpha=1;}
  // stimpack, pierce, splash: rings above the drone that empty as the effect runs out
  if(G.drone){let n=0,m=0;for(const id of BUFFS)if(a[id]>0)m++;if(m){ctx.dronePos(v);v.y+=3.4;ctx.project(v,p);if(p.z>-1&&p.z<1)for(const id of BUFFS)if(a[id]>0){aidRing(G,p.x+(n-(m-1)/2)*29*ui,p.y-6*ui,a[id]/IT[id].time,id,IT[id].col);n++;}}}

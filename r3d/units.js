@@ -448,6 +448,8 @@ const holoMat=new THREE.ShaderMaterial({uniforms:{uCol:{value:new THREE.Color(0x
  fragmentShader:'uniform vec3 uCol;uniform float uA,uT;varying vec3 vN;varying vec3 vW;void main(){float fr=1.-abs(dot(normalize(vN),normalize(cameraPosition-vW)));float sc=.5+.5*sin(vW.y*26.-uT*10.);'+
   'gl_FragColor=vec4(uCol*uA*(.22+.78*fr*fr)*(.45+.55*sc),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});
 const ghost=new THREE.Mesh(dGeo,holoMat);ghost.visible=false;scene.add(ghost);
+// the clone item (G.aid.clone): a steadier copy of the hologram in the lane the drone is not on, while the item runs
+const cloneMat=holoMat.clone(),cloneG=new THREE.Mesh(dGeo,cloneMat);cloneG.visible=false;scene.add(cloneG);let cloneIn=0;
 
 // smoothed drone state: lateral speed, overdrive level, mark brightness, overload-ready level, and short kicks from events
 let lastZ=NaN,velZ=0,odS=0,markA=1,pulseA=0,recoil=0,kick=0,flare=0,ghostKick=0;
@@ -538,6 +540,14 @@ function updateDrone(dt,t,G){
   holoMat.uniforms.uA.value=a*(.85+ghostKick*.8);holoMat.uniforms.uT.value=t%100;
   decal(x,DY,gz,3.2,3.2,0,0,cTeal.r*.16*a,cTeal.g*.16*a,cTeal.b*.16*a,0,1,1);
   sprite(x,gy+.2,gz,5,0,0,cTeal.r*.2*a,cTeal.g*.2*a,cTeal.b*.2*a,0);
+ }
+ const cl=live&&!!G.aid&&G.aid.clone>0;cloneIn=cl?Math.min(1,cloneIn+dt*4):0;cloneG.visible=cl;
+ if(cl){const ol=1-dr.lane,cz=ctx.laneZAt(ol,A.droneX),cy=A.droneH+lift[ol]+Math.sin(t*1.7+2)*.1,left=G.aid.clone;
+  const a=cloneIn*Math.min(1,left/.3)*(left<1.5?(Math.sin(t*18)>0?1:.35):(.9+.1*Math.sin(t*5)));   // fades in, blinks in its last 1.5 seconds
+  cloneG.position.set(x,cy,cz);cloneG.rotation.set(Math.sin(t*1.3+1)*.03,0,-.07);
+  cloneMat.uniforms.uA.value=a*(1.05+ghostKick*.6);cloneMat.uniforms.uT.value=t%100;
+  decal(x,DY,cz,3.4,3.4,0,0,cTeal.r*.2*a,cTeal.g*.2*a,cTeal.b*.2*a,0,1,1);
+  sprite(x,cy+.2,cz,5.5,0,0,cTeal.r*.24*a,cTeal.g*.24*a,cTeal.b*.24*a,0);
  }
 }
 

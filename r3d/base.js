@@ -326,6 +326,23 @@ function updField(dt,t,G){const list=G.fieldTurrets||[],R=G.FIELD?G.FIELD.range:
   if(F.flash>0){const cy=Math.cos(F.yaw),sy=Math.sin(F.yaw),cp=Math.cos(F.pit),m=FMUZ;spr(glowB,x+cy*cp*m,FPIV+Math.sin(F.pit)*m,z-sy*cp*m,1.2+2*F.flash,cHot,F.flash);}
   if(F.pop<1)spr(glowB,x,.6,z,6*(1-F.pop),cA,.8*(1-F.pop));}
 }
+// the temporary turret item (G.aid.turret): the same head on a post, a little larger, on the lane it was set on at the drone's distance, for the item's time.
+// It stands on the outer edge of the road (ctx.tmpSide), clear of the machines and of the clone hologram; along the lane it is where the game fires from.
+ctx.tmpSide=l=>Math.sign(ctx.L.laneZ[l]||1)*A.laneW*.36;
+const TMP_S=FS*1.12,tmp=(()=>{const g=new THREE.Group(),m=glowMat();g.visible=false;scene.add(g);add(g,gPost,m,2);add(g,headGeo(C.amber,C.la),m,2);const gun=add(g,gGun,m,2);
+ return{g,gun,mat:m,on:false,lane:0,yaw:0,pit:.06,kick:0,flash:0,pop:0};})();
+function updTemp(dt,t,G){const a=G.aid,T=tmp,on=G.phase==='battle'&&!!a&&a.turret>0;
+ if(!on){T.g.visible=false;T.on=false;return;}
+ if(!T.on||T.lane!==a.turretLane){T.on=true;T.lane=a.turretLane;T.pop=0;T.yaw=ctx.L.laneZ[T.lane]>0?-.46:.46;T.kick=T.flash=0;}
+ const l=T.lane,Y=G.DRONE_Y,x=ctx.wx(Y),z=ctx.laneZAt(l,x)+ctx.tmpSide(l),R=G.BAL.turretRange,en=G.enemies,cov=G.map&&G.map.cover;
+ T.pop=Math.min(1,T.pop+dt*4);const end=Math.min(1,a.turret/.4),b=T.pop<1?1+.25*Math.sin(T.pop*Math.PI):1;
+ T.g.visible=true;T.g.position.set(x,FPIV,z);T.g.scale.setScalar(TMP_S*Math.max(.05,Math.min(T.pop,end))*b);
+ let e=null,best=-1e9;for(let j=0;j<en.length;j++){const q=en[j];if(q.hp<=0||q.lane!==l||Math.abs(q.y-Y)>R||(cov&&cov(q.lane,q.y)))continue;const pr=q.y+(q.type==='boss'?6:0);if(pr>best){best=pr;e=q;}}   // the game's own choice (pickTarget)
+ aimHead(T,e,x,FPIV,z,(ctx.L.laneZ[l]>0?-.46:.46)+Math.sin(t*.6)*.5,dt);recoil(T,dt);
+ const blink=a.turret<2?(Math.sin(t*18)>0?1:.2):1;                                       // the last two seconds it blinks
+ setG(T.mat,0,cW,blink);setG(T.mat,1,cHot,3.5*T.flash);setG(T.mat,2,cA,1.2*blink);
+ if(T.flash>0){const cy=Math.cos(T.yaw),sy=Math.sin(T.yaw),cp=Math.cos(T.pit),m=FMUZ*1.12;spr(glowB,x+cy*cp*m,FPIV+Math.sin(T.pit)*m,z-sy*cp*m,1.3+2*T.flash,cHot,T.flash);}
+ if(T.pop<1)spr(glowB,x,.6,z,7*(1-T.pop),cA,.8*(1-T.pop));}
 function applyShadows(){for(let i=0;i<casters.length;i+=2)casters[i].castShadow=Q>=casters[i+1];}
 
 /* ================= 6. per-frame state ================= */
@@ -481,11 +498,11 @@ return{
   updFac(fac[0],dt,t,G);updFac(fac[1],dt,t,G);
   updGate(gate[0],0,dt,t,G);updGate(gate[1],1,dt,t,G);
   setG(runMat,0,cW,.9*fac[0].on);setG(runMat,1,cW,.9*fac[1].on);
-  updHub(dt,t,G);updTurrets(dt,t,G);updField(dt,t,G);
+  updHub(dt,t,G);updTurrets(dt,t,G);updField(dt,t,G);updTemp(dt,t,G);
   updParticles(dt);flush(glowB);flush(smokeB);flush(poolB);
  },
  event(ev){
-  if(ev.t==='hit'){if(ev.src==='turret'&&ev.e){const T=tur[ev.e.lane];if(T)fire(T);}}
+  if(ev.t==='hit'){if(ev.src==='turret'&&ev.e){const T=tur[ev.e.lane];if(T)fire(T);}else if(ev.src==='temp'&&tmp.on)fire(tmp);}
   else if(ev.t==='leak'){const F=fac[ev.lane],g=gate[ev.lane];if(!F)return;
    g.fl=1;F.jt=0;F.ja=ev.down?.6:.28;
    fw(F,0,1.6,0);sparks(v.x+2.5,1.2,v.z,ev.down?4:3,cSpark,4);

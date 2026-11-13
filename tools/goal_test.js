@@ -1,6 +1,7 @@
 // 판 2026.11.13-3 시험: 화면을 떠났다 돌아올 때(설정 창), 배경음 재시도, 강화·결과 화면의 전투 단추 숨김, 8장(배율 1.85와 새 일정),
 // 다시 도전(한 판에 한 번), 패배 기록, 유인 섬멸, 다음 작전 정찰, 맵별 특별 목표(열한 장 각각 달성과 하나 모자랄 때), 화면 맞춤(스크롤 없음).
 // 판 2026.11.13-4: 뒤로 가기(한 번 설정 열기, 두 번 닫기, 뒤로 가는 동안 기록을 쌓지 않음, 터치로 다시 두 칸), 바꾼 화면 문구.
+// 판 2026.11.13-5: 제목 화면(숨긴 작은 글씨, 주 버튼 글자 가운데, 문장마다 한 줄), 임시 포탑 사격의 이름표(temp).
 // node tools/goal_test.js <게임 폴더 절대 경로> [출력 폴더(화면 사진, 생략 가능)]
 const { chromium } = require('playwright');const {hooked,inGame,checks}=require('./lib.js');const path=require('path'),fs=require('fs');
 const dir=path.resolve(process.argv[2]),out=process.argv[3]?path.resolve(process.argv[3]):null;if(out)fs.mkdirSync(out,{recursive:true});
@@ -148,6 +149,25 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   const up=await T(`(()=>{mute=true;$('title').hidden=true;reset();newStage(1);liveRun=true;phase='battle';pattern=[];nextSpawn=0;enemies=[];facilities=[0,100];update(1/30);return document.querySelector('#overlayContent').textContent;})()`);
   ck('wording: facility words on the upgrade screen (가동/정지), no 유지/붕괴/생존',up.includes('발전소 정지')&&up.includes('정비소 가동')&&!/유지|붕괴|생존/.test(up),up.slice(0,160));
   await p.close();}
+ // ---------- title screen (build 2026.11.13-5): a hidden small line stays hidden, a single label sits in the middle of the primary button, one line per sentence ----------
+ for(const drilled of [false,true])for(const [w,h] of [[915,350],[568,320],[412,915]]){const c=await b.newContext({viewport:{width:w,height:h},hasTouch:true});
+  await c.addInitScript(d=>{try{localStorage.setItem('relayLearn',JSON.stringify({drill:d}));}catch(e){}},drilled);
+  const p=await c.newPage();await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(400);await p.click('#skipFilm');await p.waitForTimeout(700);
+  const m=await p.evaluate(()=>{const tag=document.querySelector('.title-tag'),lh=parseFloat(getComputedStyle(tag).lineHeight);
+   const prim=document.querySelector('.title-actions .tbtn.primary'),pr=prim.getBoundingClientRect(),first=prim.firstChild,rg=document.createRange();rg.selectNodeContents(first.nodeType===3?prim:first);const q=rg.getBoundingClientRect();
+   const sm=document.querySelector('#tutorialBtn small');
+   return{lines:Math.round(tag.getBoundingClientRect().height/lh),primary:prim.id,label:prim.textContent.trim(),smallShown:getComputedStyle(sm).display!=='none',dy:Math.round((q.top+q.height/2)-(pr.top+pr.height/2)),scroll:document.documentElement.scrollHeight>innerHeight+1};});
+  const ok=m.lines===3&&!m.scroll&&(drilled?(m.primary==='skipBtn'&&!m.smallShown&&Math.abs(m.dy)<=3):(m.primary==='tutorialBtn'&&m.smallShown));
+  ck(`title ${drilled?'after the drill':'first visit'} ${w}x${h}: three boot lines, the drill hint ${drilled?'hidden':'shown'}, ${drilled?'"출격" centred':'two lines in the primary button'}`,ok,m);await c.close();}
+ // ---------- the temporary turret's shots carry their own tag; nothing else about them changes ----------
+ {const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='warning'&&/hud\.js|units\.js|base\.js|fx\.js/.test(m.text()))errs.push(m.text());});
+  await p.goto('file://'+f);try{await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay&&window.__relay.active,null,{timeout:8000});}catch(e){errs.push('2.5D did not start');}
+  const T=inGame(p);
+  const r=JSON.parse(await T(`(()=>{${PUT}mute=true;$('title').hidden=true;$('titleVid').pause();learned.drill=learned.item=learned.pulse=learned.combo=true;for(const m of MAPS)learned.maps[m.id]=true;for(const k in ITEMS)learned.items[k]=true;
+   ${START(3)}const evs=[];const e0=ev3;ev3=o=>{if(o.t==='hit')evs.push(o.src+'@'+o.sx);e0(o);};drone.lane=0;drone.x=LANES[0];put(1,'brute',DRONE_Y-40,{hp:900});bag=['turret','clone'];useItem(0);useItem(0);
+   for(let i=0;i<60;i++)update(1/30);ev3=e0;return JSON.stringify({temp:evs.filter(x=>x==='temp@'+LANES[1]).length,echo:evs.filter(x=>x.startsWith('echo@')).length,side:typeof R3D.ctx.tmpSide});})()`));
+  await p.waitForTimeout(700);
+  ck('temporary turret shots are tagged temp, the clone still fires, the 2.5D models draw without errors',r.temp>0&&r.echo>0&&r.side==='function'&&!errs.length,{r,errs:errs.slice(0,2)});await p.close();}
  // ---------- screens: no scroll, every button inside the screen, text size (2.5D and 2D) ----------
  const sizes=[[568,320],[667,375],[844,390],[390,844],[360,740]];
  for(const mode of ['','?2d=1'])for(const [w,h] of sizes){const c=await b.newContext({viewport:{width:w,height:h},hasTouch:true});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
