@@ -42,7 +42,7 @@ const J2=async T=>JSON.parse(await T("JSON.stringify({n:enemies.length,ram:enemi
   // lesson and scouting
   const ls=JSON.parse(await T(`(()=>{${PUT}learned.foes={};${START(4)}lessonQuiet=99;stageTime=5;const e=put(0,'grunt',200,{kind:'shield'});lessonTick(1/30);const a={hold:holdState&&holdState.need,title:$('coachTitle').textContent,main:$('coachMain').textContent};
    releaseHold();lessonQuiet=99;lessonTick(1/30);return JSON.stringify({a,again:!!holdState,learned:learned.foes});})()`));
-  ck('a variant is explained the first time it is in view, once (the shield under its new key since its rule changed)',ls.a.hold==='tap'&&ls.a.title==='새 적 · 방패형'&&ls.a.main.includes('앞질러 가지 못합니다')&&ls.a.main.includes('50% 덜 받고')&&ls.a.main.includes('75%')&&!ls.again&&ls.learned.shield2===true,ls);
+  ck('a variant is explained the first time it is in view, once (the shield under its new key since its rule changed)',ls.a.hold==='tap'&&ls.a.title==='새 적 · 방패형'&&ls.a.main.includes('방패형 뒤에 있는 적은')&&ls.a.main.includes('50% 덜 받고')&&ls.a.main.includes('75%')&&!ls.again&&ls.learned.shield2===true,ls);
   const sc=await T(`(()=>{${START(8)}enemies=[];nextSpawn=pattern.length;stageHurt=true;update(1/30);return document.querySelector('.scout').textContent;})()`);
   ck('scouting names the variants of the next chapter',/변종 · 방패형 \d+ · 분열형 \d+ · 수리형 \d+/.test(sc),sc);
   // the 2D canvases draw every variant
@@ -63,15 +63,23 @@ const J2=async T=>JSON.parse(await T("JSON.stringify({n:enemies.length,ram:enemi
   const sp=await J(`(()=>{${S0(3)}for(let i=0;i<300;i++)spawn(i%2,'runner');spawn(0,'boss');const v=enemies.filter(e=>e.type==='runner').map(e=>e.speed/TYPES.runner.speed);return JSON.stringify({min:Math.min(...v),max:Math.max(...v),boss:enemies.find(e=>e.type==='boss').speed===TYPES.boss.speed});})()`);
   ck('every machine walks within 12% of its kind\'s speed, spread out; a boss walks at its kind\'s speed',sp.min>=.88&&sp.max<=1.12&&sp.max-sp.min>.18&&sp.boss,sp);
   // the shield's new rule
-  const bl=await J(`(()=>{${PUT}${S0(4)}const s=put(0,'grunt',300,{kind:'shield'}),r=put(0,'runner',200,{speed:84}),g=put(0,'grunt',150,{speed:84}),o=put(1,'runner',200,{speed:84});for(let i=0;i<180;i++)update(1/60);
-   return JSON.stringify({s:s.y,r:+r.y.toFixed(1),g:+g.y.toFixed(1),o:+o.y.toFixed(1),qr:300-(13+10+3),qg:300-26-(10+13+3)});})()`);
-  ck('shield: no machine of its lane gets past it; they queue behind it a body apart (the other lane walks on)',Math.abs(bl.r-bl.qr)<.01&&Math.abs(bl.g-bl.qg)<.01&&bl.o>300,bl);
+  const bl=await J(`(()=>{${PUT}${S0(4)}const s=put(0,'grunt',300,{kind:'shield'}),r=put(0,'runner',200,{speed:84});for(let i=0;i<180;i++)update(1/60);return JSON.stringify({r:+r.y.toFixed(1)});})()`);
+  ck('shield: machines walk past it (the no-passing rule of build 2026.11.13-9 was taken out in -10)',bl.r>300,bl);
   const gd=await J(`(()=>{${PUT}${S0(4)}drone.lane=0;drone.x=LANES[0];const s=put(0,'grunt',DRONE_Y-10,{kind:'shield',hp:900,maxHp:900}),a=put(0,'brute',DRONE_Y-40,{hp:900,maxHp:900}),c=put(0,'brute',DRONE_Y+20,{hp:900,maxHp:900}),o=put(1,'brute',DRONE_Y-40,{hp:900,maxHp:900});
    drone.pulseCooldown=0;pulse();const ov=[900-s.hp,900-a.hp,900-c.hp];damageEnemy(a,19,0,0,'drone');return JSON.stringify({ov,shot:900-ov[1]-a.hp,d:effects.pulseDamage,g:FOE.shield.guard});})()`);
   ck('shield: machines behind it take half the overload, the one ahead all of it, the shield a quarter; shots are not reduced',gd.ov[0]===gd.d*.25&&gd.ov[1]===gd.d*gd.g&&gd.ov[2]===gd.d&&gd.g===.5&&gd.shot===19,gd);
+  // build 2026.11.13-10 (owner's choice): rubble only near where the drone left, not again while slowed nor for rubbleImm s after; emergency range +10 a rank, recharge counts at most refundCap hits
+  const rb=await J(`(()=>{${PUT}${S0(4)}Object.assign(effects,BAL.card.rubble(4));effects.rubble=1;drone.lane=0;drone.x=LANES[0];const near=put(0,'grunt',DRONE_Y-100),far=put(0,'grunt',DRONE_Y-DR()-20),other=put(1,'grunt',DRONE_Y);
+   const hop=()=>{drone.moveCooldown=0;switchLane(1-drone.lane);};hop();const first=[near.slow,far.slow,other.slow];for(let i=0;i<60;i++)update(1/30);hop();hop();const again=near.slow;
+   while(near.slow>0)update(1/30);const imm=near.slowImm;hop();hop();const inImm=near.slow;for(let i=0;i<70;i++)update(1/30);hop();hop();return JSON.stringify({first,again:+again.toFixed(2),imm:+imm.toFixed(2),inImm,after:near.slow,dur:effects.rubbleSlow,immS:BAL.rubbleImm});})()`);
+  ck('rubble: only the machines within the drone\'s reach of where it left; not again while slowed, nor for 2 s after',rb.first[0]===rb.dur&&rb.first[1]===0&&rb.first[2]===0&&rb.again<rb.dur-1.9&&rb.imm>1.9&&rb.inImm===0&&rb.after===rb.dur&&rb.immS===2,rb);
+  const em=await J(`(()=>{${PUT}const o={};for(const n of [1,4]){${S0(4)}Object.assign(effects,BAL.card.emergency(n));drone.lane=0;drone.x=LANES[0];for(let i=0;i<8;i++)put(0,'brute',DRONE_Y-30+i*5,{hp:9e3,maxHp:9e3});drone.pulseCooldown=0;pulse();o[n]={range:effects.pulseRange,cd:+drone.pulseCooldown.toFixed(2),refund:effects.refund};}return JSON.stringify(o);})()`);
+  ck('emergency: range 165 / 195 at ranks 1 and 4; the recharge counts at most four machines hit',em[1].range===165&&em[4].range===195&&em[1].cd===+(9-em[1].refund*4).toFixed(2)&&em[4].cd===3,em);
+  const ct=await T("cardDescription('rubble')+' | '+cardDescription('emergency')");
+  ck('card texts say where the rubble falls, its pause and the four-machine count',ct.includes('그 자리 근처의 적')&&ct.includes('2초 동안 다시 걸리지 않음')&&ct.includes('1기당(4기까지)'),ct);
   // the bosses
-  const sb=await J(`(()=>{${PUT}${S0(13)}const s=put(1,'boss',300,{kind:'shield',hp:9e3,maxHp:9e3}),r=put(1,'runner',200,{speed:84});for(let i=0;i<120;i++)update(1/60);drone.lane=1;drone.x=LANES[1];const a=put(1,'brute',DRONE_Y-30,{hp:900,maxHp:900});s.y=DRONE_Y-5;drone.pulseCooldown=0;pulse();return JSON.stringify({r:+r.y.toFixed(1),q:300-(23+10+3),a:900-a.hp,d:effects.pulseDamage});})()`);
-  ck('shield boss: holds the machines behind it and halves the overload on them',Math.abs(sb.r-sb.q)<.01&&sb.a===sb.d*.5,sb);
+  const sb=await J(`(()=>{${PUT}${S0(13)}drone.lane=1;drone.x=LANES[1];const s=put(1,'boss',DRONE_Y-5,{kind:'shield',hp:9e3,maxHp:9e3}),a=put(1,'brute',DRONE_Y-30,{hp:900,maxHp:900}),c=put(1,'brute',DRONE_Y+30,{hp:900,maxHp:900});drone.pulseCooldown=0;pulse();return JSON.stringify({a:900-a.hp,c:900-c.hp,d:effects.pulseDamage});})()`);
+  ck('shield boss: halves the overload on the machines behind it, not ahead',sb.a===sb.d*.5&&sb.c===sb.d,sb);
   const spb=await J(`(()=>{${S0(10)}nextSpawn=pattern.length;spawn(0,'boss','split');const c=enemies[0];c.y=300;c.wv=4;damageEnemy(c,1e9,0,0,'drone');update(1/60);return JSON.stringify(enemies.filter(e=>e.hp>0).map(e=>e.type+':'+e.maxHp+':'+e.wv));})()`);
   const spx=await T("Math.round(TYPES.brute.hp*OP_HP[10]*HP_SCALE*FOE.split.hp*(1+HP_WAVE*3))");
   ck('split boss: breaks into two large machines (60% of a large hull, its attack)',spb.length===2&&spb.every(x=>x==='brute:'+spx+':4'),{spb,spx});

@@ -402,14 +402,15 @@ let core=100,facilities=[100,100],turrets=[],enemies=[],shots=[],particles=[],al
 let drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,moveWait:0,shotCooldown:0, pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};
 let pattern=[],nextSpawn=0,kills=0,leaks=0,switches=0,upgradeHistory=[],upgradeRanks={stable:0,emergency:0,precision:0,rubble:0},offeredUpgrades=[];   // switches: lane moves made, a count kept for tools/purity3d.js
 // Balance numbers in one place. Card values are read by the upgrade screen text, so the text never drifts from the rule.
-const BAL={droneRange:155,droneDmg:19,droneRate:.29,turretDmg:14,turretRate:.52,turretRange:165,moveBase:2.2,pulseRange:110,pulseDamage:75,pulseBase:11,pulseStun:.5,powerDownMove:1.5,shopDownTurret:1.35,opHeal:15,preview:5,
+const BAL={rubbleImm:2,refundCap:4,droneRange:155,droneDmg:19,droneRate:.29,turretDmg:14,turretRate:.52,turretRange:165,moveBase:2.2,pulseRange:110,pulseDamage:75,pulseBase:11,pulseStun:.5,powerDownMove:1.5,shopDownTurret:1.35,opHeal:15,preview:5,
  card:{
   // From rank 3 a card gains an effect that lower ranks do not have.
   // stable (echo): during the post-move burst the extra shots go to the lane the drone just left, while that lane has a target in range.
   // precision (pierce): turrets at the full bonus also hit the enemy behind their target.
   stable:n=>({moveBase:Math.max(.55,1.5-.3*(n-1)),droneRange:BAL.droneRange+15+15*(n-1),burstTime:1.0+.7*(n-1),burstRate:1.6,echo:n>=3?1:0}),
   precision:n=>({focusRamp:.25+.05*(n-1),focusCap:.6+.5*(n-1),pierce:n>=3?.3+.15*(n-3):0}),
-  emergency:n=>({pulseDamage:110+30*(n-1),pulseRange:165+20*(n-1),pulseBase:9,refund:1.4+.5*(n-1),pulseMin:3}),
+  // emergency: the range grows 10 a rank (20 until build 2026.11.13-9); the recharge counts at most refundCap machines hit (owner's choice 2026-11-14)
+  emergency:n=>({pulseDamage:110+30*(n-1),pulseRange:165+10*(n-1),pulseBase:9,refund:1.4+.5*(n-1),pulseMin:3}),
   rubble:n=>({rubbleSlow:2+1.2*(n-1),rubbleFactor:Math.max(.25,.55-.08*(n-1))})
  }};
 function baseEffects(){return{droneRange:BAL.droneRange,moveBase:BAL.moveBase,pulseDamage:BAL.pulseDamage,pulseBase:BAL.pulseBase,pulseRange:BAL.pulseRange,burstTime:0,burstRate:1,echo:0,focusRamp:0,focusCap:0,pierce:0,refund:0,pulseMin:BAL.pulseBase,rubble:0,rubbleSlow:0,rubbleFactor:1};}
@@ -420,7 +421,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.13-9';
+const BUILD='2026.11.13-10';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={active:false,renderer:null,events:[]};
@@ -514,7 +515,7 @@ const GOALS={
  bridge:{txt:'과부하 한 번으로 적 5기를 다리 아래로 떨어뜨리기',n:5,at:e=>knockable(e)},
  tunnel:{txt:'터널 안의 적 3기를 과부하 한 번으로 격파',n:3,at:e=>map.cover(e.lane,e.y)},
  cross:{txt:'건너온 적 4기를 과부하 한 번으로 격파',n:4,at:e=>!!e.crossed},
- hangar:{txt:'격납고 문을 9번 막기',n:9,count:'hangar'},
+ hangar:{txt:'격납고 문을 7번 막기',n:7,count:'hangar'},
  mortar:{txt:'포탄 8발 떨어뜨리기',n:8,count:'mortar'},
  grid:{txt:'과부하 한 번으로 적 8기 격파',n:8,at:e=>true},
  barrier:{txt:'역장 너머 구간의 적 4기를 과부하 한 번으로 격파',n:4,at:e=>inZ(e.y,[BARRIER.a,BARRIER.y])},
@@ -770,9 +771,9 @@ for(const k in stages){const add=[],every=k>1?2:3;let n=0;for(const ev of stages
 //  split (large): destroyed, it breaks into n small machines where it stood, each with hp of a small machine's hull (not when it falls off a bridge).
 //  medic (medium): repairs the other machines of its lane within r, rate of their hull per second (not the bosses); its own hull is hp of a medium's.
 // The schedule decides which machines: from chapter `from`, every `every`-th machine of the base type in that chapter (counted after the followers are added).
-//  shield, since 2026-11-14 (owner's choice): no machine of its lane can pass it, and the machines behind it take `guard` of the overload's damage.
+//  shield, since 2026-11-14 (owner's choice): the machines of its lane behind it take `guard` of the overload's damage. (For build 2026.11.13-9 no machine could pass it either; taken out in -10: it only bunched machines up for the overload.)
 const FOE={shield:{name:'방패형',base:'grunt',from:4,every:5,pulse:.25,guard:.5,col:'#9fd4ff'},split:{name:'분열형',base:'brute',from:6,every:3,n:2,hp:.6,col:'#ffb36b'},medic:{name:'수리형',base:'grunt',from:9,every:7,r:80,rate:.1,hp:.8,col:'#9be38f'}};
-FOE.shield.lesson=`다른 적은 방패형을 앞질러 가지 못합니다. 방패형 뒤의 적은 과부하 피해를 ${FOE.shield.guard>0?pct(1-FOE.shield.guard)+' 덜 받고':'받지 않고'}, 방패형 자신은 ${pct(1-FOE.shield.pulse)}를 막습니다. 다리에서도 떨어지지 않습니다. 사격으로 먼저 부수세요`;
+FOE.shield.lesson=`같은 전선에서 방패형 뒤에 있는 적은 과부하 피해를 ${FOE.shield.guard>0?pct(1-FOE.shield.guard)+' 덜 받고':'받지 않고'}, 방패형 자신은 ${pct(1-FOE.shield.pulse)}를 막습니다. 다리에서도 떨어지지 않습니다. 사격으로 먼저 부수세요`;
 FOE.split.lesson=`부서지면 그 자리에서 소형 적 ${FOE.split.n}기로 갈라집니다. 방어선에서 먼 곳에서 부수세요`;
 FOE.medic.lesson=`같은 전선의 가까운 적을 초마다 장갑의 ${pct(FOE.medic.rate)}씩 수리합니다. 거대 병기는 수리하지 못합니다. 먼저 부수세요`;
 for(const k in stages){const c={grunt:0,brute:0};for(const ev of stages[k]){const t=ev[2];if(!(t in c))continue;const i=++c[t];
@@ -783,7 +784,7 @@ for(const k in stages){const c={grunt:0,brute:0};for(const ev of stages[k]){cons
 //  carrier: while it lives, every `every` s it sets down n small machines behind it (at most `max` times).
 //  ram: every `cycle` s it glows for `warn` s, then charges for `dash` s at k times its speed (the first charge `first` s after it appears).
 const BOSSK={shield:{name:'방패 거대 병기'},split:{name:'분열 거대 병기'},medic:{name:'수리 거대 병기'},carrier:{name:'운반 병기',every:5,n:2,max:6,col:'#ffc46b'},ram:{name:'돌진 병기',cycle:8,warn:1,dash:1.5,k:2.5,first:4,col:'#ff5a46'}};
-BOSSK.shield.lesson=`방패형처럼 다른 적이 앞질러 가지 못하고, 그 뒤의 적은 과부하 피해를 ${FOE.shield.guard>0?pct(1-FOE.shield.guard)+' 덜 받습니다':'받지 않습니다'}. 자신은 과부하 피해의 ${pct(1-FOE.shield.pulse)}를 막습니다`;
+BOSSK.shield.lesson=`방패형처럼 같은 전선에서 그 뒤에 있는 적은 과부하 피해를 ${FOE.shield.guard>0?pct(1-FOE.shield.guard)+' 덜 받습니다':'받지 않습니다'}. 자신은 과부하 피해의 ${pct(1-FOE.shield.pulse)}를 막습니다`;
 BOSSK.split.lesson=`부서지면 그 자리에서 대형 적 ${FOE.split.n}기로 갈라집니다`;
 BOSSK.medic.lesson=`같은 전선의 가까운 적을 초마다 장갑의 ${pct(FOE.medic.rate)}씩 수리합니다. 먼저 부수세요`;
 BOSSK.carrier.lesson=`살아 있는 동안 ${BOSSK.carrier.every}초마다 소형 적 ${BOSSK.carrier.n}기를 내려놓습니다. 빨리 부술수록 적이 덜 나옵니다`;
@@ -793,7 +794,7 @@ const bossName=e=>e.final?'최종 병기':e.kind&&BOSSK[e.kind]?BOSSK[e.kind].na
 const foeKey=e=>e.type==='boss'?'boss_'+e.kind:e.kind==='shield'?'shield2':e.kind,foeInfo=e=>e.type==='boss'?BOSSK[e.kind]:FOE[e.kind];
 const SPEED_VAR=.12;   // every machine but a boss walks a little faster or slower than its kind (±12%, owner's choice 2026-11-14)
 let splitQ=[];   // split machines destroyed since the last update: they break apart there (flushSplits), so no list is changed while it is being walked
-const HP_WAVE=.06,HP_SCALE=.85,RARE_P=.015,OP_HP=[0,1,1,1.18,1.32,1.17,1.12,1.34,1.5,1.45,1.65,1.41,1.52,1.47,1.66,1.33,1.88];   // hull per chapter, set by the balance bots for build 2026.11.13-9 (four and five attacks a chapter, hull +HP_WAVE each attack, more bosses)
+const HP_WAVE=.06,HP_SCALE=.85,RARE_P=.015,OP_HP=[0,1,1,1.18,1.32,1.16,1.08,1.27,1.47,1.3,1.55,1.38,1.4,1.37,1.46,1.26,1.75];   // hull per chapter, set by the balance bots for build 2026.11.13-9 (four and five attacks a chapter, hull +HP_WAVE each attack, more bosses) and again for -10 (rubble and emergency trimmed)
 const WAVES={};for(let k=1;k<=TOTAL_OPS;k++){const len=k===1?17:k===2?18:22;WAVES[k]=Array.from({length:NATT(k)-1},(_,i)=>len*(i+1));}   // the attacks inside a chapter change at these seconds
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
 // what a new run and a new chapter both start from: an empty field, both facilities whole
@@ -860,11 +861,6 @@ function knockOff(e,src){e.fell=true;ruleMark(e);ev3({t:'fall',e});damageEnemy(e
 function boosted(e){ruleMark(e);return map.boostK;}   // boost rails
 function slowed(e){ruleMark(e);return map.slowK;}   // a detour
 // A shut gate: machines that had not passed it at the start of the frame queue up in front of it, each a body length behind the one ahead.
-// shields (2026-11-14): no machine of a lane gets past a shield ahead of it; the ones that catch up queue behind it a body length apart, like at a shut gate
-function shieldHold(){for(let l=0;l<2;l++){if(!enemies.some(e=>e.hp>0&&e.lane===l&&e.kind==='shield'))continue;
- const P=e=>e.py===undefined?e.y:e.py,q=enemies.filter(e=>e.hp>0&&e.lane===l).sort((a,b)=>P(b)-P(a));let front=null;   // in the order they stood at the frame's start; front: the queue's last body (a shield starts one)
- for(const e of q){if(front){const lim=front.y-(TYPES[front.type].r+TYPES[e.type].r+3);if(e.y>lim)e.y=P(e)<=lim?lim:Math.min(e.y,P(e));if(e.y>=lim-.01)front=e;}   // one already inside the gap (come over from the other lane) cannot move up
-  if(e.kind==='shield')front=e;}}}
 function gateHold(){for(let l=0;l<2;l++){if(!gateShut(l))continue;const q=enemies.filter(e=>e.hp>0&&e.lane===l&&e.py<=GATE.y-TYPES[e.type].r+.01).sort((a,b)=>b.y-a.y);let lim=GATE.y,prev=null;
  for(const e of q){lim=prev?Math.min(lim,prev.y-(TYPES[prev.type].r+TYPES[e.type].r+3)):GATE.y-TYPES[e.type].r;if(e.y>lim){e.y=Math.max(lim,Math.min(e.py,e.y));ruleMark(e);}prev=e;}}}
 // The drone's target: its own lane, and where the lanes run side by side (map.shoot) also the other lane's machines in that stretch.
@@ -872,9 +868,10 @@ function pickDrone(){let e=pickTarget(drone.lane,drone.y,DR());if(map.shoot){con
 function pickTarget(lane,y,range,skip,nearOnly){let chosen=null,best=-Infinity,hid=null,hidP=-Infinity;for(const e of enemies){if(e.lane!==lane||e.hp<=0||e===skip)continue;if(nearOnly&&!map.near(e.y))continue;let d=Math.abs(e.y-y);if(d>range)continue;let priority=e.y+(e.type==='boss'?6:0);if(map.cover(e.lane,e.y)||behindBarrier(e)){if(priority>hidP){hid=e;hidP=priority;}continue;}if(priority>best){chosen=e;best=priority;}}if(hid&&hidP>best)ruleMark(hid);return chosen;}   // a hidden machine counts for the tunnel only when it would have been the target
 // moveWait keeps the full wait this move set (stimpack and a dead power plant change it); the view draws the wait ring against it
 function switchLane(lane){if(holdState){if(holdState.need!=='move'+lane||performance.now()-holdState.t0<350)return;drone.moveCooldown=0;releaseHold();}else if(drill&&drill.lockMove)return;if(phase!=='battle'||paused)return;if(drone.lane===lane)return;if(drone.moveCooldown>.02){showToast('이동 대기 중',750);return;}const from=drone.lane;drone.lane=lane;drone.stay=0;drone.burst=effects.burstTime;drone.echoLane=from;drone.echoCool=BAL.droneRate;drone.moveCooldown=drone.moveWait=effects.moveBase*(facilities[0]<=0?BAL.powerDownMove:1)*(aid.stim>0?STIM.move:1);switches++;ev3({t:'move',from,to:lane,rubble:!!effects.rubble});
- if(effects.rubble){for(const e of enemies)if(e.lane===from&&e.hp>0)e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');updateControls();}
+ // rubble (2026-11-14, owner's choice): only the machines within the drone's reach of where it left, not one still slowed, nor one whose slow ended less than rubbleImm s ago
+ if(effects.rubble){const r=DR();for(const e of enemies)if(e.lane===from&&e.hp>0&&Math.abs(e.y-drone.y)<=r&&!(e.slow>0)&&!(e.slowImm>0))e.slow=effects.rubbleSlow;alerts.push({lane:from,y:drone.y,life:.6,r:12});burst(LANES[from],drone.y,16,'#c9a27a');}burst(drone.x,drone.y,10,COLORS.teal);sfx('move');updateControls();}
 function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||performance.now()-holdState.t0<350)return;releaseHold();}else if(pulseLock)return;if(phase!=='battle'||paused)return;if(drone.pulseCooldown>.02)return;if(map.grid&&grid<1){showToast('전력 부족 · 축전이 차기를 기다리세요',1100);return;}const close=enemies.filter(e=>e.hp>0&&!behindBarrier(e)&&Math.abs(e.y-drone.y)<PR()&&(e.lane===drone.lane||map.near(e.y)));const wet=map.flood&&Math.abs(drone.y-Math.max(FLOOD[0],Math.min(FLOOD[1],drone.y)))<PR()?enemies.filter(e=>e.hp>0&&inZ(e.y,FLOOD)&&!close.includes(e)&&!behindBarrier(e)):[];if(!close.length&&!wet.length){showToast('타격 범위에 적이 없습니다',1000);return;}if(map.grid)grid--;const goal=goalOf(op),gl=goal&&!goalNow&&!goal.count&&!drill?close.concat(wet):null,gat=gl&&goal.at?gl.map(goal.at):null;   // the chapter's goal is judged on where the machines are now
- drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*close.length):effects.pulseBase;if(effects.refund>0)showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(knockable(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
+ drone.pulseCooldown=effects.refund>0?Math.max(effects.pulseMin,effects.pulseBase-effects.refund*Math.min(close.length,BAL.refundCap)):effects.pulseBase;if(effects.refund>0)showToast('적중 '+close.length+' · 재충전 '+drone.pulseCooldown.toFixed(1)+'초',900);let fell=0;for(const e of close){e.stun=BAL.pulseStun;if(e.lane!==drone.lane)ruleMark(e);if(knockable(e)){fell++;knockOff(e,'pulse');}else damageEnemy(e,effects.pulseDamage,drone.x,drone.y,'pulse');}if(fell)showToast('다리 아래로 '+fell+'기 추락',1100);if(map.flood){for(const e of wet){ruleMark(e);e.stun=BAL.pulseStun;damageEnemy(e,effects.pulseDamage*MAPK.flood.k,LANES[e.lane],e.y,'shock');}if(wet.length){ev3({t:'shock',n:wet.length});showToast('감전 · '+wet.length+'기',1000);}}   // the overload runs through the water
  chap.pulses++;chap.maxHit=Math.max(chap.maxHit,close.length+wet.length);
  if(map.cross)lureN=Math.max(lureN,close.filter(e=>e.crossed&&e.hp<=0).length);   // a lure kill is named when the multi-kill window closes (settleMulti)
  if(gl&&(goal.both?gl.some(e=>e.hp<=0&&e.lane===0)&&gl.some(e=>e.hp<=0&&e.lane===1)&&gl.filter(e=>e.hp<=0).length>=goal.n:gl.filter((e,i)=>gat[i]&&(goal.hit||e.hp<=0)).length>=goal.n))goalMet();
@@ -908,10 +905,9 @@ function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);
    else e.y+=e.speed*dt*(e.stun>0?.35:1)*(e.slow>0?effects.rubbleFactor:1)*(aid.wall>0&&e.lane===aid.wallLane?0:1)*(aid.jam>0?.5:1)*(map.slow(e.lane,e.y)?slowed(e):1)*(map.boost(e.lane,e.y)?boosted(e):1)*(map.storm?STORM.speed:1)*(e.ramDash?BOSSK.ram.k:1);
    if(map.cross&&e.type!=='boss'&&e.type!=='brute'&&!e.crossed&&map.zone(e.lane,e.y)&&e.lane!==drone.lane){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e});}   // the crossover: small and medium machines come over to the drone's lane, once
    if(map.flee&&e.type==='runner'&&!e.crossed&&map.zone(e.lane,e.y)&&e.lane===drone.lane){e.crossed=1;e.from=e.lane;e.lane=1-e.lane;e.x=LANES[e.lane];e.crossT=CROSS_T;ruleMark(e);ev3({t:'cross',e,flee:1});}   // the escape route: small machines run away from the drone's lane, once
-   e.flash=Math.max(0,e.flash-dt);if(e.healT>0)e.healT-=dt;e.stun=Math.max(0,e.stun-dt);e.slow=Math.max(0,(e.slow||0)-dt);if(e.y>=LEAK_Y&&e.hp>0){e.hp=-999;enemyLeak(e);}}
+   e.flash=Math.max(0,e.flash-dt);if(e.healT>0)e.healT-=dt;e.stun=Math.max(0,e.stun-dt);if(e.slow>0){e.slow-=dt;if(e.slow<=0){e.slow=0;e.slowImm=BAL.rubbleImm;}}else if(e.slowImm>0)e.slowImm-=dt;if(e.y>=LEAK_Y&&e.hp>0){e.hp=-999;enemyLeak(e);}}
   for(const m of enemies)if(m.kind==='medic'&&m.hp>0)for(const q of enemies)if(q!==m&&q.hp>0&&q.lane===m.lane&&q.type!=='boss'&&q.hp<q.maxHp&&Math.abs(q.y-m.y)<=FOE.medic.r){q.hp=Math.min(q.maxHp,q.hp+q.maxHp*FOE.medic.rate*dt);q.healT=.3;}   // medics repair (q.healT: for the drawing)
   if(map.gate)gateHold();
-  shieldHold();
   for(const c of enemies.filter(q=>q.hp>0&&q.type==='boss'&&(q.kind==='carrier'||q.kind==='ram'))){
    if(c.kind==='carrier'){const K=BOSSK.carrier;c.dropT+=dt;if(c.dropT>=K.every&&c.drops<K.max&&c.y>LANE_TOP+5){c.dropT-=K.every;c.drops++;for(let i=0;i<K.n;i++)spawn(c.lane,'runner',null,{child:1,wv:c.wv,y:Math.max(LANE_TOP,c.y-24-10*i)});ev3({t:'carrier',e:c});sfx('surge_warn',0,1.45,.4);}}
    else{const K=BOSSK.ram;c.ramT+=dt;const u=c.ramT-K.first+K.warn,ph=u<0?-1:u%K.cycle,was=c.ramDash;c.ramWarn=ph>=0&&ph<K.warn;c.ramDash=ph>=K.warn&&ph<K.warn+K.dash;if(c.ramDash&&!was){ev3({t:'ram',e:c});sfx('boss_warn',0,.8,.6);}}}
@@ -936,9 +932,9 @@ function rankCap(){return RANK_STEP*(Math.floor(Math.min(...Object.values(upgrad
 function cardDescription(id){const n=upgradeRanks[id]+1,a=BAL.card[id](n),b=n>1?BAL.card[id](n-1):null,f1=v=>v.toFixed(1),f2=v=>v.toFixed(2),pc=v=>Math.round(v*100)+'%';
  switch(id){
  case 'stable':return (!b?`이동 대기 ${BAL.moveBase}초 → ${f1(a.moveBase)}초 · 이동 후 ${f1(a.burstTime)}초간 기체 공격 속도 ×${a.burstRate} · 사거리 +${a.droneRange-BAL.droneRange}`:`이동 대기 ${f2(b.moveBase)} → ${f2(a.moveBase)}초 · 이동 후 빠른 사격 ${f1(b.burstTime)} → ${f1(a.burstTime)}초 · 사거리 +${a.droneRange-b.droneRange}`)+(n<3?' · 3단계부터 이동 직후 떠난 전선도 사격':n===3?' · 새 효과: 이동 직후 늘어난 사격이 방금 떠난 전선의 적도 공격':' · 떠난 전선 사격 시간도 함께 늘어남');
- case 'emergency':return !b?`과부하 피해 ${BAL.pulseDamage} → ${a.pulseDamage} · 범위 ${BAL.pulseRange} → ${a.pulseRange} · 맞힌 적 1기당 재충전 ${f1(a.refund)}초 단축 (기본 ${a.pulseBase}초, 최소 ${a.pulseMin}초)`:`피해 ${b.pulseDamage} → ${a.pulseDamage} · 범위 ${b.pulseRange} → ${a.pulseRange} · 1기당 단축 ${f1(b.refund)} → ${f1(a.refund)}초`;
+ case 'emergency':return !b?`과부하 피해 ${BAL.pulseDamage} → ${a.pulseDamage} · 범위 ${BAL.pulseRange} → ${a.pulseRange} · 맞힌 적 1기당(${BAL.refundCap}기까지) 재충전 ${f1(a.refund)}초 단축 (기본 ${a.pulseBase}초, 최소 ${a.pulseMin}초)`:`피해 ${b.pulseDamage} → ${a.pulseDamage} · 범위 ${b.pulseRange} → ${a.pulseRange} · 1기당 단축 ${f1(b.refund)} → ${f1(a.refund)}초`;
  case 'precision':return (!b?`기체가 한 전선에 머무는 동안 양쪽 포탑이 1초마다 +${pc(a.focusRamp)}씩 빨라짐 (최대 +${pc(a.focusCap)}) · 기체가 이동하면 처음부터`:`최대 +${pc(b.focusCap)} → +${pc(a.focusCap)} · 1초마다 +${pc(b.focusRamp)} → +${pc(a.focusRamp)}`)+(n<3?' · 3단계부터 최대일 때 포탑 관통':n===3?` · 새 효과: 가속이 최대일 때 포탑이 뒤의 적 1기도 공격 (피해 ${pc(a.pierce)})`:` · 관통 피해 ${pc(b.pierce)} → ${pc(a.pierce)}`);
- case 'rubble':return !b?`기체가 떠난 전선의 적 ${f1(a.rubbleSlow)}초 감속 (이동 속도 ${pc(a.rubbleFactor)})`:`감속 ${f1(b.rubbleSlow)} → ${f1(a.rubbleSlow)}초 · 이동 속도 ${pc(b.rubbleFactor)} → ${pc(a.rubbleFactor)}`;
+ case 'rubble':return !b?`기체가 전선을 떠날 때 그 자리 근처의 적 ${f1(a.rubbleSlow)}초 감속 (이동 속도 ${pc(a.rubbleFactor)}) · 감속이 끝난 적은 ${BAL.rubbleImm}초 동안 다시 걸리지 않음`:`감속 ${f1(b.rubbleSlow)} → ${f1(a.rubbleSlow)}초 · 이동 속도 ${pc(b.rubbleFactor)} → ${pc(a.rubbleFactor)}`;
  }
 }
 function chapterStars(){const n=!stageHurt?3:facilities[0]>0&&facilities[1]>0?2:1;stars.push(n);score+=n*250;return n;}

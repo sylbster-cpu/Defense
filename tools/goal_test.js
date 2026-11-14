@@ -20,7 +20,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   // chapter 8 (build 2026.11.13-3 schedule, four attacks since 2026.11.13-9: 8-3 added before the boss attack)
   const c8=JSON.parse(await T("(()=>{const b=WAVES[8],w=Array(b.length+1).fill(0);for(const ev of stages[8])w[b.filter(x=>ev[0]>=x).length]++;return JSON.stringify({hp8:OP_HP[8],n:stages[8].length,w,boss:stages[8].filter(e=>e[2]==='boss').map(e=>b.filter(x=>e[0]>=x).length+1),all:OP_HP.join(',')});})()"));
   ck('chapter 8: four attacks (22/30/32 as before, then 32 new and the boss attack), one boss in 8-4',c8.n===116&&c8.w.slice(0,2).join('/')==='22/30'&&c8.w.length===4&&c8.boss.join()==='4',c8);
-  ck('hull per chapter (set by the balance bots for build 2026.11.13-9)',c8.all==='0,1,1,1.18,1.32,1.17,1.12,1.34,1.5,1.45,1.65,1.41,1.52,1.47,1.66,1.33,1.88',c8.all);
+  ck('hull per chapter (set by the balance bots for build 2026.11.13-10)',c8.all==='0,1,1,1.18,1.32,1.16,1.08,1.27,1.47,1.3,1.55,1.38,1.4,1.37,1.46,1.26,1.75',c8.all);
   // leaving the page opens the settings; closing them resumes
   await T("mute=true;"+START(3)+"0");
   const t0=+await T('stageTime');await p.waitForTimeout(300);const t1=+await T('stageTime');
