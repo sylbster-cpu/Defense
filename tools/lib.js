@@ -34,7 +34,7 @@ function checks(){
 const bot={
  threat:"[0,1].map(l=>enemies.filter(e=>e.lane===l&&e.hp>0&&e.y>DRONE_Y-190&&!map.cover(e.lane,e.y)).reduce((a,e)=>a+TYPES[e.type].value,0))",
  act:n=>"if(drone.moveCooldown<=.01&&c[1-drone.lane]>c[drone.lane])switchLane(1-drone.lane);"+
-  "{const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&Math.abs(e.y-drone.y)<effects.pulseRange).length;if(drone.pulseCooldown<=.01&&inR>="+n+")pulse();}",
+  "{const inR=enemies.filter(e=>e.hp>0&&(e.lane===drone.lane||map.near(e.y))&&!map.cover(e.lane,e.y)&&!(typeof behindBarrier==='function'&&behindBarrier(e))&&Math.abs(e.y-drone.y)<(typeof PR==='function'?PR():effects.pulseRange)).length;if(drone.pulseCooldown<=.01&&inR>="+n+")pulse();}",
  useItem:"if(bag.length&&(c[0]+c[1]>=5||facilities[0]<60||facilities[1]<60)){const id=bag[0];"+
   "if(id==='magnet'){aim=0;useAim(drone.lane,DRONE_Y-30);}"+
   "else if(id==='orbital'){const l=c[1]>c[0]?1:0;let lead=null;for(const e of enemies)if(e.hp>0&&e.lane===l&&(!lead||e.y>lead.y))lead=e;aim=0;useAim(l,lead?lead.y-20:DRONE_Y);}"+

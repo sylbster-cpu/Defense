@@ -92,8 +92,6 @@ R3D.boot=function(G,field){
   // A stretch shorter than one unit at an end of the range is dropped: it is not worth a spike across the other lane.
   reach(out,count,x0,step){const near=G.map.near;for(let i=0;i<count;i++)out[i]=near(G.LEAK_Y-(x0+i*step)/U)?1:0;
    for(let i=0,j;i<count;i=j){for(j=i;j<count&&out[j]===out[i];j++);if(out[i]&&(j-i)*step<1)out.fill(0,i,j);}},
-  // the fire vents' grates: GRATES of them along the vent stretch on each lane (maps.js draws them, fx.js lights them)
-  GRATES:4,grateY(i){const V=G.VENT;return V.a+(i+.5)*(V.b-V.a)/ctx.GRATES;},
   // world position of the support drone body / an enemy centre / a turret muzzle pivot
   dronePos(out){return out.set(A.droneX,A.droneH,ctx.gz(G.drone.x));},
   enemyPos(e,out){const d=R3D.ENEMY[e.type]||R3D.ENEMY.grunt;const x=ctx.wx(e.y);let z=ctx.laneZAt(e.lane,x);

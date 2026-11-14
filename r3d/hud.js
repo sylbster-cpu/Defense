@@ -338,7 +338,7 @@ function practiceHint(G,t){
 let comboFx=0,banner='',bannerN=0,bannerT=0,bannerSub=null,bannerCol=null,bq=[],brokeT=0,cbKey='',cbW=0,cbW2=0,hubW=0,hubH=0,hubB=0,scKey=-1,scStr='';
 // bottom of the DOM hub chip in HUD coordinates (it sits lower on narrow screens): the combo goes under it. Measured once per layout, while the chip is shown.
 function hubBottom(){if(L.w!==hubW||L.h!==hubH){const hb=document.querySelector('.hubchip');if(hb&&hb.offsetParent){const r=hb.getBoundingClientRect(),cr=c.canvas.getBoundingClientRect();hubB=cr.width>0?(r.bottom-cr.top)*L.w/cr.width:0;hubW=L.w;hubH=L.h;}}return hubB;}const NUMS=[],NUM_MAX=28;
-const NUM_COL={pulse:'#ffd38a',mine:'#ff9a52',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a',vent:'#ff9a52'};
+const NUM_COL={pulse:'#ffd38a',shock:'#9fdcff',chain:'#bfe8ff',orbital:'#ff8a5a'};
 function addNum(e,txt,col,big){if(!e)return;ctx.enemyPos(e,v);let n=NUMS.length<NUM_MAX?{}:NUMS.shift();n.x=v.x;n.y=v.y+(ENEMY[e.type]||ENEMY.grunt).h;n.z=v.z;n.t=0;n.txt=txt;n.col=col;n.big=big;n.dx=(Math.random()-.5)*14;NUMS.push(n);}
 function showBanner(ev){banner=ev.name||'';bannerN=ev.n|0;bannerSub=ev.sub!=null?ev.sub:null;bannerCol=ev.col||null;bannerT=1.3;}
 function feel(dt,t,G){
@@ -360,12 +360,19 @@ function feel(dt,t,G){
   const f=Math.max(0,k.t/G.ORB.delay),r=(10+40*f)*ui;c.strokeStyle='rgba(255,120,80,.95)';c.lineWidth=2.5;c.setLineDash([6,5]);c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();c.setLineDash([]);
   c.beginPath();c.moveTo(p.x-r-6,p.y);c.lineTo(p.x-r+6,p.y);c.moveTo(p.x+r-6,p.y);c.lineTo(p.x+r+6,p.y);c.moveTo(p.x,p.y-r-6);c.lineTo(p.x,p.y-r+6);c.moveTo(p.x,p.y+r-6);c.lineTo(p.x,p.y+r+6);c.stroke();}
 }
+// 포격장: a red reticle over the turret a mortar shell will hit; it closes as the shell falls. Drawn in practice too (the rule is the map's).
+function shellMarks(G){const S=G.shells;if(!S||!S.length)return;
+ for(const k of S){if(k.lane!==0&&k.lane!==1)continue;ctx.turretPos(k.lane,v);ctx.project(v,p);if(!(p.z>-1&&p.z<1))continue;
+  const f=Math.max(0,Math.min(1,k.t/G.MORTAR.fall)),r=(12+34*f)*ui;c.globalAlpha=.16;c.fillStyle='#ff3b2a';c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.fill();c.globalAlpha=1;
+  c.strokeStyle='#ff3b2a';c.lineWidth=2.5*ui;c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.stroke();
+  c.beginPath();c.moveTo(p.x-r-7*ui,p.y);c.lineTo(p.x-r+7*ui,p.y);c.moveTo(p.x+r-7*ui,p.y);c.lineTo(p.x+r+7*ui,p.y);c.moveTo(p.x,p.y-r-7*ui);c.lineTo(p.x,p.y-r+7*ui);c.moveTo(p.x,p.y+r-7*ui);c.lineTo(p.x,p.y+r+7*ui);c.stroke();}}
 function frame(dt,t,G){
  if(L.hudScale>0&&L.hudScale!==s)metrics();
  c.setTransform(s,0,0,s,0,0);c.clearRect(0,0,L.w+1,L.h+1);
  // the context state is set again every frame: a resized or restored canvas forgets it
  c.globalAlpha=1;c.textBaseline='middle';c.lineJoin='round';c.lineCap='butt';curFont='';
  const battle=G.phase==='battle',side=L.mode==='side';
+ if(battle&&G.map&&G.map.storm){c.fillStyle='rgba(196,150,92,.13)';c.fillRect(0,0,L.w,L.h);}   // 모래폭풍: the haze, under every mark
  if(facFx[0]>0)facFx[0]-=dt*2.5;if(facFx[1]>0)facFx[1]-=dt*2.5;if(waveFx>0)waveFx-=dt;
  let warn=false,pu=0;
  if(battle){scanIncoming(G);warn=surgeNow(G);if(warn){pu=.5+.5*Math.sin(t*9.5);surgeGlow(side,pu);}}
@@ -374,7 +381,7 @@ function frame(dt,t,G){
  if(battle){tray(G,0,side,warn,pu);tray(G,1,side,warn,pu);turretBonus(G,side);}
  opText(G);
  if(G.hold)practiceHint(G,t);
- if(battle){moveRing(G);rareMarks(G,t);aidMarks(G,t);dropMarks(G,t);if(!G.drill)feel(dt,t,G);}
+ if(battle){shellMarks(G);moveRing(G);rareMarks(G,t);aidMarks(G,t);dropMarks(G,t);if(!G.drill)feel(dt,t,G);}
  screenFx(dt);
  if(battle&&G.paused)pauseVeil();
 }

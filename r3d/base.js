@@ -334,10 +334,10 @@ const TMP_S=FS*1.12,tmp=(()=>{const g=new THREE.Group(),m=glowMat();g.visible=fa
 function updTemp(dt,t,G){const a=G.aid,T=tmp,on=G.phase==='battle'&&!!a&&a.turret>0;
  if(!on){T.g.visible=false;T.on=false;return;}
  if(!T.on||T.lane!==a.turretLane){T.on=true;T.lane=a.turretLane;T.pop=0;T.yaw=ctx.L.laneZ[T.lane]>0?-.46:.46;T.kick=T.flash=0;}
- const l=T.lane,Y=G.DRONE_Y,x=ctx.wx(Y),z=ctx.laneZAt(l,x)+ctx.tmpSide(l),R=G.BAL.turretRange,en=G.enemies,cov=G.map&&G.map.cover;
+ const l=T.lane,Y=G.DRONE_Y,x=ctx.wx(Y),z=ctx.laneZAt(l,x)+ctx.tmpSide(l),R=G.BAL.turretRange*(G.rangeK?G.rangeK():1),en=G.enemies,cov=G.map&&G.map.cover,bar=G.map&&G.map.barrier&&G.barrierUp()?G.BARRIER.y:-1;
  T.pop=Math.min(1,T.pop+dt*4);const end=Math.min(1,a.turret/.4),b=T.pop<1?1+.25*Math.sin(T.pop*Math.PI):1;
  T.g.visible=true;T.g.position.set(x,FPIV,z);T.g.scale.setScalar(TMP_S*Math.max(.05,Math.min(T.pop,end))*b);
- let e=null,best=-1e9;for(let j=0;j<en.length;j++){const q=en[j];if(q.hp<=0||q.lane!==l||Math.abs(q.y-Y)>R||(cov&&cov(q.lane,q.y)))continue;const pr=q.y+(q.type==='boss'?6:0);if(pr>best){best=pr;e=q;}}   // the game's own choice (pickTarget)
+ let e=null,best=-1e9;for(let j=0;j<en.length;j++){const q=en[j];if(q.hp<=0||q.lane!==l||Math.abs(q.y-Y)>R||(cov&&cov(q.lane,q.y))||q.y<bar)continue;const pr=q.y+(q.type==='boss'?6:0);if(pr>best){best=pr;e=q;}}   // the game's own choice (pickTarget)
  aimHead(T,e,x,FPIV,z,(ctx.L.laneZ[l]>0?-.46:.46)+Math.sin(t*.6)*.5,dt);recoil(T,dt);
  const blink=a.turret<2?(Math.sin(t*18)>0?1:.2):1;                                       // the last two seconds it blinks
  setG(T.mat,0,cW,blink);setG(T.mat,1,cHot,3.5*T.flash);setG(T.mat,2,cA,1.2*blink);
@@ -452,11 +452,13 @@ function updTurrets(dt,t,G){
  setG(bunkMat,0,cW,shopDown?(Math.sin(t*19)*Math.sin(t*6.3)>0?.4:.1):1);
  if(pierce){setG(bunkMat,1,cHot,1.7+.4*Math.sin(t*11));bunkMat.userData.lvl.y=1.1;}else{setG(bunkMat,1,cA,1.2);bunkMat.userData.lvl.y=frac;}
  for(let i=0;i<2;i++){const T=tur[i],e=tgt[i];let gt=G.turrets[i];if(gt&&gt.lane!==i)gt=G.turrets[1-i];
-  aimHead(T,e,T.x,T.y,T.z,T.home+Math.sin(t*.42+i*2.1)*.6,dt);                                     // at its target, or the idle sweep
+  const jam=!!gt&&gt.jam>0;
+  aimHead(T,jam?null:e,T.x,T.y,T.z,jam?T.yaw:T.home+Math.sin(t*.42+i*2.1)*.6,dt);                    // at its target, or the idle sweep
+  if(jam)T.pit=damp(T.pit,-.38,6,dt);                                                              // jammed by a mortar shell: the barrel hangs
   // the bridge also exposes flash (>0 right after a shot): use it as a backup for the hit event
   const gf=gt?gt.flash:0;if(gf>T.lastFlash+.05)fire(T);T.lastFlash=gf;
   recoil(T,dt);T.zap=Math.max(0,T.zap-dt*8);
-  const dim=shopDown?(Math.sin(t*23+i*3)*Math.sin(t*7.1)>0?.55:.14):1;
+  const dim=jam?.06:shopDown?(Math.sin(t*23+i*3)*Math.sin(t*7.1)>0?.55:.14):1;
   setG(T.mat,0,cW,1.0*dim);
   setG(T.mat,1,cHot,3.5*T.flash+(pierce?1.3+.3*Math.sin(t*11+i):0));
   if(pierce){setG(T.mat,2,cHot,1.7);T.lvl.z=1.1;}else{setG(T.mat,2,cA,1.2*dim);T.lvl.z=frac;}
@@ -465,6 +467,7 @@ function updTurrets(dt,t,G){
   if(T.flash>0){spr(poolB,mx,.3,mz,7.2,cWarm,.5*T.flash);spr(glowB,mx,my,mz,1.9+3*T.flash,cHot,T.flash);spr(glowB,mx+cy*.6,my,mz-sy*.6,1.2+1.7*T.flash,cW,T.flash);}
   if(pierce)spr(glowB,mx,my,mz,1.5+.3*Math.sin(t*11+i),cHot,.75);
   if(frac>0)spr(glowB,T.x,1.7,T.z,2.3+2.1*frac+(pierce?.4:0),pierce?cHot:cA,.2+.45*frac);          // the charge has to read at phone size, where the ring is a few pixels
+  if(jam){T.js=(T.js||0)-dt;if(T.js<=0){T.js=.22+Math.random()*.18;puff(T.x,T.y+.5,T.z,.55,cSmoke,cAsh);if(Math.random()<.4)sparks(T.x,T.y+.2,T.z,2,cZap,2.4);}}
   if(shopDown){T.tk-=dt;if(T.tk<=0){T.tk=.5+Math.random()*1.1;T.zap=1;if(Q>0||i)sparks(T.x-.5,T.y-.3,T.z,2,cZap,2.8);}
    if(T.zap>0)spr(glowB,T.x-.4,T.y,T.z,1.8,cZap,.7*T.zap);}
  }
@@ -490,11 +493,11 @@ return{
  update(dt,t,G){
   glowB.c=0;smokeB.c=0;poolB.c=0;
   // one pass over the enemies: turret targets (same rule as the game: in range, closest to the base) and distance to each gate
-  const en=G.enemies,TY=G.TURRET_Y,R=G.phase==='battle'?G.BAL.turretRange:-1;
+  const en=G.enemies,TY=G.TURRET_Y,R=G.phase==='battle'?G.BAL.turretRange*(G.rangeK?G.rangeK():1):-1,cov=G.map&&G.map.cover,bar=G.map&&G.map.barrier&&G.barrierUp()?G.BARRIER.y:-1;
   tgt[0]=tgt[1]=null;bestP[0]=bestP[1]=-1e9;near[0]=near[1]=1e9;
   for(let j=0;j<en.length;j++){const e=en[j],l=e.lane;if(e.hp<=0||(l!==0&&l!==1))continue;
    const d=G.LEAK_Y-e.y;if(d<near[l])near[l]=d;
-   if(Math.abs(e.y-TY)>R)continue;const p=e.y+(e.type==='boss'?6:0);if(p>bestP[l]){bestP[l]=p;tgt[l]=e;}}
+   if(Math.abs(e.y-TY)>R||(cov&&cov(l,e.y))||e.y<bar)continue;const p=e.y+(e.type==='boss'?6:0);if(p>bestP[l]){bestP[l]=p;tgt[l]=e;}}
   updFac(fac[0],dt,t,G);updFac(fac[1],dt,t,G);
   updGate(gate[0],0,dt,t,G);updGate(gate[1],1,dt,t,G);
   setG(runMat,0,cW,.9*fac[0].on);setG(runMat,1,cW,.9*fac[1].on);

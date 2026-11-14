@@ -532,12 +532,12 @@ function updateDrone(dt,t,G){
 
  // range marks: every range runs along the lane, so they are brackets across it. They slide with the drone and dim in transit.
  markA=damp(markA,moving?.3:1,moving?18:6,dt);
- const dx=ef.droneRange*A.U,k=markA*(.5+.12*odS);
+ const rk=G.rangeK?G.rangeK():1,dx=ef.droneRange*rk*A.U,k=markA*(.5+.12*odS);
  {const z0=z-ctx.off(dr.lane,x);bracket(x+dx,-1,z0+ctx.off(dr.lane,x+dx),k);bracket(x-dx,1,z0+ctx.off(dr.lane,x-dx),k);}   // each mark sits on the lane where it is, also on a bent lane
  // overload ready: dashed amber frame around everything it would hit, and a blinking lamp under the nose
  pulseA=damp(pulseA,live&&dr.pulseCooldown<=.01&&!G.pulseLock?1:0,8,dt);   // hidden until the overload has been introduced
  if(pulseA>.02){
-  const px=ef.pulseRange*A.U,hz=A.laneW/2-.75,k2=pulseA*markA*(.62+.2*Math.sin(t*4)),r=cAmber.r*k2,g=cAmber.g*k2,b=cAmber.b*k2,off=(t*1.1)%1.7;
+  const px=ef.pulseRange*rk*A.U,hz=A.laneW/2-.75,k2=pulseA*markA*(.62+.2*Math.sin(t*4)),r=cAmber.r*k2,g=cAmber.g*k2,b=cAmber.b*k2,off=(t*1.1)%1.7;
   pulseFrame(x,z,dr.lane,px,hz,off,r,g,b);
   const bl=(.5+.5*Math.sin(t*6))*pulseA*.8;_v.set(.55,-.6,0).applyMatrix4(drone.matrixWorld);sprite(_v.x,_v.y,_v.z,1,0,0,cAmber.r*bl,cAmber.g*bl,cAmber.b*bl,0);
  }

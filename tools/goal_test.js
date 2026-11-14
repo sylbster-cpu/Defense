@@ -2,6 +2,7 @@
 // 다시 도전(한 판에 한 번), 패배 기록, 유인 섬멸, 다음 작전 정찰, 맵별 특별 목표(열한 장 각각 달성과 하나 모자랄 때), 화면 맞춤(스크롤 없음).
 // 판 2026.11.13-4: 뒤로 가기(한 번 설정 열기, 두 번 닫기, 뒤로 가는 동안 기록을 쌓지 않음, 터치로 다시 두 칸), 바꾼 화면 문구.
 // 판 2026.11.13-5: 제목 화면(숨긴 작은 글씨, 주 버튼 글자 가운데, 문장마다 한 줄), 임시 포탑 사격의 이름표(temp).
+// 판 2026.11.13-7: 열여섯 장, 특별 목표 열다섯(지뢰밭·화염로 대신 격납고·포격장·변전소·역장·도주로·모래폭풍), 정찰과 승리는 16장 기준.
 // node tools/goal_test.js <게임 폴더 절대 경로> [출력 폴더(화면 사진, 생략 가능)]
 const { chromium } = require('playwright');const {hooked,inGame,checks}=require('./lib.js');const path=require('path'),fs=require('fs');
 const dir=path.resolve(process.argv[2]),out=process.argv[3]?path.resolve(process.argv[3]):null;if(out)fs.mkdirSync(out,{recursive:true});
@@ -17,7 +18,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   // chapter 8 numbers
   const c8=JSON.parse(await T("(()=>{const w=[0,0,0];let hp=0;for(const ev of stages[8]){w[waveIndex.call(null,ev[0])-1]||0;}const b=WAVES[8];for(const ev of stages[8])w[ev[0]<b[0]?0:ev[0]<b[1]?1:2]++;for(const ev of stages[8])hp+=Math.round(TYPES[ev[2]].hp*OP_HP[8]*(ev[2]==='boss'?1:HP_SCALE));return JSON.stringify({hp8:OP_HP[8],n:stages[8].length,w,hp,boss:stages[8].filter(e=>e[2]==='boss').length,others:OP_HP.filter((v,i)=>i!==8).join(',')});})()"));
   ck('chapter 8: hull 1.85, 84 machines in 22/30/32, one boss',c8.hp8===1.85&&c8.n===84&&c8.w.join('/')==='22/30/32'&&c8.boss===1,c8);
-  ck('other chapters keep their hull (chapter 10 is 1.85 since build 2026.11.13-6)',c8.others==='0,1,1,1.18,1.32,1.38,1.52,1.5,1.72,1.85,1.95,2.02',c8.others);
+  ck('other chapters keep their hull (sixteen chapters since build 2026.11.13-7)',c8.others==='0,1,1,1.18,1.32,1.38,1.52,1.5,1.6,1.85,1.85,1.95,1.75,1.95,1.9,2.6',c8.others);
   // leaving the page opens the settings; closing them resumes
   await T("mute=true;"+START(3)+"0");
   const t0=+await T('stageTime');await p.waitForTimeout(300);const t1=+await T('stageTime');
@@ -58,8 +59,8 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   ck('lure kill: three crossed machines in one overload are named and paid 50 each on top',l1.name==='유인 섬멸'&&l0.name==='동시 격파'&&l1.gain-l0.gain===150,{l1,l0});
   // special goals: every chapter from 2 on, met with exactly n, missed with n-1
   const G=JSON.parse(await T("JSON.stringify({count:goalCount(),one:!!goalOf(1),maps:Array.from({length:TOTAL_OPS},(_,i)=>goalOf(i+1)?MAPS[MAP_OF[i+1]].id:'-')})"));
-  ck('eleven special goals, none in chapter 1',G.count===11&&!G.one&&G.maps.filter(x=>x!=='-').length===11,G);
-  // each case places machines so that exactly k of them meet the goal's condition, then fires one overload (the mine case steps on a mine)
+  ck('fifteen special goals, none in chapter 1',G.count===15&&!G.one&&G.maps.filter(x=>x!=='-').length===15,G);
+  // each case places machines so that exactly k of them meet the goal's condition, then fires one overload (the counted goals, hangar and mortar, play out k events instead)
   const CASES={
    pinch:k=>`for(let i=0;i<k;i++)put(i%2,'runner',(MAPK.pinch.a+MAPK.pinch.b)/2+i*4,{hp:1});`,   // k in the gorge, the lanes taking turns
    detour:k=>`drone.lane=0;drone.x=LANES[0];for(let i=0;i<k;i++)put(0,'runner',345+i*15,{hp:1});put(0,'runner',300,{hp:1});`,   // the one at 300 is outside the detour
@@ -68,13 +69,17 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
    bridge:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',290+i*10,{});put(drone.lane,'brute',320,{hp:1});`,
    tunnel:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',245+i*15,{hp:1});put(drone.lane,'runner',360,{hp:1});`,
    cross:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',300+i*12,{hp:1,crossed:1});put(drone.lane,'runner',370,{hp:1});`,
-   mine:k=>`const m=mines.find(q=>q.lane===0);const y=m.y;for(let i=0;i<k;i++)put(0,'runner',i===0?y-1:y+4+i*6,{hp:1,speed:i===0?120:0});drone.lane=1;drone.x=LANES[1];update(1/30);`,   // one mine and what it catches; the goal counts mine kills over the chapter
+   hangar:k=>`for(let i=0;i<k;i++){const l=i%2;drone.lane=l;drone.x=LANES[l];hangarT[l]=stageTime;update(1/60);}`,   // the drone keeps k doors shut, one after the other
+   mortar:k=>`for(let i=0;i<k;i++){shells.push({lane:drone.lane,t:.001});update(1/60);}`,   // k shells come down on the drone's lane: it shoots each one down
+   grid:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',DRONE_Y-30+i*8,{hp:1});`,
+   barrier:k=>`stageTime=BARRIER.up+1;for(let i=0;i<k;i++)put(drone.lane,'runner',BARRIER.y-24+i*5,{hp:1});put(drone.lane,'runner',BARRIER.y+20,{hp:1});`,   // the barrier is down; the one past it is not counted
+   flee:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',300+i*12,{hp:1,crossed:1});put(drone.lane,'runner',370,{hp:1});`,
+   storm:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',DRONE_Y-25+i*8,{hp:1});`,
    flood:k=>`const c=(FLOOD[0]+FLOOD[1])/2;for(let i=0;i<k;i++)put(i%2,'brute',c-30+i*8,{hp:900});put(drone.lane,'brute',FLOOD[1]+40,{hp:900});`,
    boost:k=>`drone.lane=1;drone.x=LANES[1];for(let i=0;i<k;i++)put(1,'runner',345+i*15,{hp:1});put(1,'runner',300,{hp:1});`,
-   vent:k=>`for(let i=0;i<k;i++)put(drone.lane,'runner',240+i*14,{hp:1});put(drone.lane,'runner',360,{hp:1});`,
   };
   const run=async(id,k)=>JSON.parse(await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='${id}');${START('ch')}const g=goalOf(ch);const k=${k};const evs=[];const e0=ev3;ev3=o=>{evs.push(o);e0(o);};const s0=score;
-   ${CASES[id]('k')}if(!g.mine){drone.pulseCooldown=0;pulse();}ev3=e0;return JSON.stringify({met:goalNow,done:goalsDone.slice(),gain:score-s0,banner:evs.some(o=>o.t==='multi'&&o.name==='특별 목표 달성'),n:g.n,ch});})()`));
+   ${CASES[id]('k')}if(!g.count){drone.pulseCooldown=0;pulse();}ev3=e0;return JSON.stringify({met:goalNow,done:goalsDone.slice(),gain:score-s0,banner:evs.some(o=>o.t==='multi'&&o.name==='특별 목표 달성'),n:g.n,ch});})()`));
   for(const id of Object.keys(CASES)){const n=JSON.parse(await T(`JSON.stringify(GOALS['${id}'].n)`));const yes=await run(id,n),no=await run(id,n-1);
    ck(`goal ${id} (chapter ${yes.ch}): met with ${n}, not with ${n-1}`,yes.met&&yes.banner&&yes.done.join()===String(yes.ch)&&yes.gain>=300&&!no.met&&!no.done.length,{yes,no});}
   const one=JSON.parse(await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='pinch');${START('ch')}for(let i=0;i<6;i++)put(drone.lane,'runner',DRONE_Y-30+i*10,{hp:1});drone.pulseCooldown=0;pulse();return JSON.stringify({met:goalNow});})()`));
@@ -84,8 +89,8 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   // scouting on the upgrade screen
   const sc=await T(`(()=>{${START(7)}enemies=[];nextSpawn=pattern.length;stageHurt=true;update(1/30);return document.querySelector('.scout').textContent;})()`);
   ck('scouting names chapter 8, its machines, the boss and the goal',/다음 작전 · WAVE 8 샛길/.test(sc)&&/적 84기 · 소형 35 · 중형 38 · 대형 10 · 거대 병기/.test(sc)&&sc.includes('건너온 적 4기를 과부하 한 번으로 격파 (+300점)'),sc);
-  const sc11=await T(`(()=>{${START(11)}enemies=[];nextSpawn=pattern.length;update(1/30);return document.querySelector('.scout').textContent;})()`);
-  ck('scouting before the last chapter names the final machine',/WAVE 12 화염로/.test(sc11)&&/최종 병기/.test(sc11),sc11);
+  const sc15=await T(`(()=>{${START(15)}enemies=[];nextSpawn=pattern.length;update(1/30);return document.querySelector('.scout').textContent;})()`);
+  ck('scouting before the last chapter names the final machine',/WAVE 16 포격장/.test(sc15)&&/최종 병기/.test(sc15),sc15);
   const gl=await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='tunnel');${START('ch')}for(let i=0;i<3;i++)put(drone.lane,'runner',245+i*15,{hp:1});drone.pulseCooldown=0;pulse();enemies=[];nextSpawn=pattern.length;update(1/30);return document.querySelector('#overlayContent .report').textContent;})()`);
   ck('the upgrade screen reports a met goal',gl.includes('특별 목표 달성 · +300점'),gl);
   // retry: lose chapter 3 after two upgrades; the retry restores what chapter 3 began with, with the score cut by 20%
@@ -102,11 +107,11 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   ck('loss offers the one retry of the run',r.fin.phase==='finish'&&r.fin.again&&/WAVE 3-1부터 다시/.test(r.fin.againText)&&/점수 -20%/.test(r.fin.againText)&&r.fin.retryText==='처음부터 다시 출격',r.fin);
   ck('retry restores the chapter start (upgrades, items, hub, record) with the score cut by 20%',A.phase==='battle'&&A.op===3&&A.core===S.core&&JSON.stringify(A.bag)===JSON.stringify(S.bag)&&JSON.stringify(A.ranks)===JSON.stringify(S.ranks)&&A.hist===S.hist&&A.kills===S.kills&&A.leaks===S.leaks&&JSON.stringify(A.effects)===JSON.stringify(S.effects)&&A.score===Math.round(S.score*.8)&&A.retryUsed,{S,A});
   ck('second loss: no retry, plain restart, the report says the retry was used',r.fin2.phase==='finish'&&!r.fin2.again&&r.fin2.retryText==='다시 출격'&&r.fin2.report.includes('다시 도전 1회 사용'),r.fin2);
-  ck('loss record: breaches by lane and by attack, overloads',r.fin.report.includes('WAVE 3 돌파 · 발전소 쪽 1 · 정비소 쪽 2')&&r.fin.report.includes('공격별 · 3-1 0기 · 3-2 1기 · 3-3 2기')&&/과부하 0회 · 한 번에 최대 0기/.test(r.fin.report)&&/특별 목표 0 \/ 11/.test(r.fin.report),r.fin.report);
+  ck('loss record: breaches by lane and by attack, overloads',r.fin.report.includes('WAVE 3 돌파 · 발전소 쪽 1 · 정비소 쪽 2')&&r.fin.report.includes('공격별 · 3-1 0기 · 3-2 1기 · 3-3 2기')&&/과부하 0회 · 한 번에 최대 0기/.test(r.fin.report)&&/특별 목표 0 \/ 15/.test(r.fin.report),r.fin.report);
   const rec=await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='cross');beginRun();newStage(ch);holdState=null;hideCoach();pattern=[[1e9,0,'runner']];nextSpawn=0;enemies=[];
    for(let i=0;i<3;i++)put(drone.lane,'brute',DRONE_Y-30+i*15,{hp:900});drone.pulseCooldown=0;pulse();drone.pulseCooldown=0;put(drone.lane,'brute',DRONE_Y,{hp:900});pulse();core=0;update(1/30);return document.querySelector('#overlayContent .report').textContent;})()`);
   ck('loss record counts overloads and the most machines one struck',/과부하 2회 · 한 번에 최대 4기/.test(rec),rec);
-  const win=await T(`(()=>{${START(12)}stars=[1,1,1,1,1,1,1,1,1,1,1];enemies=[];nextSpawn=pattern.length;update(1/30);return JSON.stringify({phase,again:!!$('againBtn'),retry:$('retryBtn').textContent,rec:/돌파 · 발전소 쪽/.test(document.querySelector('#overlayContent .report').textContent)});})()`);
+  const win=await T(`(()=>{${START('TOTAL_OPS')}stars=Array(TOTAL_OPS-1).fill(1);enemies=[];nextSpawn=pattern.length;update(1/30);return JSON.stringify({phase,again:!!$('againBtn'),retry:$('retryBtn').textContent,rec:/돌파 · 발전소 쪽/.test(document.querySelector('#overlayContent .report').textContent)});})()`);
   ck('victory: no retry button and no loss record',JSON.parse(win).phase==='finish'&&!JSON.parse(win).again&&JSON.parse(win).retry==='다시 출격'&&!JSON.parse(win).rec,win);
   ck('no page errors (2D)',!errs.length,errs.slice(0,3).join(' | '));await p.close();}
  // ---------- back button (real page, real touches): the first back opens the settings, the second closes them, going back adds nothing ----------
@@ -145,7 +150,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   const w=JSON.parse(await T(`JSON.stringify({title:document.title,tag:document.querySelector('.title-tag').textContent,caps:FILM_CAPS.map(c=>c[2]),cards:Object.values(CARD_NAMES),multi:[3,4,5,8].map(MULTI_NAME),
    rules:MAPS.map(m=>m.rule).join(' '),repair:ITEMS.repair.desc,build:$('titleBuild').textContent})`));
   ck('wording: title, tagline, film captions, card names, multi-kill names',w.title==='중계선: 최후의 방어'&&w.tag.startsWith('전선은 둘, 지원 기체는 하나.')&&w.caps.join('/')==='전선은 둘/지원 기체는 하나/중앙 송신소를 지켜라'&&w.cards.join('/')==='기동 사격/비상 축전/협동 조준/잔해 살포'&&w.multi.join('/')==='동시 격파/동시 격파/대량 격파/섬멸'&&/^시험판 · /.test(w.build),w);
-  ck('wording: map rules and the repair text',w.rules.includes('협곡에서는 두 전선이 붙어 있어')&&w.rules.includes('물에 잠긴 적에게는')&&w.rules.includes('피해를 입습니다')&&w.rules.includes('바로 파괴됩니다')&&w.rules.includes('번집니다. 터진 지뢰는')&&!/(고|며|면서|어서|아서),/.test(w.rules)&&w.repair.startsWith('두 시설 가운데 더 부서진 쪽의'),w.rules.slice(0,120));
+  ck('wording: map rules and the repair text',w.rules.includes('협곡에서는 두 전선이 붙어 있어')&&w.rules.includes('물에 잠긴 적에게는')&&w.rules.includes('피해를 입습니다')&&w.rules.includes('바로 파괴됩니다')&&w.rules.includes('번갈아 노립니다')&&!/(고|며|면서|어서|아서),/.test(w.rules)&&w.repair.startsWith('두 시설 가운데 더 부서진 쪽의'),w.rules.slice(0,120));
   const up=await T(`(()=>{mute=true;$('title').hidden=true;reset();newStage(1);liveRun=true;phase='battle';pattern=[];nextSpawn=0;enemies=[];facilities=[0,100];update(1/30);return document.querySelector('#overlayContent').textContent;})()`);
   ck('wording: facility words on the upgrade screen (가동/정지), no 유지/붕괴/생존',up.includes('발전소 정지')&&up.includes('정비소 가동')&&!/유지|붕괴|생존/.test(up),up.slice(0,160));
   await p.close();}

@@ -14,5 +14,5 @@ const f=hooked(dir,'map');
  await T('paused=false;newStage(3);learned.maps.detour=true;enemies=[];pattern=[[1e9,0,"runner"]];nextSpawn=0;spawn(0,"brute");spawn(0,"brute");enemies[0].y=200;enemies[1].y=280;enemies[0].hp=enemies[1].hp=1e6;turrets=[];drone.lane=1;drone.x=LANES[1];');
  const a=await T('const y=[enemies[0].y,enemies[1].y];for(let i=0;i<30;i++)update(1/60);JSON.stringify([enemies[0].y-y[0],enemies[1].y-y[1]])');const d=JSON.parse(a);
  ck('detour: 30% slower inside the stretch (power-plant lane)',Math.abs(d[0]/d[1]-.7)<.03,d);
- ck('maps per chapter',await T('[1,2,3,4,5,6,7,8,9,10,11,12].map(i=>MAPS[MAP_OF[i]].id).join()')==='pylon,pinch,detour,wave,gate,bridge,tunnel,cross,mine,flood,boost,vent');ck('no errors',!errs.length,errs.slice(0,2));
+ ck('maps per chapter',await T('MAP_OF.slice(1).map(i=>MAPS[i].id).join()')==='pylon,pinch,detour,wave,gate,bridge,tunnel,cross,hangar,flood,flee,boost,barrier,storm,grid,mortar');ck('no errors',!errs.length,errs.slice(0,2));
  await b.close();end();})();

@@ -80,7 +80,7 @@ const RUN=`window.__trace=function*(o){
   return true;};
  const state=()=>{let q=phase+'|'+op+'|'+wave+'|'+core.toFixed(3)+'|'+facilities[0].toFixed(3)+','+facilities[1].toFixed(3)+'|'+score+'|'+combo+'|'+kills+'|'+leaks+'|'+drone.lane+'|'+drone.x.toFixed(2)+'|'+drone.pulseCooldown.toFixed(3)+'|'+drone.moveCooldown.toFixed(3)+'|'+bag.join(',')+'|'+drops.length+'|'+aim+'|'+enemies.length+'|'+strikes.length+'|'+fieldTurrets.length+'|'+(holdState?holdState.need:'')+'|'+stageTime.toFixed(3)+'|'+speed+'|'+(paused?1:0);
   let sy=0,sh=0;for(const e of enemies){sy+=e.y*(e.lane+1);sh+=e.hp;}q+='|'+sy.toFixed(2)+'|'+sh.toFixed(2);for(const k in aid)q+='|'+(+aid[k]).toFixed(3);
-  if(mines.length){let m=0;for(const z of mines)m+=z.arm;q+='|m'+m.toFixed(2);}return q;};
+  if(typeof shells!=='undefined')q+='|s'+shells.map(k=>k.lane+':'+k.t.toFixed(2)).join(',')+'|g'+grid+'|h'+hangarT.map(x=>x.toFixed(2)).join(',');return q;};
  if(o.sound){   // the title screen first. The music starts by itself once its file is read (in real time), so wait for it before the clock moves at all.
   for(let i=0;i<400&&!bgmSrc;i++)yield 'wait';if(!bgmSrc)throw new Error('the title music did not start '+JSON.stringify({bgm:prefs.bgm,mute,vol:prefs.vol,phase,loading:bgmLoading,buf:!!bgmBuf,ctx:!!audio}));
   const run=k=>{for(let i=0;i<k;i++)__clock.step(1000/30);};

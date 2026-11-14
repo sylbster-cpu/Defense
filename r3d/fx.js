@@ -403,7 +403,7 @@ function onHit(ev){
  const d=ENEMY[e.type]||ENEMY.grunt;ctx.enemyPos(e,vE);
  if(src==='pulse'){
   // the surge reaches each enemy when the shockwave front does
-  if(!ev.kill){const R=Math.min(60,Math.max(1,ctx.G.effects.pulseRange*U||0)),f=Math.min(1,Math.abs(vE.x-A.droneX)/R);after((1-Math.pow(1-f,1/2.2))*waveTime(R),K_ZAP,0,0,0,1,e);}
+  if(!ev.kill){const R=Math.min(60,Math.max(1,ctx.G.effects.pulseRange*ctx.G.rangeK()*U||0)),f=Math.min(1,Math.abs(vE.x-A.droneX)/R);after((1-Math.pow(1-f,1/2.2))*waveTime(R),K_ZAP,0,0,0,1,e);}
  }else{
   let c=C.amber,style=S_BOLT,w=1.7,life=.16,hot=1,alpha=1;
   if(src==='turret')ctx.turretPos(e.lane,vS);
@@ -414,7 +414,7 @@ function onHit(ev){
   else if(src==='pierce'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,d.cy,vS);c=C.lance;style=S_LANCE;w=.95;life=.24;hot=1.6;}
   else if(src==='chain'&&ev.sy===ev.sy){const G=ctx.G,sl=Math.abs(ev.sx-G.LANES[1])<Math.abs(ev.sx-G.LANES[0])?1:0;ctx.lanePos(sl,ev.sy,ev.sy===G.DRONE_Y&&Math.abs(ev.sx-G.drone.x)<1?A.droneH:1.3,vS);c=C.zap;w=1.7;life=.3;hot=1.8;emit(P.glow,vE.x,vE.y,vE.z,0,0,0,3,C.white,C.zap);}   // chain lightning: a jump from the last machine struck
   else if(src==='shock'&&ev.sy===ev.sy){ctx.lanePos(e.lane,ev.sy,.7,vS);c=C.zap;w=1.05;life=.2;hot=1.4;}   // electricity running through the water
-  else{if(src==='vent'&&Q>0)emit(P.fire,vE.x+(rnd()-.5)*d.r,GY+.3,vE.z+(rnd()-.5)*d.r,(rnd()-.5)*1.5,3+rnd()*3,(rnd()-.5)*1.5,.8,C.fire0,C.fire1);if(ev.kill)kill(e);return;}   // mines, vents (a lick of flame), the orbital shell and anything unknown: no tracer
+  else{if(ev.kill)kill(e);return;}   // the orbital shell and anything unknown: no tracer
   let dx=vE.x-vS.x,dy=vE.y-vS.y,dz=vE.z-vS.z;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;
   // stop at the hull on the side of the shooter, nudged towards the camera so the flash is not buried in the model
   const hr=Math.min(d.r*.7,l*.5);let hx=vE.x-dx*hr,hy=vE.y-dy*hr,hz=vE.z-dz*hr;
@@ -434,7 +434,7 @@ function onHit(ev){
 }
 function onPulse(ev){
  if(!isLane(ev.lane))return;
- const z=ctx.laneZAt(ev.lane,A.droneX),x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange;
+ const z=ctx.laneZAt(ev.lane,A.droneX),x=A.droneX,y=A.droneH,range=ev.range>0?ev.range:ctx.G.effects.pulseRange*ctx.G.rangeK();
  wOn=true;wT=-1;wR=Math.min(60,Math.max(1,range*U||0));wDur=waveTime(wR);wX=x;wAcc=0;wEnd=false;wU.uO.value.set(x,GY+.02,z);waveBand(ev.lane,x,wR);
  ribbon(S_COLUMN,x,y+8,z,x,GY,z,4.2,.26,C.amber,1.3,1.25);          // vertical flash through the drone
  emit(P.flash,x,y,z,0,0,0,5.2,C.white,C.amber);emit(P.glow,x,y,z,0,0,0,7,C.amber);
@@ -531,14 +531,6 @@ function stepWave(dt,t){
  }
  if(wT>.95){wOn=false;wave.visible=false;}
 }
-// fire vents (화염로): flames roar out of the grates on both lanes while the vents burn
-let ventAcc=0;
-function stepVents(dt,G){
- if(G.phase!=='battle'||G.ventPhase()!==2){ventAcc=0;return;}   // ventPhase is 2 only while the vents of a vent map burn
- ventAcc+=dt*(Q?90:40);let n=ventAcc|0;ventAcc-=n;n=Math.min(n,12);
- for(let i=0;i<n;i++){const l=i&1,x=ctx.wx(ctx.grateY(Math.floor(rnd()*ctx.GRATES)))+(rnd()-.5)*1.2,z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.8;
-  emit(P.fire,x,GY+.2,z,(rnd()-.5)*1.2,7+rnd()*6,(rnd()-.5)*1.2,1.5+rnd()*.8,C.fire0,C.fire1);if(i%3===0)emit(P.ember,x,GY+.5,z,(rnd()-.5)*3,4+rnd()*4,(rnd()-.5)*3,1,C.fire0,C.fire1);}
-}
 function findSun(o){if(o.isDirectionalLight)vS.copy(o.position).sub(o.target.position);}
 // The decals must sit just above the road, whose height belongs to env.js: probe it with a few short rays down onto both lanes.
 const ray=new THREE.Raycaster(),hits=[];
@@ -589,7 +581,10 @@ return{
     case 'pulse':onPulse(ev);break;
     case 'orbital':if(isLane(ev.lane)&&ev.y===ev.y){const x=ctx.wx(ev.y),z=ctx.laneZAt(ev.lane,x);ribbon(S_COLUMN,x,30,z,x,GY,z,6,.35,C.fire0,1.8,1.4);blast(x,.5,z,2.3,false,true);light(x,3,z,C.fire0,420,.35);ctx.shake(.9);ctx.fxScreen.white=1;}break;   // the shell comes down as a column of fire
     case 'multi':ctx.shake(Math.min(.6,.15+.06*(ev.n|0)));break;
-    case 'mine':if(isLane(ev.lane)&&ev.y===ev.y){const x=ctx.wx(ev.y),z=ctx.laneZAt(ev.lane,x);blast(x,.4,z,1.35,false,true);light(x,2.2,z,C.fire0,160,.22);ctx.shake(.32);}break;   // a mine goes off (the chain sends one event per mine)
+    case 'mortar':if(isLane(ev.lane)){ctx.turretPos(ev.lane,vS);ribbon(S_COLUMN,vS.x,26,vS.z,vS.x,GY,vS.z,3.6,.3,C.fire0,1.6,1.3);blast(vS.x,.4,vS.z,1.7,false,true);light(vS.x,3,vS.z,C.fire0,300,.3);ctx.shake(.6);}break;   // a mortar shell lands on the turret of that lane (포격장)
+    case 'shellDown':if(isLane(ev.lane)){ctx.dronePos(vS);ctx.turretPos(ev.lane,vT);vT.y+=9;vT.x+=2;ribbon(S_BOLT,vS.x,vS.y,vS.z,vT.x,vT.y,vT.z,1.3,.16,C.teal,1.2,1);pop(vT.x,vT.y,vT.z,1,false);light(vT.x,vT.y,vT.z,C.fire0,140,.2);ctx.shake(.2);}break;   // the drone shoots the shell down in the air over the turret
+    case 'hangar':if(isLane(ev.lane)){const G=ctx.G,x=ctx.wx(G.HANGAR.y),z=ctx.laneZAt(ev.lane,x)+Math.sign(L.laneZ[ev.lane]||1)*(A.laneW/2+1.6);
+     if(ev.shut)light(x,2.5,z,C.red0,120,.25);else{const n=cnt(14);for(let i=0;i<n;i++)emit(P.dust,x+(rnd()-.5)*3,GY+.4+rnd(),z-Math.sign(L.laneZ[ev.lane]||1)*rnd()*2,(rnd()-.5)*4,1+rnd()*2,-Math.sign(L.laneZ[ev.lane]||1)*(2+rnd()*4),1.6,C.dust0,C.dust1);}}break;   // the hangar door: dust rolls out when it opens, a red flash when the drone keeps it shut
     case 'shock':{const G=ctx.G,F=G.FLOOD;if(!F)break;const n=cnt(26);for(let i=0;i<n;i++){const l=i&1,x=ctx.wx(F[0]+rnd()*(F[1]-F[0])),z=ctx.laneZAt(l,x)+(rnd()-.5)*A.laneW*.9;emit(P.zip,x,GY+.15,z,(rnd()-.5)*6,2+rnd()*5,(rnd()-.5)*6,1.1,C.white,C.zap);}ctx.fxScreen.white=Math.max(ctx.fxScreen.white,.35);}break;
     case 'splash':if(isLane(ev.lane)&&ev.y===ev.y){const sx=ctx.wx(ev.y);pop(sx,1.1,ctx.laneZAt(ev.lane,sx),.6,false);}break;   // splash rounds burst around the machine they hit
     case 'leak':onLeak(ev);break;
@@ -604,7 +599,7 @@ return{
  update(dt,t,G){
   if(dead||!(dt>=0)||(G.paused&&G.phase==='battle'))return;   // paused: the world is frozen, hold every effect where it is
   try{
-   stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepVents(dt,G);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
+   stepTimers(dt);stepEmitters(dt);stepWave(dt,t);stepParticles(dt);stepRibbons(dt);stepDecals(dt);stepDebris(dt);stepLights(dt);
    if(warm>0)warm--;   // everything is drawn (empty) for the first frames so shaders and buffers are ready before the first shot
   }catch(err){fail(err);}
  }
