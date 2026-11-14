@@ -186,6 +186,8 @@ function opText(G){
 
 /* ---------- 5. facility labels ---------- */
 const facFx=[0,0];
+// damage numbers rising over each facility's bar after a breach: {n, type, t}. Breaches close together add up; colour and size follow the biggest machine (G.LEAK_LOOK)
+const FAC_NUMS=[[],[]];ctx.facNums=FAC_NUMS;   // (tools/goal_test.js reads it)
 function facility(G,ln,side){
  const f=G.facilities,hp=f?+f[ln]||0:0,alive=hp>0;
  const lz=L.laneZ[ln],sg=lz<0?-1:1;
@@ -211,6 +213,16 @@ function facility(G,ln,side){
  if(alive){c.fillStyle=hp<28?RED:FAC_FILL[ln];c.fillRect(bx,by,Math.max(1/s,snap(bw*clamp(hp/100,0,1))),bh);}
  else{c.fillStyle='#a35751';c.fillRect(bx,by+1,bw,1);}
  if(facFx[ln]>0){c.globalAlpha=clamp(facFx[ln],0,1);c.fillStyle=FLASH;c.fillRect(bx,by,bw,bh);c.globalAlpha=1;}
+ facNums(G,ln);
+}
+// the breach's damage number rises from the building's roof (the bar of the near building sits by the overload button on small landscape screens), kept inside the screen
+function facNums(G,ln){const LK=G.LEAK_LOOK,q=FAC_NUMS[ln];if(!LK||!q.length)return;
+ v.set(A.facX,7.5,L.laneZ[ln]);ctx.project(v,p);if(!(p.z>-1&&p.z<1))return;
+ for(const n of q){const k=n.t/.9,look=LK[n.type]||LK.grunt,pop=(n.t<.12?1+.8*(1-n.t/.12):1)*look.k,txt='-'+n.n;
+  c.font=fDmgB;curFont=fDmgB;const hw=c.measureText(txt).width*pop*.5;
+  const x=clamp(p.x,M+hw,L.w-M-hw),y=Math.max(M+FS*pop,p.y-6*ui-22*ui*k);
+  c.globalAlpha=k<.6?1:1-(k-.6)/.4;c.save();c.translate(x,y);c.scale(pop,pop);text(txt,0,0,fDmgB,look.col,'center');c.restore();curFont='';}
+ c.globalAlpha=1;
 }
 
 /* ---------- 6. turret bonus (협동 조준) ---------- */
@@ -374,6 +386,7 @@ function frame(dt,t,G){
  const battle=G.phase==='battle',side=L.mode==='side';
  if(battle&&G.map&&G.map.storm){c.fillStyle='rgba(196,150,92,.13)';c.fillRect(0,0,L.w,L.h);}   // 모래폭풍: the haze, under every mark
  if(facFx[0]>0)facFx[0]-=dt*2.5;if(facFx[1]>0)facFx[1]-=dt*2.5;if(waveFx>0)waveFx-=dt;
+ for(const q of FAC_NUMS){for(const n of q)n.t+=dt;while(q.length&&q[0].t>=.9)q.shift();}
  let warn=false,pu=0;
  if(battle){scanIncoming(G);warn=surgeNow(G);if(warn){pu=.5+.5*Math.sin(t*9.5);surgeGlow(side,pu);}}
  facility(G,0,side);facility(G,1,side);
@@ -400,9 +413,10 @@ return{
  quality(q){Q=q|0;},
  event(ev){
   if(!ev)return;
-  if(ev.t==='leak'){if(ev.lane===0||ev.lane===1)facFx[ev.lane]=1;}
+  if(ev.t==='leak'){if(ev.lane===0||ev.lane===1){facFx[ev.lane]=1;const q=FAC_NUMS[ev.lane],n=+ev.fac||0,T=ctx.G.TYPES;
+   if(n>0){const last=q.length?q[q.length-1]:null;if(last&&last.t<.35){last.n+=n;if(T&&T[ev.type]&&T[last.type]&&T[ev.type].value>T[last.type].value)last.type=ev.type;last.t=0;}else{q.push({n,type:ev.type,t:0});if(q.length>4)q.shift();}}}}
   else if(ev.t==='wave')waveFx=1.6;
-  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;waveFx=0;bannerT=0;bq.length=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
+  else if(ev.t==='stage'){facFx[0]=facFx[1]=0;FAC_NUMS[0].length=FAC_NUMS[1].length=0;waveFx=0;bannerT=0;bq.length=0;brokeT=0;NUMS.length=0;if(ctx.fxScreen)ctx.fxScreen.white=ctx.fxScreen.red=0;}
   else if(ev.t==='combo')comboFx=1;
   else if(ev.t==='comboEnd')brokeT=1.2;   // a breach broke the combo
   else if(ev.t==='multi'){if(bannerT>.3&&bq.length<3)bq.push(ev);else showBanner(ev);}

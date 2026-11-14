@@ -3,6 +3,7 @@
 // 판 2026.11.13-4: 뒤로 가기(한 번 설정 열기, 두 번 닫기, 뒤로 가는 동안 기록을 쌓지 않음, 터치로 다시 두 칸), 바꾼 화면 문구.
 // 판 2026.11.13-5: 제목 화면(숨긴 작은 글씨, 주 버튼 글자 가운데, 문장마다 한 줄), 임시 포탑 사격의 이름표(temp).
 // 판 2026.11.13-7: 열여섯 장, 특별 목표 열다섯(지뢰밭·화염로 대신 격납고·포격장·변전소·역장·도주로·모래폭풍), 정찰과 승리는 16장 기준.
+// 판 2026.11.13-8: 돌파 피해의 등급 표시(시설·송신소 피해 숫자, 등급별 흔들림·소리·진동, 패배 기록의 피해량). 피해량 규칙은 그대로인지도 본다.
 // node tools/goal_test.js <게임 폴더 절대 경로> [출력 폴더(화면 사진, 생략 가능)]
 const { chromium } = require('playwright');const {hooked,inGame,checks}=require('./lib.js');const path=require('path'),fs=require('fs');
 const dir=path.resolve(process.argv[2]),out=process.argv[3]?path.resolve(process.argv[3]):null;if(out)fs.mkdirSync(out,{recursive:true});
@@ -97,7 +98,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   const r=JSON.parse(await T(`(()=>{${PUT}beginRun();holdState=null;hideCoach();lessonQuiet=99;
    for(const ch of [1,2]){enemies=[];nextSpawn=pattern.length;stageHurt=true;update(1/30);choose(offeredUpgrades[0]);}
    const snap=JSON.parse(JSON.stringify({op,core,bag,score,ranks:upgradeRanks,hist:upgradeHistory.length,kills,leaks,effects}));
-   score+=777;bag=['wall','jam'];kills+=5;core=0;put(0,'runner',LEAK_Y-1,{wv:2});put(1,'runner',LEAK_Y-1,{wv:3});put(1,'runner',LEAK_Y-1,{wv:3});enemies.forEach(e=>e.speed=60);update(1/20);
+   score+=777;bag=['wall','jam'];kills+=5;core=12;put(0,'runner',LEAK_Y-1,{wv:2});put(1,'runner',LEAK_Y-1,{wv:3});put(1,'runner',LEAK_Y-1,{wv:3});enemies.forEach(e=>e.speed=60);update(1/20);
    const fin={phase,again:!!$('againBtn'),againText:$('againBtn')&&$('againBtn').textContent,retryText:$('retryBtn').textContent,report:document.querySelector('#overlayContent .report').textContent};
    $('againBtn').click();
    const after={phase,op,core,bag:bag.slice(),score,ranks:upgradeRanks,hist:upgradeHistory.length,kills,leaks,effects,retryUsed};
@@ -107,7 +108,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   ck('loss offers the one retry of the run',r.fin.phase==='finish'&&r.fin.again&&/WAVE 3-1부터 다시/.test(r.fin.againText)&&/점수 -20%/.test(r.fin.againText)&&r.fin.retryText==='처음부터 다시 출격',r.fin);
   ck('retry restores the chapter start (upgrades, items, hub, record) with the score cut by 20%',A.phase==='battle'&&A.op===3&&A.core===S.core&&JSON.stringify(A.bag)===JSON.stringify(S.bag)&&JSON.stringify(A.ranks)===JSON.stringify(S.ranks)&&A.hist===S.hist&&A.kills===S.kills&&A.leaks===S.leaks&&JSON.stringify(A.effects)===JSON.stringify(S.effects)&&A.score===Math.round(S.score*.8)&&A.retryUsed,{S,A});
   ck('second loss: no retry, plain restart, the report says the retry was used',r.fin2.phase==='finish'&&!r.fin2.again&&r.fin2.retryText==='다시 출격'&&r.fin2.report.includes('다시 도전 1회 사용'),r.fin2);
-  ck('loss record: breaches by lane and by attack, overloads',r.fin.report.includes('WAVE 3 돌파 · 발전소 쪽 1 · 정비소 쪽 2')&&r.fin.report.includes('공격별 · 3-1 0기 · 3-2 1기 · 3-3 2기')&&/과부하 0회 · 한 번에 최대 0기/.test(r.fin.report)&&/특별 목표 0 \/ 15/.test(r.fin.report),r.fin.report);
+  ck('loss record: damage taken by facility and hub, hub damage by attack (what was actually lost), overloads',r.fin.report.includes('WAVE 3 받은 피해 · 발전소 13 · 정비소 26 · 송신소 12')&&r.fin.report.includes('공격별 송신소 피해 · 3-1 0 · 3-2 6 · 3-3 6')&&/과부하 0회 · 한 번에 최대 0기/.test(r.fin.report)&&/특별 목표 0 \/ 15/.test(r.fin.report),r.fin.report);
   const rec=await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='cross');beginRun();newStage(ch);holdState=null;hideCoach();pattern=[[1e9,0,'runner']];nextSpawn=0;enemies=[];
    for(let i=0;i<3;i++)put(drone.lane,'brute',DRONE_Y-30+i*15,{hp:900});drone.pulseCooldown=0;pulse();drone.pulseCooldown=0;put(drone.lane,'brute',DRONE_Y,{hp:900});pulse();core=0;update(1/30);return document.querySelector('#overlayContent .report').textContent;})()`);
   ck('loss record counts overloads and the most machines one struck',/과부하 2회 · 한 번에 최대 4기/.test(rec),rec);
@@ -188,10 +189,35 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   await T(`(()=>{reset();liveRun=true;newStage(7);phase='battle';pattern=[];nextSpawn=0;enemies=[];goalNow=true;stageHurt=false;score=123456;bestCombo=88;update(1/30);})()`);await p.waitForTimeout(900);
   const up=await measure();if(out)await p.screenshot({path:path.join(out,`upgrade_${mode?'2d':'3d'}_${w}x${h}.png`)});
   // the busiest result screen: a loss with the record and both buttons
-  await T(`(()=>{choose(offeredUpgrades[0]);chap={leaks:[4,1],waves:[0,2,3],pulses:3,maxHit:2};core=0;update(1/30);})()`);await p.waitForTimeout(900);
+  await T(`(()=>{choose(offeredUpgrades[0]);chap={leaks:[4,1],waves:[0,2,3],pulses:3,maxHit:2,fac:[100,100],hub:100,hubW:[15,40,45],cnt:0};core=0;update(1/30);})()`);await p.waitForTimeout(900);
   const fi=await measure();if(out)await p.screenshot({path:path.join(out,`result_${mode?'2d':'3d'}_${w}x${h}.png`)});
   ck(`${mode?'2D':'2.5D'} ${w}x${h}: upgrade and result screens fit without scrolling, all buttons on screen`,!up.scroll&&!fi.scroll&&up.buttons&&fi.buttons&&up.card&&fi.card&&!errs.length,{up,fi,errs:errs.slice(0,2)});
   await c.close();}
+ // ---------- breach damage by grade (build 2026.11.13-8): the damage rule is unchanged, what changed is how it shows ----------
+ {const p=await b.newPage({viewport:{width:844,height:390}});const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto('file://'+f+'?2d=1');await p.waitForTimeout(400);const T=inGame(p);
+  await T("mute=true;$('title').hidden=true;$('titleVid').pause();learned.drill=learned.item=learned.pulse=learned.combo=true;for(const m of MAPS)learned.maps[m.id]=true;0");
+  const lk=JSON.parse(await T(`(()=>{${PUT}const out={};for(const type of ['runner','grunt','brute','boss']){${START(3)}const evs=[],calls=[];const e0=ev3,s0=sfx,b0=buzz;ev3=o=>{if(o.t==='leak')evs.push(o);e0(o);};sfx=(n,d,pp,g)=>{calls.push([n,pp||1,g||1]);};buzz=x=>calls.push(['buzz',x]);leakAt=-9;
+   put(0,type,LEAK_Y-1,{speed:60});update(1/30);const a={fac:100-facilities[0],core:100-core,ev:evs[0]&&[evs[0].fac,evs[0].hub],hits:facHits.map(h=>h.n+':'+h.type),hub:$('hubHit').textContent,hubCol:$('hubHit').style.color,calls:calls.slice()};
+   facilities[0]=0;core=100;calls.length=0;evs.length=0;put(0,type,LEAK_Y-1,{speed:60});update(1/30);a.down=[100-core,evs[0]&&evs[0].fac,evs[0]&&evs[0].hub];ev3=e0;sfx=s0;buzz=b0;out[type]=a;}return JSON.stringify(out);})()`));
+  const D={runner:[13,6],grunt:[19,9],brute:[30,15],boss:[42,21]};
+  ck('breach: facility and hub damage per grade are the same numbers as before (13/6, 19/9, 30/15, 42/21) and the event carries them',Object.entries(D).every(([k,[f0,h0]])=>lk[k].fac===f0&&lk[k].core===h0&&lk[k].ev[0]===f0&&lk[k].ev[1]===h0),lk);
+  ck('breach: with the facility down the hub takes 1.7x (rounded up) and the facility number is 0',Object.entries(D).every(([k,[f0,h0]])=>lk[k].down[0]===Math.ceil(h0*1.7)&&lk[k].down[1]===0&&lk[k].down[2]===Math.ceil(h0*1.7)),Object.fromEntries(Object.entries(lk).map(([k,v])=>[k,v.down])));
+  ck('breach: the 2D number over the facility and the hub number beside its chip show the damage',Object.entries(D).every(([k,[f0,h0]])=>lk[k].hits.includes(f0+':'+k)&&lk[k].hub==='-'+h0),Object.fromEntries(Object.entries(lk).map(([k,v])=>[k,[v.hits,v.hub]])));
+  const snd=Object.fromEntries(Object.entries(lk).map(([k,v])=>[k,v.calls.find(c=>c[0]==='leak')]));
+  ck('breach: a bigger machine sounds lower and louder',snd.runner[1]>snd.grunt[1]&&snd.grunt[1]>snd.brute[1]&&snd.brute[1]>snd.boss[1]&&snd.runner[2]<snd.grunt[2]&&snd.grunt[2]<snd.brute[2]&&snd.brute[2]<snd.boss[2],snd);
+  const bz=Object.fromEntries(Object.entries(lk).map(([k,v])=>[k,(v.calls.find(c=>c[0]==='buzz')||[0,[]])[1].reduce((a,x)=>a+x,0)]));
+  ck('breach: a bigger machine vibrates longer',bz.runner<bz.grunt&&bz.grunt<bz.brute&&bz.brute<bz.boss,bz);
+  const acc=JSON.parse(await T(`(()=>{${PUT}${START(3)}put(1,'runner',LEAK_Y-1,{speed:60});put(1,'boss',LEAK_Y-1,{speed:60});update(1/30);return JSON.stringify({hits:facHits.map(h=>h.n+':'+h.type),hub:$('hubHit').textContent,col:$('hubHit').style.color});})()`));
+  ck('breach: breaches close together add up and take the colour of the biggest machine',acc.hits.join()==='55:boss'&&acc.hub==='-27'&&acc.col===await T("(()=>{const d=document.createElement('i');d.style.color=LEAK_LOOK.boss.col;return d.style.color;})()"),acc);
+  ck('no page errors (breach display, 2D)',!errs.length,errs.slice(0,2));await p.close();}
+ for(const [w,h] of [[844,390],[390,844]]){const c=await b.newContext({viewport:{width:w,height:h}});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='warning'&&/hud\.js|fx\.js|base\.js/.test(m.text()))errs.push(m.text());});
+  await p.goto('file://'+f+'?q=1');try{await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay&&window.__relay.active,null,{timeout:10000});}catch(e){errs.push('2.5D did not start');}
+  const T=inGame(p);
+  await T(`${PUT}mute=true;$('title').hidden=true;$('titleVid').pause();learned.drill=learned.item=learned.pulse=learned.combo=true;for(const m of MAPS)learned.maps[m.id]=true;${START(3)}put(0,'boss',LEAK_Y-1,{speed:60});put(1,'runner',LEAK_Y-1,{speed:60});0`);
+  await p.waitForFunction(()=>window.__relay.facilities[0]<100&&window.__relay.facilities[1]<100,null,{timeout:10000});
+  const n=JSON.parse(await p.evaluate(()=>JSON.stringify(R3D.ctx.facNums.map(q=>q.map(x=>x.n+':'+x.type)))));
+  await p.waitForTimeout(400);if(out)await p.screenshot({path:path.join(out,'breach_3d_'+w+'x'+h+'.png')});
+  ck(`2.5D ${w}x${h}: the hud puts the damage over each facility (boss 42, small 13) and draws without errors`,n[0].join()==='42:boss'&&n[1].join()==='13:runner'&&!errs.length,{n,errs:errs.slice(0,2)});await c.close();}
  // ---------- 2.5D: the banners of a lure kill and a met goal draw without errors ----------
  {const c=await b.newContext({viewport:{width:844,height:390},hasTouch:true});const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='warning'&&/hud\.js/.test(m.text()))errs.push(m.text());});
   await p.goto('file://'+f);try{await p.waitForFunction(()=>window.R3D&&window.R3D.ready&&window.__relay&&window.__relay.active,null,{timeout:8000});}catch(e){errs.push('2.5D did not start');}

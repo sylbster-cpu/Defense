@@ -443,6 +443,7 @@ function onPulse(ev){
  const n=cnt(18);for(let i=0;i<n;i++){const sg=i&1?1:-1,sp=10+rnd()*26;emit(P.zip,x,y-.4,z+(rnd()-.5)*2,sg*sp,-4+rnd()*8,(rnd()-.5)*7,1,C.hot,C.amber);}
  light(x,2.6,z,C.amber,330,.2);ctx.shake(.7);ctx.fxScreen.white=.8;
 }
+const LEAK_FEEL={runner:[.6,1],grunt:[.7,1.15],brute:[.82,1.35],boss:[.95,1.6]};   // shake and red edge per grade of the machine that broke through. The smallest is the old breach (0.6, 1); a red edge above 1 stays full longer
 function onLeak(ev){
  if(!isLane(ev.lane))return;
  const z=L.laneZ[ev.lane],s=ev.type==='boss'?1.8:ev.type==='brute'?1.45:ev.type==='runner'?1:1.2,x=.5,y=1.2;
@@ -451,7 +452,7 @@ function onLeak(ev){
  let n=cnt(8+6*s);for(let i=0;i<n;i++)emit(P.spark,x,y,z+(rnd()-.5)*5,-(5+rnd()*15),2+rnd()*9,(rnd()-.5)*8,1,C.hot,C.red0);   // momentum carries on into the base
  n=cnt(4);for(let i=0;i<n;i++)emit(P.fire,x-.5,y,z+(rnd()-.5)*4,-(3+rnd()*6),1+rnd()*3,(rnd()-.5)*2,1.1*s,C.red0,C.red1);
  chunks(cnt(3+2*s),x,y,z,2,7,.34,ENEMY_COL[ev.type]||ENEMY_COL.grunt,C.dark,false);
- light(x,2.5,z,C.red0,90*s,.22);ctx.shake(.6);ctx.fxScreen.red=1;
+ light(x,2.5,z,C.red0,90*s,.22);const g=LEAK_FEEL[ev.type]||LEAK_FEEL.grunt;ctx.shake(g[0]);ctx.fxScreen.red=Math.max(ctx.fxScreen.red,g[1]);   // a bigger machine shakes harder and reddens the edges more
  if(ev.down)after(.18,K_FAC,A.facX,0,z,ev.lane);
 }
 function onMove(ev){

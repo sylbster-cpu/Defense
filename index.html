@@ -142,6 +142,9 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
 #pulseBtn:disabled:not(.cooling){opacity:.5}#pulseBtn.locked{opacity:.28}
 .hubchip{position:absolute;z-index:4;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:9px;border:1px solid #47585d;background:rgba(18,30,36,.8);font-size:12px;font-weight:800;color:#eae9dc;pointer-events:none}
 .hubchip span{color:#a6d4a9;font-size:10px}.hubchip i{display:block;width:54px;height:4px;border-radius:2px;background:#2b3c42;overflow:hidden}
+.hubchip .hubhit{position:absolute;left:100%;top:50%;margin-left:4px;min-width:0;opacity:0;font-weight:900;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px #000;transform:translateY(-50%)}
+.hubchip .hubhit.on{animation:hubhit .95s ease-out}
+@keyframes hubhit{0%{opacity:1;transform:translate(0,-50%) scale(1.3)}18%{opacity:1;transform:translate(0,-50%) scale(1)}100%{opacity:0;transform:translate(10px,-110%) scale(1)}}
 .hubchip b{display:block;height:100%;width:100%;background:#a6d4a9}.hubchip b.danger{background:var(--red,#f17c6f)}.hubchip em{font-style:normal;min-width:22px;text-align:right}
 .coach{max-width:calc(100% - 150px)}
 @media(orientation:portrait){.coach{bottom:76px;max-width:94%}}
@@ -326,7 +329,7 @@ body{position:fixed;inset:0;touch-action:manipulation;-webkit-text-size-adjust:1
         <canvas id="game" width="480" height="702" tabindex="0" aria-label="두 전선의 전투 화면. 왼쪽 절반은 발전소, 오른쪽 절반은 정비소. 전투 중 터치하여 지원 기체를 이동합니다."></canvas>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
         <div class="coach" id="coach" role="status" aria-live="polite" hidden><strong id="coachTitle"></strong><span id="coachMain"></span><small id="coachHint"></small></div>
-        <div class="hubchip" id="hubChip" role="img" aria-label="중앙 송신소 내구도"><span>●</span><i><b id="hubBar"></b></i><em id="hubNum">100</em></div>
+        <div class="hubchip" id="hubChip" role="img" aria-label="중앙 송신소 내구도"><span>●</span><i><b id="hubBar"></b></i><em id="hubNum">100</em><em class="hubhit" id="hubHit" aria-hidden="true"></em></div>
         <button type="button" class="fbtn" id="drillSkip" hidden>훈련 건너뛰기 »</button>
         <button type="button" class="fbtn item" id="itemBtn" aria-label="빈 아이템 칸" disabled></button>
         <button type="button" class="fbtn item" id="itemBtn2" aria-label="빈 아이템 칸" disabled></button>
@@ -417,7 +420,7 @@ function pierceOn(){return effects.pierce>0&&effects.focusRamp*drone.stay>=effec
 function echoOn(){return effects.echo>0&&drone.burst>0&&drone.echoLane!==drone.lane;}
 let effects=baseEffects(),surges=[];
 // Shown on the first and the result screens. Change it with every published build.
-const BUILD='2026.11.13-7';
+const BUILD='2026.11.13-8';
 // Bridge for the 2.5D renderer in r3d/. It only reads game state; rules stay in this file.
 // Discrete moments (a hit, a kill, a leak...) are queued in G3.events while the renderer is active.
 const G3={active:false,renderer:null,events:[]};
@@ -526,7 +529,9 @@ let lureN=0,goalNow=false,goalsDone=[];   // lureN: crossed machines the last ov
 function goalTick(kind){const g=goalOf(op);if(!g||g.count!==kind||drill)return;if(++chap.cnt>=g.n)goalMet();}   // a map event that counts for a 'count' goal
 function goalMet(){if(goalNow||drill)return;goalNow=true;goalsDone.push(op);score+=GOAL_PTS;ev3({t:'multi',n:0,name:'특별 목표 달성',sub:'+'+GOAL_PTS+'점',col:'#ffd866'});sfx('upgrade',0,1.8,.7);buzz([30,40,60]);if(!G3.active)showToast('특별 목표 달성 · +'+GOAL_PTS+'점',1800);}
 // Per-chapter record for the result screen after a loss: breaches by lane and by the attack the machine came in, overloads used, most machines one overload struck.
-let chap={leaks:[0,0],waves:[0,0,0],pulses:0,maxHit:0,cnt:0};   // cnt: map events that count for the chapter's goal (goalTick)
+// facHits: damage numbers over the facilities on the 2D canvases ({lane, n, type, t}); the 2.5D hud makes its own from the 'leak' event
+let facHits=[],hubHitN=0,hubHitAt=-9,hubHitV=0;
+let chap={leaks:[0,0],waves:[0,0,0],pulses:0,maxHit:0,cnt:0,fac:[0,0],hub:0,hubW:[0,0,0]};   // cnt: map events that count for the chapter's goal. fac, hub, hubW: damage taken (facility by lane, hub, hub by attack) (goalTick)
 const MAP_OF=[0,...['pylon','pinch','detour','wave','gate','bridge','tunnel','cross','hangar','flood','flee','boost','barrier','storm','grid','mortar'].map(id=>MAPS.findIndex(m=>m.id===id))];let map=MAPS[0];   // chapter -> map: every chapter has its own (the drill keeps the plain straight road)
 // Items. Rare machines and mid bosses drop them on the field: a drop stays DROP_LIFE seconds and has to be touched to be taken.
 // Up to BAG_MAX are kept and used with the two buttons at the bottom left. They are single rescues, not standing upgrades.
@@ -618,6 +623,8 @@ function fieldStep(dt){for(const f of fieldTurrets){f.life-=dt;f.cool-=dt;f.flas
 function aidStep(dt){if(aid.wall>0)aid.wall-=dt;if(aid.jam>0)aid.jam-=dt;if(aid.stim>0)aid.stim-=dt;if(aid.pierce>0)aid.pierce-=dt;if(aid.splash>0)aid.splash-=dt;if(aid.mag>0)aid.mag-=dt;
  if(aid.turret>0){aid.turret-=dt;aid.turretCool-=dt;if(aid.turretCool<=0){const e=pickTarget(aid.turretLane,DRONE_Y,TR());if(e){aid.turretCool=BAL.turretRate;damageEnemy(e,BAL.turretDmg,LANES[aid.turretLane],DRONE_Y,'temp');sfx('turret');}}}
  if(aid.clone>0){aid.clone-=dt;aid.cloneCool-=dt;if(aid.cloneCool<=0){const l=1-drone.lane,e=pickTarget(l,drone.y,DR());if(e){aid.cloneCool=BAL.droneRate;damageEnemy(e,BAL.droneDmg,LANES[l],drone.y,'echo');sfx('echo');}}}}
+// LEAK_LOOK: how a breach shows its grade (number colour, size k, sound pitch p and gain g, vibration). Feel only: the damage is TYPES' power (facility) and baseDamage (hub).
+const LEAK_LOOK={runner:{col:'#f3dca6',k:1,p:1.06,g:.95,buzz:[20,40,30]},grunt:{col:'#ffc46b',k:1.15,p:1,g:1,buzz:[25,40,45]},brute:{col:'#ff9a52',k:1.35,p:.9,g:1.1,buzz:[30,40,75]},boss:{col:'#ff5a46',k:1.6,p:.8,g:1.2,buzz:[40,40,110]}};   // the smallest keeps the breach feel of before (owner: shake and feel are fine), bigger ones go further
 const TYPES={runner:{hp:50,speed:84,power:13,baseDamage:6,r:10,color:'#e3b65e',value:1},grunt:{hp:105,speed:58,power:19,baseDamage:9,r:13,color:'#dc876f',value:2},brute:{hp:205,speed:37,power:30,baseDamage:15,r:17,color:'#b86562',value:3},boss:{hp:400,speed:24,power:42,baseDamage:21,r:23,color:'#de9e80',value:4}};
 // Enemy schedule: [time, lane(0 power / 1 workshop), type] rows, built from a few wave shapes so that
 // each operation asks for a different way of playing.
@@ -755,7 +762,7 @@ const BOSS_OPS=Object.keys(stages).map(Number).filter(k=>k<TOTAL_OPS&&stages[k].
 const WAVES={1:[17,34],2:[18,36]};for(let k=3;k<=TOTAL_OPS;k++)WAVES[k]=[22,44];   // the attacks inside a chapter change at these seconds
 function findSurges(p){const out=[];for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++){if(p[i][1]!==p[j][1]&&Math.abs(p[i][0]-p[j][0])<=.7&&(p[i][2]!=='runner'||p[j][2]!=='runner')){const t=Math.min(p[i][0],p[j][0]);if(!out.some(s=>Math.abs(s.t-t)<4))out.push({t,said:false});}}return out.sort((a,b)=>a.t-b.t);}
 // what a new run and a new chapter both start from: an empty field, both facilities whole
-function clearField(){stageHurt=false;strikes=[];splitQ=[];chap={leaks:[0,0],waves:[0,0,0],pulses:0,maxHit:0,cnt:0};lureN=0;goalNow=false;combo=comboT=multiN=multiT=0;aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];paused=false;}
+function clearField(){stageHurt=false;strikes=[];splitQ=[];chap={leaks:[0,0],waves:[0,0,0],pulses:0,maxHit:0,cnt:0,fac:[0,0],hub:0,hubW:[0,0,0]};facHits=[];hubHitAt=-9;lureN=0;goalNow=false;combo=comboT=multiN=multiT=0;aid.wall=aid.turret=aid.jam=aid.clone=aid.stim=aid.pierce=aid.splash=aid.mag=0;fieldTurrets=[];drops=[];aim=-1;stageTime=0;nextSpawn=0;enemies=[];shots=[];particles=[];alerts=[];facilities=[100,100];paused=false;}
 function reset(){clearField();bag=[];bestCombo=score=0;stars=[];goalsDone=[];retryUsed=false;stageSnap=null;liveRun=false;stageGift='';op=1;wave=0;speed=prefs.speed;core=100;turrets=[];drone={lane:0,x:LANES[0],y:DRONE_Y,moveCooldown:0,moveWait:0,shotCooldown:0,pulseCooldown:0,stay:0,burst:0,echoLane:0,echoCool:0};kills=0;leaks=0;switches=0;upgradeHistory=[];upgradeRanks={stable:0,emergency:0,precision:0,rubble:0};offeredUpgrades=[];effects=baseEffects();surges=[];}
 function newStage(index){map=drill?MAPS[0]:MAPS[MAP_OF[index]||0];clearField();ruleCount=spawnCount=0;hangarT=[HANGAR.cycle/2,HANGAR.cycle];shells=[];shellT=MORTAR.cycle/2;shellLane=0;grid=GRID.max;gridT=0;op=index;wave=1;core=Math.min(100,core+(index>1?BAL.opHeal:0));drone.moveCooldown=0;drone.shotCooldown=0;drone.pulseCooldown=0;drone.stay=0;drone.burst=0;drone.echoLane=0;drone.echoCool=0;drone.lane=0;drone.x=LANES[0];turrets=[{lane:0,x:LANES[0],y:TURRET_Y,cool:0,flash:0},{lane:1,x:LANES[1],y:TURRET_Y,cool:0,flash:0}];pattern=stages[index].slice();surges=findSurges(pattern);phase='battle';stopT=0;stopQ.length=0;if(!drill)snapStage();sfxAmb(true);ev3({t:'stage',op:index});showOverlay(false);hideCoach();showToast('WAVE '+index+'-1 · '+map.name,2200);updateControls();updateUI();}
 // One retry per run (2026-11-13, owner's choice): a lost chapter can be fought again from its start, with the upgrades, items, score and record it began with.
@@ -830,7 +837,18 @@ function pulse(){if(drill)return;if(holdState){if(holdState.need!=='pulse'||perf
  if(map.cross)lureN=Math.max(lureN,close.filter(e=>e.crossed&&e.hp<=0).length);   // a lure kill is named when the multi-kill window closes (settleMulti)
  if(gl&&(goal.both?gl.some(e=>e.hp<=0&&e.lane===0)&&gl.some(e=>e.hp<=0&&e.lane===1)&&gl.filter(e=>e.hp<=0).length>=goal.n:gl.filter((e,i)=>gat[i]&&(goal.hit||e.hp<=0)).length>=goal.n))goalMet();
  burst(drone.x,drone.y,22,COLORS.amber);alerts.push({lane:drone.lane,y:drone.y,life:.48,r:10});ev3({t:'pulse',lane:drone.lane,range:PR(),hits:close.length});sfx('pulse');hitStop(.07);buzz(30);updateControls();}
-function enemyLeak(e){const d=TYPES[e.type];leaks++;stageHurt=true;chap.leaks[e.lane]++;chap.waves[(e.wv||1)-1]++;if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0});const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7);core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');{const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;sfx(down?'facdown':'leak');if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz([20,40,30]);}leakAt=now;}if(before>0&&facilities[lane]<=0)showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}
+const GRADE=['','runner','grunt','brute','boss'];
+// the hub's damage number beside its chip (both views). Breaches close together add up; the colour and size follow the biggest machine among them.
+function hubHit(n,type){const el=$('hubHit');if(!el||!(n>0))return;const now=performance.now()/1000,v=TYPES[type].value;
+ if(now-hubHitAt<.6){hubHitN+=n;hubHitV=Math.max(hubHitV,v);}else{hubHitN=n;hubHitV=v;}hubHitAt=now;const look=LEAK_LOOK[GRADE[hubHitV]];
+ el.textContent='-'+hubHitN;el.style.color=look.col;el.style.fontSize=Math.round(12*look.k)+'px';el.classList.remove('on');void el.offsetWidth;el.classList.add('on');}
+function enemyLeak(e){const d=TYPES[e.type],look=LEAK_LOOK[e.type]||LEAK_LOOK.grunt;leaks++;stageHurt=true;chap.leaks[e.lane]++;chap.waves[(e.wv||1)-1]++;if(combo>=5)ev3({t:'comboEnd',n:combo});combo=0;comboT=0;const lane=e.lane;const before=facilities[lane];facilities[lane]=Math.max(0,facilities[lane]-d.power);
+ const coreDamage=before>0?d.baseDamage:Math.ceil(d.baseDamage*1.7),fac=before-facilities[lane],hub=Math.min(core,coreDamage),wv=(e.wv||1)-1;   // fac, hub: what was actually lost
+ chap.fac[lane]+=fac;chap.hub+=hub;chap.hubW[wv]+=hub;
+ ev3({t:'leak',lane,type:e.type,down:before>0&&facilities[lane]<=0,fac,hub});core=Math.max(0,core-coreDamage);burst(e.x,LEAK_Y+3,15,'#f1a077');
+ {const now=performance.now();facHits=facHits.filter(h=>now-h.t<900);if(fac>0){const last=facHits.find(h=>h.lane===lane&&now-h.t<350);if(last){last.n+=fac;if(TYPES[e.type].value>TYPES[last.type].value)last.type=e.type;last.t=now;}else facHits.push({lane,n:fac,type:e.type,t:now});}}
+ hubHit(hub,e.type);
+ {const down=before>0&&facilities[lane]<=0,now=performance.now()/1000;if(down)sfx('facdown');else sfx('leak',0,look.p,look.g);if(down){hitStop(.1);buzz([30,50,140]);}else if(now-leakAt>.6){hitStop(.04);buzz(look.buzz);}leakAt=now;}if(before>0&&facilities[lane]<=0)showToast(lane===0?'발전소 기능 정지 · 기체 이동 느려짐':'정비소 기능 정지 · 포탑 사격 느려짐',2200);}
 function update(dt){stageTime+=dt;const prevWave=wave;wave=waveIndex(stageTime);if(wave!==prevWave&&!drill){ev3({t:'wave',wave});showToast('WAVE '+op+'-'+wave,1600);}
   for(const s of surges){if(!s.said&&stageTime>=s.t-3){s.said=true;showToast('양 전선 동시 돌격',1900);sfx('surge_warn');}}
   while(nextSpawn<pattern.length&&stageTime>=pattern[nextSpawn][0]){const ev=pattern[nextSpawn++];spawn(ev[1],ev[2],ev[3]);if(ev[2]==='boss'){showToast('경고 · 거대 병기 접근',1800);sfx('boss_warn');}}
@@ -906,7 +924,7 @@ function finish(victory){phase='finish';ev3({t:'finish',victory});sfxAmb(false);
  const progress='WAVE '+op+'-'+wave+' · '+(victory?'전체 방어 성공':'작전 중단');
  const rate=victory?(starSum>=stars.length*3*.85?3:starSum>=stars.length*3*.6?2:1):0;
  // after a loss: the lost chapter's record (numbers only, no advice), and the one retry of the run while it is unused
- const w=chap.waves,record2=victory?'':`<br>WAVE ${op} 돌파 · 발전소 쪽 ${chap.leaks[0]} · 정비소 쪽 ${chap.leaks[1]}<br>공격별 · ${op}-1 ${w[0]}기 · ${op}-2 ${w[1]}기 · ${op}-3 ${w[2]}기<br>과부하 ${chap.pulses}회 · 한 번에 최대 ${chap.maxHit}기`;
+ const w=chap.hubW,record2=victory?'':`<br>WAVE ${op} 받은 피해 · 발전소 ${chap.fac[0]} · 정비소 ${chap.fac[1]} · 송신소 ${chap.hub}<br>공격별 송신소 피해 · ${op}-1 ${w[0]} · ${op}-2 ${w[1]} · ${op}-3 ${w[2]}<br>과부하 ${chap.pulses}회 · 한 번에 최대 ${chap.maxHit}기`;
  const canRetry=!victory&&liveRun&&!drill&&!retryUsed&&!!stageSnap&&stageSnap.op===op;
  const acts=`<div class="acts">${canRetry?`<button type="button" class="primary" id="againBtn"><span>WAVE ${op}-1부터 다시</span><small>한 번만 · 점수 -${Math.round(RETRY.cut*100)}%</small></button>`:''}<button type="button" class="${canRetry?'second':'primary'}" id="retryBtn"><span>${canRetry?'처음부터 다시 출격':'다시 출격'}</span></button></div>`;
  renderOverlay(`<div class="banner ${victory?'win':'lose'}">${victory?'작전 성공':'작전 실패'}</div><div class="bigstars">${[0,1,2].map(k=>'<i class="'+(k<rate?'on':'')+'">★</i>').join('')}</div><h2>${victory?'중계선이 살아남았습니다':'송신소가 끊겼습니다'}</h2><div class="scorebig"><b id="scoreNum">0</b><span>점</span>${record?'<em>최고 기록</em>':'<small>최고 '+best.toLocaleString()+'</small>'}</div><div class="result-stats"><div class="result-stat"><div class="n">${kills}</div><div class="k">처치한 적</div></div><div class="result-stat"><div class="n">${leaks}</div><div class="k">방어선 돌파</div></div><div class="result-stat"><div class="n">${bestCombo}</div><div class="k">최고 콤보</div></div><div class="result-stat"><div class="n">★ ${starSum} / ${stars.length*3||3}</div><div class="k">별</div></div></div><div class="report"><strong>${progress}</strong>${record2}<br>강화 ${upgradeHistory.length}회: ${upgradeText}<br>특별 목표 ${goalsDone.length} / ${goalCount()}${retryUsed?' · 다시 도전 1회 사용':''}<br><small>판 ${BUILD}</small></div>${acts}`,'finish');$('retryBtn').addEventListener('click',()=>beginRun());if($('againBtn'))$('againBtn').addEventListener('click',retryStage);countUp($('scoreNum'),score);updateControls();updateUI();}
@@ -1119,6 +1137,8 @@ function mapMarks2D(pos,at,hw,span,vertical,over){
  if(map.cross||map.flee){const Z=map.flee?FLEE:CROSS,p=pos((Z[0]+Z[1])/2),a=at(0),b=at(1),lo=Math.min(a,b)+hw,hi=Math.max(a,b)-hw,to=(at(drone.lane)>at(1-drone.lane)?1:-1)*(map.flee?-1:1),mid=(lo+hi)/2,[len,tip,back,half]=vertical?[12,12,6,8]:[10,9,5,7];
   R(p-len,lo,2*len,hi-lo,'#33474c');ctx.beginPath();ctx.moveTo(...P(p,mid+to*tip));ctx.lineTo(...P(p-half,mid-to*back));ctx.lineTo(...P(p+half,mid-to*back));ctx.closePath();ctx.fillStyle='#f1c37c';ctx.fill();}   // the deck between the lanes, with an arrow toward the drone's lane
 }
+// damage numbers over the facilities on the 2D canvases. at(lane) gives the place, size the type size of a small machine's number.
+function drawFacHits(at,size){const now=performance.now();for(const h of facHits){const k=(now-h.t)/900;if(k<0||k>=1)continue;const look=LEAK_LOOK[h.type],[x,y]=at(h.lane);ctx.globalAlpha=k<.6?1:1-(k-.6)/.4;text('-'+h.n,x,y-k*22,Math.round(size*look.k),look.col,'center',true);}ctx.globalAlpha=1;}
 function drawCompact(){
  const dpr=compactRatio,w=compactW,h=compactH;
  ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1230,11 +1250,12 @@ function drawCompact(){
  ctx.globalAlpha=1;
  for(const p of particles){const xy=toXY(p.x,p.y);ctx.globalAlpha=Math.min(1,p.life*2.3);circle(xy[0],xy[1],Math.max(1.3,p.r*scale),p.color);}
  ctx.globalAlpha=1;
+ drawFacHits(l=>[xEnd,ys[l]-20*scale],Math.round(13*scale));
  if(paused&&phase==='battle'){
   rect(0,0,w,h,'rgba(8,18,22,.67)');text('일시정지',w/2,h/2,25,'#ffe1ae','center',true);
  }
 }
-function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact();return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop();mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,false);drawIncoming();drawStations();drawTurrets();for(const e of enemies)if(!map.cover(e.lane,e.y))drawEnemy(e,now);mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,true);drawDrone(now);drawVfx();if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
+function draw(now){syncCanvasMode();if(G3.active){try{G3.renderer.frame(now);return;}catch(e){console.warn('2.5D view stopped; using the 2D canvas.',e);G3.active=false;$('field').classList.remove('r3d-on');}}if(compactCanvas){drawCompact();return;}ctx.setTransform(classicSX,0,0,classicSY,0,0);drawBackdrop();mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,false);drawIncoming();drawStations();drawTurrets();for(const e of enemies)if(!map.cover(e.lane,e.y))drawEnemy(e,now);mapMarks2D(y=>y,i=>LANES[i],44,[0,480],true,true);drawDrone(now);drawVfx();drawFacHits(l=>[LANES[l],534+DY-42],16);if(paused&&phase==='battle'){rect(0,61,480,H-61,'rgba(7,18,22,.65)');text('일시정지',240,DRONE_Y-8,31,'#f0d1a1','center',true);}}
 function loop(timestamp){let dt=Math.min(.05,(timestamp-lastTime)/1000||0);lastTime=timestamp;if(settingsOpen){}else if(holdState)holdTick(dt);else if(phase==='battle'&&!paused){if(stopTick(dt)){}else if(drill)drillTick(dt);else{lessonTick(dt);update(dt*speed);}}draw(timestamp);if(timestamp-toastExpiry>0)$('toast').classList.remove('show');uiClock+=dt;if(uiClock>.12){updateUI();uiClock=0;}requestAnimationFrame(loop);}
 $('pulseBtn').addEventListener('click',pulse);$('itemBtn').addEventListener('click',()=>useItem(0));$('itemBtn2').addEventListener('click',()=>useItem(1));
 // Touches on the field. The 2D canvases answer the same three questions as the 2.5D renderer (r3d/core.js): which lane a touch means,
@@ -1283,7 +1304,7 @@ window.addEventListener('keydown',ev=>{const k0=ev.key.toLowerCase();if(k0==='es
 window.addEventListener('blur',()=>{if(phase==='battle')openSettings();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='battle')openSettings();});
 // 2.5D view (r3d/): loaded only when WebGL exists. If a script or the renderer fails, the 2D canvas keeps working. ?2d=1 forces 2D.
-Object.assign(G3,{FOE,FIELD,ITEMS,iconPath,DROP_LIFE,DROP_H,MAG,ORB,COMBO,HANGAR,MORTAR,GRID,BARRIER,STORM,FLEE,FLOOD,barrierUp,rangeK,GATE,BRIDGE,CROSS,CROSS_T,TUNNEL,PYLON,gateShut,gatePhase,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,BAL,TYPES,focusBonus,pierceOn,echoOn,compact:wantsCompactCanvas});
+Object.assign(G3,{LEAK_LOOK,FOE,FIELD,ITEMS,iconPath,DROP_LIFE,DROP_H,MAG,ORB,COMBO,HANGAR,MORTAR,GRID,BARRIER,STORM,FLEE,FLOOD,barrierUp,rangeK,GATE,BRIDGE,CROSS,CROSS_T,TUNNEL,PYLON,gateShut,gatePhase,LANES,LANE_TOP,LEAK_Y,DRONE_Y,TURRET_Y,BAL,TYPES,focusBonus,pierceOn,echoOn,compact:wantsCompactCanvas});
 Object.defineProperties(G3,{phase:{get:()=>phase},op:{get:()=>op},wave:{get:()=>wave},stageTime:{get:()=>stageTime},paused:{get:()=>paused},core:{get:()=>core},facilities:{get:()=>facilities},turrets:{get:()=>turrets},enemies:{get:()=>enemies},drone:{get:()=>drone},effects:{get:()=>effects},pattern:{get:()=>pattern},nextSpawn:{get:()=>nextSpawn},surges:{get:()=>surges},drill:{get:()=>!!drill},pulseLock:{get:()=>!!drill||pulseLock},bag:{get:()=>bag},drops:{get:()=>drops},aim:{get:()=>aim},aid:{get:()=>aid},map:{get:()=>map},hangarT:{get:()=>hangarT},shells:{get:()=>shells},grid:{get:()=>grid},strikes:{get:()=>strikes},combo:{get:()=>combo},comboT:{get:()=>comboT},score:{get:()=>score},fieldTurrets:{get:()=>fieldTurrets},hold:{get:()=>holdState?holdState.need:''}});
 window.__relay=G3;
 (function load3d(){if(/[?&]2d\b/.test(location.search)||!window.WebGLRenderingContext)return;
