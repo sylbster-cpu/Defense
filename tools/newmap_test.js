@@ -58,7 +58,7 @@ const f=hooked(dir,'nm');
   await T("__stage(__cid('flood'));drone.lane=0;drone.x=LANES[0];window.__w2=[__put(0,'brute',300,5000),__put(0,'brute',310,5000)];drone.shotCooldown=0;update(1/60);0");
   ck('flood: a drone round spreads to a machine close by in the water',await T("__w2[0].hp<5000&&__w2[1].hp<5000"),await T("__w2.map(e=>+e.hp.toFixed(1))"));
   // 가속로
-  await T("__stage(__cid('boost'));drone.lane=0;drone.x=LANES[0];window.__f=[__put(0,'brute',200,1e6),__put(1,'brute',200,1e6)];__run(.5);0");
+  await T("__stage(__cid('boost'));drone.lane=0;drone.x=LANES[0];window.__f=[__put(0,'brute',200,1e6),__put(1,'brute',200,1e6)];for(const e of __f)e.speed=TYPES.brute.speed;__run(.5);0");   // (every machine's own speed spread taken out)
   ck('boost: machines on the rails of the workshop lane are 15% faster',await T("Math.abs((__f[1].y-200)/(__f[0].y-200)-MAPK.boost.k)<.02"),await T("__f.map(e=>+e.y.toFixed(2))"));
   // 격납고: a door opens every cycle, the lanes in turn, and lets out two small machines; the drone on that lane keeps it shut (and the goal counts it)
   await T("__stage(__cid('hangar'));drone.lane=1;drone.x=LANES[1];hangarT=[stageTime,stageTime+99];window.__hv=[];const e0=ev3;ev3=o=>{if(o.t==='hangar')__hv.push(o);e0(o);};update(1/60);ev3=e0;0");
@@ -96,7 +96,7 @@ const f=hooked(dir,'nm');
   ck('storm: drone, overload, turret and field-turret ranges are STORM.range of normal',await T("Math.abs(DR()-effects.droneRange*STORM.range)<1e-9&&Math.abs(PR()-effects.pulseRange*STORM.range)<1e-9&&Math.abs(TR()-BAL.turretRange*STORM.range)<1e-9&&rangeK()===STORM.range"));
   await T("drone.lane=0;drone.x=LANES[0];window.__st=[__put(0,'brute',DRONE_Y-effects.droneRange*.9,5000)];__st[0].speed=0;0");
   ck('storm: a machine just inside the normal range is out of the drone\'s reach',await T("pickTarget(0,DRONE_Y,DR())===null&&pickTarget(0,DRONE_Y,effects.droneRange)===__st[0]"));
-  await T("__stage(__cid('storm'));window.__sw=[__put(0,'brute',200,1e6)];__run(1);__stage(__cid('pinch'));__sw.push(__put(0,'brute',200,1e6));__run(1);0");
+  await T("__stage(__cid('storm'));window.__sw=[__put(0,'brute',200,1e6)];__sw[0].speed=TYPES.brute.speed;__run(1);__stage(__cid('pinch'));__sw.push(__put(0,'brute',200,1e6));__sw[1].speed=TYPES.brute.speed;__run(1);0");
   ck('storm: machines walk at STORM.speed of their speed',await T("Math.abs((__sw[0].y-200)/(__sw[1].y-200)-STORM.speed)<.02"),await T("__sw.map(e=>+e.y.toFixed(2))"));
   // items
   ck('items: twelve kinds, and the drop is one of thirteen (twelve plus the field turret)',await T("Object.keys(ITEMS).length===12&&ITEMS.chain&&ITEMS.orbital&&ICON.chain&&ICON.orbital"));

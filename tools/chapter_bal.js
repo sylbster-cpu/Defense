@@ -14,7 +14,7 @@ const BOT=(tick,react,pulseAt,n,seed)=>`(function(){mute=true;const swap=${JSON.
  let wins=0;
  for(let run=0;run<${n};run++){reset();newStage(1);let fr=0,guard=0,ch=1,l0=0,k0=0,f0=falls,c0=crosses,held=0,cover=0;
   const close=(lost)=>{const c=C[ch];c.n++;const l=leaks-l0;c.leaks+=l;c.l2+=l*l;c.fac+=200-facilities[0]-facilities[1];c.core+=core;c.kills+=kills-k0;c.falls+=falls-f0;c.crosses+=crosses-c0;c.held+=held;c.cover+=cover;c.time+=stageTime;if(lost)c.lost++;};
-  while(phase!=='finish'&&guard++<30*1200){
+  while(phase!=='finish'&&guard++<30*2400){
    if(phase==='upgrade'){close(false);const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);ch=op;l0=leaks;k0=kills;f0=falls;c0=crosses;held=0;cover=0;continue;}
    update(1/30);fr++;
    for(const e of enemies){if(e.hp<=0)continue;if(map.gate&&gateShut(e.lane)&&e.y<=GATE.y&&e.y-e.py<e.speed/30*.5)held+=1/30;if(map.cover(e.lane,e.y))cover+=1/30;}

@@ -8,7 +8,7 @@ const BOT=(tick,react,pulseAt,n,seed)=>`(function(){mute=true;let rs=${seed};con
  let lures=0;const e0=ev3;ev3=function(o){if(o.t==='multi'&&o.name==='유인 섬멸')lures++;e0(o);};
  const C=[];for(let k=0;k<=TOTAL_OPS;k++)C.push({n:0,goal:0,lure:0});let wins=0;
  for(let run=0;run<${n};run++){reset();newStage(1);let fr=0,guard=0,l0=0;
-  while(phase!=='finish'&&guard++<30*1200){
+  while(phase!=='finish'&&guard++<30*2400){
    if(phase==='upgrade'){const c=C[op];c.n++;if(goalNow)c.goal++;c.lure+=lures-l0;l0=lures;const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);continue;}
    update(1/30);fr++;
    for(const d of drops.slice())if(DROP_LIFE-d.life>=${react}&&bag.length<BAG_MAX)takeDrop(d);

@@ -326,6 +326,7 @@ function freeState(i){const S=act[i];states.delete(S.e);S.e=null;spare.push(S);a
 function clearStates(){for(let i=act.length-1;i>=0;i--)freeState(i);pp.fill(0);}
 
 const cShield=new THREE.Color(0x9fd4ff),cSplit=new THREE.Color(0xffb36b),cMedic=new THREE.Color(0x9be38f);   // variant machines (G.FOE)
+const cCarrier=new THREE.Color(0xffc46b),cRam=new THREE.Color(0xff5a46);   // the carrier and the ram bosses (G.BOSSK)
 const cEye=new THREE.Color(pal.enemyEye),cHot=new THREE.Color(EYE),cDust=new THREE.Color(0xd9a468),cTeal=new THREE.Color(pal.teal),cLit=new THREE.Color(TEAL_LIT),cAmber=new THREE.Color(pal.amber);
 const _p=new THREE.Vector3(),_s=new THREE.Vector3(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_m=new THREE.Matrix4(),_v=new THREE.Vector3();
 // The boss (4.6 tall) and the brute are taller than the drone's belly at A.droneH, and they walk right under it.
@@ -395,6 +396,13 @@ function drawEnemy(S,dt,t){
    if(run&&Math.random()<.25)sprite(x+(Math.random()-.5)*d.r,y+d.h*(.3+Math.random()*.6),z+(Math.random()-.5)*d.r,d.r*.8,1,Math.random()*TAU,cSplit.r*.7,cSplit.g*.7,cSplit.b*.7,0);}
   else if(kd==='medic'){const k=ek*(.75+.25*Math.sin(t*5+wig)),R=(ctx.G.FOE?ctx.G.FOE.medic.r:70)*A.U;sprite(x,y+d.h*1.25*sy+.7,z,2.6,1,0,cMedic.r*1.2*k,cMedic.g*1.2*k,cMedic.b*1.2*k,0);sprite(x,y+d.h*1.25*sy+.7,z,1.6,0,0,cMedic.r*.4*k,cMedic.g*.4*k,cMedic.b*.4*k,0);
    decal(x,DY,z,R,A.laneW*.5,0,2,cMedic.r*.2*k,cMedic.g*.2*k,cMedic.b*.2*k,0,1,1);}
+  // the carrier: three cargo lights circle over it and swell until it sets machines down; the ram: its front glows red, blinking before a charge, and throws sparks behind while it charges
+  else if(kd==='carrier'){const K=ctx.G.BOSSK&&ctx.G.BOSSK.carrier,f=K?Math.min(1,(e.dropT||0)/K.every):0,k=ek*(.55+.45*f);
+   for(let i=0;i<3;i++){const a=t*1.6+wig+i*TAU/3;sprite(x+Math.cos(a)*d.r*.95,y+d.h*1.1*sy,z+Math.sin(a)*d.r*.95,1.1+1.1*f,0,0,cCarrier.r*k,cCarrier.g*k,cCarrier.b*k,0);}
+   decal(x,DY,z,(d.r+1.1)*sc,(d.r+1.1)*sc,-t*.8+wig,1,cCarrier.r*.55*ek,cCarrier.g*.55*ek,cCarrier.b*.55*ek,0,1,1);}
+  else if(kd==='ram'){const w=e.ramWarn?.5+.5*Math.sin(t*30):0,ds=e.ramDash?1:0,k=ek*(.3+.7*Math.max(w,ds));
+   sprite(x-d.r*1.2*sxz,y+d.h*.45*sy,z,d.r*2.3*sc,0,0,cRam.r*k,cRam.g*k,cRam.b*k,0);decal(x,DY,z,(d.r+.9)*sc,(d.r+.9)*sc,0,2,cRam.r*.4*k,cRam.g*.4*k,cRam.b*.4*k,0,1,1);
+   if(ds&&run)for(let i=0;i<2;i++)sprite(x+d.r*(1+Math.random()*1.6)*sxz,y+d.h*(.2+Math.random()*.5)*sy,z+(Math.random()-.5)*d.r,d.r*.8,1,Math.random()*TAU,cRam.r*.7,cRam.g*.7,cRam.b*.7,0);}
   if(e.healT>0){const k=Math.min(1,e.healT/.3);sprite(x,y+d.h*.5*sy,z,d.r*2.2*sc,0,0,cMedic.r*.32*k,cMedic.g*.32*k,cMedic.b*.32*k,0);}
  }
 

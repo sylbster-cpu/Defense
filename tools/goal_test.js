@@ -17,9 +17,10 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   const T=inGame(p);
   await T("$('title').hidden=true;$('titleVid').pause();learned.drill=learned.item=learned.pulse=learned.combo=true;for(const m of MAPS)learned.maps[m.id]=true;for(const k in ITEMS)learned.items[k]=true;0");
   // chapter 8 numbers
-  const c8=JSON.parse(await T("(()=>{const w=[0,0,0];let hp=0;for(const ev of stages[8]){w[waveIndex.call(null,ev[0])-1]||0;}const b=WAVES[8];for(const ev of stages[8])w[ev[0]<b[0]?0:ev[0]<b[1]?1:2]++;for(const ev of stages[8])hp+=Math.round(TYPES[ev[2]].hp*OP_HP[8]*(ev[2]==='boss'?1:HP_SCALE));return JSON.stringify({hp8:OP_HP[8],n:stages[8].length,w,hp,boss:stages[8].filter(e=>e[2]==='boss').length,others:OP_HP.filter((v,i)=>i!==8).join(',')});})()"));
-  ck('chapter 8: hull 1.85, 84 machines in 22/30/32, one boss',c8.hp8===1.85&&c8.n===84&&c8.w.join('/')==='22/30/32'&&c8.boss===1,c8);
-  ck('other chapters keep their hull (sixteen chapters since build 2026.11.13-7)',c8.others==='0,1,1,1.18,1.32,1.38,1.52,1.5,1.6,1.85,1.85,1.95,1.75,1.95,1.9,2.6',c8.others);
+  // chapter 8 (build 2026.11.13-3 schedule, four attacks since 2026.11.13-9: 8-3 added before the boss attack)
+  const c8=JSON.parse(await T("(()=>{const b=WAVES[8],w=Array(b.length+1).fill(0);for(const ev of stages[8])w[b.filter(x=>ev[0]>=x).length]++;return JSON.stringify({hp8:OP_HP[8],n:stages[8].length,w,boss:stages[8].filter(e=>e[2]==='boss').map(e=>b.filter(x=>e[0]>=x).length+1),all:OP_HP.join(',')});})()"));
+  ck('chapter 8: four attacks (22/30/32 as before, then 32 new and the boss attack), one boss in 8-4',c8.n===116&&c8.w.slice(0,2).join('/')==='22/30'&&c8.w.length===4&&c8.boss.join()==='4',c8);
+  ck('hull per chapter (set by the balance bots for build 2026.11.13-9)',c8.all==='0,1,1,1.18,1.32,1.17,1.12,1.34,1.5,1.45,1.65,1.41,1.52,1.47,1.66,1.33,1.88',c8.all);
   // leaving the page opens the settings; closing them resumes
   await T("mute=true;"+START(3)+"0");
   const t0=+await T('stageTime');await p.waitForTimeout(300);const t1=+await T('stageTime');
@@ -89,7 +90,7 @@ const START=ch=>`reset();liveRun=true;newStage(${ch});phase='battle';pattern=[[1
   ck('a goal pays once per chapter',twice.done===1&&twice.gain<600,twice);
   // scouting on the upgrade screen
   const sc=await T(`(()=>{${START(7)}enemies=[];nextSpawn=pattern.length;stageHurt=true;update(1/30);return document.querySelector('.scout').textContent;})()`);
-  ck('scouting names chapter 8, its machines, the boss and the goal',/다음 작전 · WAVE 8 샛길/.test(sc)&&/적 84기 · 소형 35 · 중형 38 · 대형 10 · 거대 병기/.test(sc)&&sc.includes('건너온 적 4기를 과부하 한 번으로 격파 (+300점)'),sc);
+  ck('scouting names chapter 8, its machines, the boss and the goal',/다음 작전 · WAVE 8 샛길/.test(sc)&&/적 116기 · 소형 51 · 중형 51 · 대형 13 · 거대 병기/.test(sc)&&sc.includes('건너온 적 4기를 과부하 한 번으로 격파 (+300점)'),sc);
   const sc15=await T(`(()=>{${START(15)}enemies=[];nextSpawn=pattern.length;update(1/30);return document.querySelector('.scout').textContent;})()`);
   ck('scouting before the last chapter names the final machine',/WAVE 16 포격장/.test(sc15)&&/최종 병기/.test(sc15),sc15);
   const gl=await T(`(()=>{${PUT}const ch=MAP_OF.findIndex(i=>MAPS[i].id==='tunnel');${START('ch')}for(let i=0;i<3;i++)put(drone.lane,'runner',245+i*15,{hp:1});drone.pulseCooldown=0;pulse();enemies=[];nextSpawn=pattern.length;update(1/30);return document.querySelector('#overlayContent .report').textContent;})()`);

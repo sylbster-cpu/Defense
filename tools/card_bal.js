@@ -7,7 +7,7 @@ const dir=path.resolve(process.argv[2]),N=+process.argv[3]||100,PATCH=process.en
 const BOT=(pol,tick,react,pulseAt,n,seed)=>`(function(){mute=true;${PATCH};let rs=${seed};const r0=Math.random;Math.random=()=>{rs=(rs*1664525+1013904223)>>>0;return rs/4294967296;};
  let wins=0,leaksSum=0,coreSum=0,lost8=0,rank=0,offered=0,pulses=0;const pol=${JSON.stringify(pol)};const p0=pulse;pulse=function(){const c0=drone.pulseCooldown;p0();if(drone.pulseCooldown>c0)pulses++;};
  for(let run=0;run<${n};run++){reset();newStage(1);let fr=0,guard=0;
-  while(phase!=='finish'&&guard++<30*1200){
+  while(phase!=='finish'&&guard++<30*2400){
    if(phase==='upgrade'){const o=offeredUpgrades;let pick=o[(run+upgradeHistory.length)%o.length];if(pol!=='rot'){const want=pol.slice(5);if(o.includes(want)){pick=want;offered++;}}choose(pick);continue;}
    update(1/30);fr++;
    for(const d of drops.slice())if(DROP_LIFE-d.life>=${react}&&bag.length<BAG_MAX)takeDrop(d);

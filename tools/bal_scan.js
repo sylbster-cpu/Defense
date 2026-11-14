@@ -2,7 +2,7 @@
 const { chromium } = require('playwright');const {hooked,bot}=require('./lib.js');const dir=process.argv[2],N=+process.argv[3]||16;
 const f=hooked(dir,'bal');
 const BOT=(tick,items,N)=>`(function(){mute=true;const res=[];for(let run=0;run<${N};run++){reset();newStage(1);let fr=0,guard=0;
- while(phase!=='finish'&&guard++<30*1200){
+ while(phase!=='finish'&&guard++<30*2400){
   if(phase==='upgrade'){const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);continue;}
   update(1/30);fr++;
   if(fr%${tick}===0){const c=${bot.threat};${bot.act(2)}

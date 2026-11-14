@@ -26,7 +26,7 @@ const BOT=(force,tick,react,pulseAt)=>`(function(){mute=true;const N=${N},tick=$
     if(lead){const y0=lead.y-MAG.range*.8;let n=0;for(const e of enemies)if(e.hp>0&&e.lane===lead.lane&&e.type!=='boss'&&Math.abs(e.y-y0)<=MAG.range)n++;if(n>=2){aim=i;useAim(lead.lane,y0);st.used++;return;}}}
    if(go){bag.splice(i,1);applyItem(id);st.used++;return;}}}
  for(let run=0;run<N;run++){reset();newStage(1);let fr=0,guard=0;
-  while(phase!=='finish'&&guard++<30*1200){
+  while(phase!=='finish'&&guard++<30*2400){
    if(phase==='upgrade'){const o=offeredUpgrades;choose(o[(run+upgradeHistory.length)%o.length]);continue;}
    for(const d of drops)if(d.life<=1/30)st.expired++;
    update(1/30);fr++;
